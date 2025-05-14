@@ -1,0 +1,51 @@
+spring:
+  application:
+    name: social-network-api
+  neo4j:
+    uri: ${NEO4J_URI}
+    authentication:
+      username: ${NEO4J_USER}
+      password: ${NEO4J_PASS}
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 60000
+      repositories:
+        enabled: true
+  jpa:
+    show-sql: true
+  mail:
+    port: 587
+    username: ${MAIL}
+    host: smtp.gmail.com
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          ssl:
+            trust: smtp.gmail.com
+server:
+  servlet:
+    context-path: /api
+    session:
+      cookie:
+        same-site: lax
+  port: 80
+
+
+jwt:
+  access-token:
+    key: ${JWT_ACCESS_TOKEN_KEY}
+    duration: ${JWT_ACCESS_TOKEN_DURATION} # seconds
+  refresh-token:
+    duration: ${JWT_REFRESH_TOKEN_DURATION} # days
+front-end:
+  origin: ${FRONTEND_ORIGIN}
+logging:
+  level:
+    root: error

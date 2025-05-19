@@ -63,7 +63,7 @@
 
 1. Clone repository:
 ```bash
-git clone https://github.com/your-username/social-network.git
+git clone https://github.com/thangtranitwork/social-network.git
 cd social-network
 ```
 
@@ -75,7 +75,11 @@ cd backend
 
 3. Chạy docker compose:
 ```bash
-docker-compose up -d
+docker compose --env-file .env.dev up
+```
+hoặc
+```bash
+docker-compose --env-file .env.dev up
 ```
 
 ### Chạy ứng dụng

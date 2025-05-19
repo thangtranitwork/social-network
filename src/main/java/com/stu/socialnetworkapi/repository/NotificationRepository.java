@@ -1,0 +1,46 @@
+package com.stu.socialnetworkapi.repository;
+
+import com.stu.socialnetworkapi.dto.projection.NotificationProjection;
+import com.stu.socialnetworkapi.entity.Notification;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.neo4j.repository.Neo4jRepository;
+import org.springframework.data.neo4j.repository.query.Query;
+import org.springframework.stereotype.Repository;
+
+import java.util.Set;
+import java.util.UUID;
+
+@Repository
+public interface NotificationRepository extends Neo4jRepository<Notification, UUID> {
+    @Query("""
+                // Lấy người dùng nhận thông báo
+                MATCH (receiver:User {id: $userId})
+            
+                // Lấy notification gửi tới user
+                MATCH (receiver)-[:HAS_NOTIFICATION]->(n:Notification)-[:BY_USER]->(creator:User)
+            
+                // Lấy ảnh đại diện nếu có
+                OPTIONAL MATCH (creator)-[:HAS_PROFILE_PICTURE]->(pf:File)
+            
+                // Gom kết quả
+                WITH n, creator, pf
+                ORDER BY n.sentAt DESC
+                SKIP $skip LIMIT $limit
+                // Trả về projection
+                SET n.isRead = true
+                RETURN n.id AS id,
+                       n.action AS action,
+                       n.targetType AS targetType,
+                       n.targetId AS targetId,
+                       n.sentAt AS sentAt,
+                       n.isRead as isRead,
+                       creator.id AS userId,
+                       creator.username AS username,
+                       creator.givenName AS givenName,
+                       creator.familyName AS familyName,
+                       CASE WHEN pf IS NOT NULL THEN pf.id ELSE NULL END AS profilePictureId
+            """)
+    Slice<NotificationProjection> getNotifications(UUID userId, Pageable pageable);
+
+}

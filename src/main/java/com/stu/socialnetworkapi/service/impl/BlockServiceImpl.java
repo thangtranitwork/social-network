@@ -1,0 +1,79 @@
+package com.stu.socialnetworkapi.service.impl;
+
+import com.stu.socialnetworkapi.dto.response.BlockResponse;
+import com.stu.socialnetworkapi.entity.User;
+import com.stu.socialnetworkapi.enums.BlockStatus;
+import com.stu.socialnetworkapi.exception.ApiException;
+import com.stu.socialnetworkapi.exception.ErrorCode;
+import com.stu.socialnetworkapi.mapper.BlockMapper;
+import com.stu.socialnetworkapi.repository.BlockRepository;
+import com.stu.socialnetworkapi.service.itf.BlockService;
+import com.stu.socialnetworkapi.service.itf.UserService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.stereotype.Service;
+
+import java.util.Objects;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+public class BlockServiceImpl implements BlockService {
+    private final BlockMapper blockMapper;
+    private final UserService userService;
+    private final BlockRepository blockRepository;
+
+    @Override
+    public void validateBlock(UUID userId, UUID targetId) {
+        BlockStatus blockStatus = getBlockStatus(userId, targetId);
+        if (Objects.requireNonNull(blockStatus) == BlockStatus.BLOCKED) {
+            throw new ApiException(ErrorCode.HAS_BLOCKED);
+        } else if (blockStatus == BlockStatus.HAS_BEEN_BLOCKED) {
+            throw new ApiException(ErrorCode.HAS_BEEN_BLOCKED);
+        }
+    }
+
+    @Override
+    public BlockStatus getBlockStatus(UUID userId, UUID targetId) {
+        return blockRepository.getBlockStatus(userId, targetId);
+    }
+
+    @Override
+    public void block(String username) {
+        User user = userService.getCurrentUserRequiredAuthentication();
+        User target = userService.getUser(username);
+
+        if (user.getId().equals(target.getId())) {
+            throw new ApiException(ErrorCode.CAN_NOT_BLOCK_YOURSELF);
+        }
+
+        BlockStatus blockStatus = getBlockStatus(user.getId(), target.getId());
+        switch (blockStatus) {
+            case BLOCKED -> throw new ApiException(ErrorCode.HAS_BLOCKED);
+            case HAS_BEEN_BLOCKED -> throw new ApiException(ErrorCode.HAS_BEEN_BLOCKED);
+            case NORMAL -> {
+                if (user.getBlockCount() + 1 > User.MAX_BLOCK_COUNT)
+                    throw new ApiException(ErrorCode.BLOCK_LIMIT_REACHED);
+                blockRepository.blockUser(user.getId(), target.getId());
+            }
+        }
+    }
+
+    @Override
+    public void unblock(UUID blockId) {
+        UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
+        if (!blockRepository.canUnblockUser(blockId, currentUserId)) {
+            throw new ApiException(ErrorCode.BLOCK_NOT_FOUND);
+        }
+        blockRepository.unblockUser(blockId);
+
+    }
+
+    @Override
+    public Slice<BlockResponse> getBlockedUsers(Pageable pageable) {
+        UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
+        return blockRepository.getBlockedUsers(currentUserId, pageable)
+                .map(blockMapper::toBlockResponse);
+    }
+}

@@ -9,7 +9,7 @@ import java.util.Map;
 public class ApiException extends RuntimeException {
 
     private final ErrorCode errorCode;
-    private final Map<String, Object> attributes;
+    private final transient Map<String, Object> attributes;
 
     public ApiException(ErrorCode errorCode) {
         super(errorCode.getMessage());

@@ -2,7 +2,6 @@ package com.stu.socialnetworkapi.exception;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.stu.socialnetworkapi.dto.response.ApiResponse;
-import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -10,6 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.Map;
@@ -24,6 +24,13 @@ public class ApiExceptionHandler {
         ErrorCode errorCode = exception.getErrorCode();
         Map<String, Object> attributes = exception.getAttributes();
         return ApiResponse.error(errorCode, attributes)
+                .toResponseEntity(errorCode.getHttpStatus());
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    private ResponseEntity<ApiResponse<Void>> handlerMaxUploadSizeExceededException() {
+        ErrorCode errorCode = ErrorCode.INVALID_FILE_SIZE;
+        return ApiResponse.error(errorCode)
                 .toResponseEntity(errorCode.getHttpStatus());
     }
 

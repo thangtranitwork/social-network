@@ -35,7 +35,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void send(Notification notification, User target) {
-        String destination = "/api/notifications/" + target.getId();
+        String destination = "/notifications/" + target.getId();
         messagingTemplate.convertAndSend(destination, save(notification));
     }
 

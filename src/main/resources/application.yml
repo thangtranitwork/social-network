@@ -31,7 +31,6 @@ spring:
             trust: smtp.gmail.com
 server:
   servlet:
-    context-path: /api
     session:
       cookie:
         same-site: lax

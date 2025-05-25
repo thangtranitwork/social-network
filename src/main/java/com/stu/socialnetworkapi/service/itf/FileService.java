@@ -8,7 +8,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 public interface FileService {
-    Resource load(String id);
+    Resource load(String id, String token);
+    String getFilename(String id);
 
     File upload(MultipartFile file, FilePrivacy privacy);
 

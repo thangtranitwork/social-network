@@ -4,5 +4,9 @@ public enum FilePrivacy {
     PUBLIC,
     FRIEND,
     PRIVATE,
-    IN_CHAT
+    IN_CHAT;
+
+    public static FilePrivacy toFilePrivacy(PostPrivacy postPrivacy) {
+        return FilePrivacy.valueOf(postPrivacy.name());
+    }
 }

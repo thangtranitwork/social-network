@@ -1,4 +1,15 @@
 package com.stu.socialnetworkapi.dto.response;
 
-public class PostResponse {
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.SuperBuilder;
+
+@EqualsAndHashCode(callSuper = true)
+@Data
+@SuperBuilder
+public class PostResponse extends PostCommonInformationResponse {
+    int likeCount;
+    int shareCount;
+    int commentCount;
+    PostCommonInformationResponse originalPost;
 }

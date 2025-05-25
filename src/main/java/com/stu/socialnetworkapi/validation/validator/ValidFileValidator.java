@@ -1,4 +1,4 @@
-package com.stu.socialnetworkapi.validation.validatior;
+package com.stu.socialnetworkapi.validation.validator;
 
 import com.stu.socialnetworkapi.validation.annotation.ValidFile;
 import jakarta.validation.ConstraintValidator;
@@ -10,13 +10,14 @@ import java.util.Set;
 public class ValidFileValidator implements ConstraintValidator<ValidFile, MultipartFile> {
 
     public static final Set<String> INVALID_FILE_EXTENSIONS = Set.of(
-            ".php", ".js", ".exe", ".sh", ".bat", ".dll", ".com", ".msi"
+            ".php", ".js", ".exe", ".sh", ".bat", ".dll", ".com", ".msi"//.ade, .adp, .apk, .appx, .appxbundle, .bat, .cab, .chm, .cmd, .com, .cpl, .diagcab, .diagcfg, .diagpkg, .dll, .dmg, .ex, .ex_, .exe, .hta, .img, .ins, .iso, .isp, .jar, .jnlp, .js, .jse, .lib, .lnk, .mde, .mjs, .msc, .msi, .msix, .msixbundle, .msp, .mst, .nsh, .pif, .ps1, .scr, .sct, .shb, .sys, .vb, .vbe, .vbs, .vhd, .vxd, .wsc, .wsf, .wsh, .xl
+
     );
 
     @Override
     public boolean isValid(MultipartFile multipartFile, ConstraintValidatorContext context) {
         if (multipartFile == null || multipartFile.isEmpty()) {
-            return false;
+            return true;
         }
 
         String originalFilename = multipartFile.getOriginalFilename();

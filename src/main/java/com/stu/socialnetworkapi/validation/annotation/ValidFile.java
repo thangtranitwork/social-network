@@ -1,6 +1,6 @@
 package com.stu.socialnetworkapi.validation.annotation;
 
-import com.stu.socialnetworkapi.validation.validatior.ValidFileValidator;
+import com.stu.socialnetworkapi.validation.validator.ValidFileValidator;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 
@@ -14,7 +14,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME) // Lưu annotation ở thời gian runtime
 public @interface ValidFile {
 
-    String message() default "INVALID_FILE_TYPE"; // Thông báo mặc định
+    String message() default "INVALID_FILE"; // Thông báo mặc định
 
     Class<?>[] groups() default {};
 

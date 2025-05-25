@@ -9,6 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
@@ -24,6 +25,16 @@ public class ApiExceptionHandler {
         ErrorCode errorCode = exception.getErrorCode();
         Map<String, Object> attributes = exception.getAttributes();
         return ApiResponse.error(errorCode, attributes)
+                .toResponseEntity(errorCode.getHttpStatus());
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    private ResponseEntity<ApiResponse<String>> handlerAppException(MethodArgumentTypeMismatchException exception) {
+        String param = exception.getName();
+        String value = exception.getValue() != null ? exception.getValue().toString() : "";
+        String message = String.format("Invalid value '%s' for parameter '%s'.", value, param);
+        ErrorCode errorCode = ErrorCode.INVALID_INPUT;
+        return ApiResponse.error(errorCode, message)
                 .toResponseEntity(errorCode.getHttpStatus());
     }
 

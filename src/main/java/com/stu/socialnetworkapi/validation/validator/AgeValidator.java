@@ -1,4 +1,4 @@
-package com.stu.socialnetworkapi.validation.validatior;
+package com.stu.socialnetworkapi.validation.validator;
 
 import com.stu.socialnetworkapi.validation.annotation.Age;
 import jakarta.validation.ConstraintValidator;

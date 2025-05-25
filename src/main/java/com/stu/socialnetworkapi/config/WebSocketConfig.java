@@ -16,12 +16,14 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Value("${front-end.origin}")
     private String frontendOrigin;
-
     private final WebSocketAuthInterceptor webSocketAuthInterceptor;
+
+    public static final String NOTIFICATION_CHANNEL_PREFIX = "/notifications";
+    public static final String CHAT_CHANNEL_PREFIX = "/chat";
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        config.enableSimpleBroker("/notifications");
+        config.enableSimpleBroker(NOTIFICATION_CHANNEL_PREFIX, CHAT_CHANNEL_PREFIX);
         config.setApplicationDestinationPrefixes("/app");
         config.setUserDestinationPrefix("/user");
     }

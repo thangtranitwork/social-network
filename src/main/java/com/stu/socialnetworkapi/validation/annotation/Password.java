@@ -1,6 +1,6 @@
 package com.stu.socialnetworkapi.validation.annotation;
 
-import com.stu.socialnetworkapi.validation.validatior.PasswordValidator;
+import com.stu.socialnetworkapi.validation.validator.PasswordValidator;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 

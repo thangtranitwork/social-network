@@ -3,7 +3,6 @@ package com.stu.socialnetworkapi.util;
 import com.stu.socialnetworkapi.enums.AccountRole;
 import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
-import com.stu.socialnetworkapi.repository.LastSeenRedisRepository;
 import com.stu.socialnetworkapi.repository.TokenRedisRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -21,7 +20,6 @@ import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.UUID;
 
@@ -39,7 +37,6 @@ public class JwtUtil {
     private String secret;
 
     private final TokenRedisRepository tokenRedisRepository;
-    private final LastSeenRedisRepository lastSeenRedisRepository;
 
     /**
      * Tạo Access Token có thời hạn ngắn, ký bằng secret.
@@ -47,7 +44,6 @@ public class JwtUtil {
     public String generateAccessToken(UUID userId, AccountRole role) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + accessTokenValiditySeconds * 1000L);
-        updateLastSeen(userId);
         String jit = UUID.randomUUID().toString();
 
         // Specify the algorithm explicitly to match the decoder
@@ -84,7 +80,6 @@ public class JwtUtil {
      */
     public void revokeRefreshToken(String token, HttpServletResponse response) {
         tokenRedisRepository.delete(token);
-
         Cookie cookie = new Cookie("token", null);
         cookie.setHttpOnly(true);
         cookie.setPath("/");
@@ -107,7 +102,6 @@ public class JwtUtil {
         AccountRole role = AccountRole.valueOf(
                 tokenRedisRepository.getRole(userId)
                         .orElseThrow(() -> new ApiException(ErrorCode.INVALID_OR_EXPIRED_REFRESH_TOKEN)));
-        updateLastSeen(userId);
         return generateAccessToken(userId, role);
     }
 
@@ -137,10 +131,5 @@ public class JwtUtil {
         } catch (JwtException | IllegalArgumentException ex) {
             throw new ApiException(ErrorCode.INVALID_TOKEN);
         }
-    }
-
-
-    private void updateLastSeen(UUID userId) {
-        lastSeenRedisRepository.save(userId, ZonedDateTime.now().plusSeconds(accessTokenValiditySeconds));
     }
 }

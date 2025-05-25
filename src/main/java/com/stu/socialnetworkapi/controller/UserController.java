@@ -6,6 +6,7 @@ import com.stu.socialnetworkapi.entity.User;
 import com.stu.socialnetworkapi.service.itf.UserService;
 import com.stu.socialnetworkapi.validation.annotation.Age;
 import com.stu.socialnetworkapi.validation.annotation.ImageFile;
+import com.stu.socialnetworkapi.validation.annotation.OnlyLetter;
 import com.stu.socialnetworkapi.validation.annotation.Username;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -48,10 +49,12 @@ public class UserController {
     public ApiResponse<LocalDate> updateName(
             @RequestParam(required = false)
             @NotBlank(message = "GIVEN_NAME_REQUIRED")
+            @OnlyLetter
             @Length(max = User.MAX_GIVEN_NAME_LENGTH, message = "INVALID_GIVEN_NAME_LENGTH")
             String givenName,
             @RequestParam(required = false)
             @NotBlank(message = "FAMILY_NAME_REQUIRED")
+            @OnlyLetter
             @Length(max = User.MAX_FAMILY_NAME_LENGTH, message = "INVALID_FAMILY_NAME_LENGTH")
             String familyName) {
         return ApiResponse.success(userService.updateName(familyName, givenName));

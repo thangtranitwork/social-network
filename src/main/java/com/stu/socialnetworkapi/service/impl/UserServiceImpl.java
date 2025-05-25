@@ -50,6 +50,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public UUID getUserId(String username) {
+        return userRepository.getUserIdByUsername(username)
+                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    @Override
     public UUID getCurrentUserId() {
         return jwtUtil.getUserId();
     }

@@ -6,6 +6,7 @@ import com.stu.socialnetworkapi.enums.FilePrivacy;
 import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.repository.FileRepository;
+import com.stu.socialnetworkapi.repository.TokenRedisRepository;
 import com.stu.socialnetworkapi.repository.UserRepository;
 import com.stu.socialnetworkapi.service.itf.FileService;
 import com.stu.socialnetworkapi.util.JwtUtil;
@@ -34,9 +35,10 @@ public class FileServiceImpl implements FileService {
     private static final String UPLOAD_DIRECTORY = "upload";
 
     private final Path root = Paths.get(UPLOAD_DIRECTORY);
+    private final JwtUtil jwtUtil;
     private final FileRepository fileRepository;
     private final UserRepository userRepository;
-    private final JwtUtil jwtUtil;
+    private final TokenRedisRepository tokenRedisRepository;
 
     @PostConstruct
     private void init() {
@@ -50,11 +52,13 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public Resource load(String id) {
+    public Resource load(String id, String token) {
         try {
             Path file = root.resolve(id);
             Resource resource = new UrlResource(file.toUri());
-            UUID userId = jwtUtil.getUserId();
+            UUID userId = tokenRedisRepository.findUserIdByToken(token)
+                    .map(UUID::fromString)
+                    .orElse(null);
             if (!resource.exists() || !resource.isReadable()) {
                 throw new ApiException(ErrorCode.FILE_NOT_FOUND);
             }
@@ -63,6 +67,12 @@ public class FileServiceImpl implements FileService {
         } catch (MalformedURLException e) {
             throw new ApiException(ErrorCode.LOAD_FILE_FAILED);
         }
+    }
+
+    @Override
+    public String getFilename(String id) {
+        return fileRepository.getNameById(id)
+                .orElseThrow(() -> new ApiException(ErrorCode.FILE_NOT_FOUND));
     }
 
     @Override

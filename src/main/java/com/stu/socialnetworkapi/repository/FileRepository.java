@@ -5,6 +5,7 @@ import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -29,4 +30,9 @@ public interface FileRepository extends Neo4jRepository<File, String> {
             """)
     boolean canUserReadFile(String fileId, UUID userId);
 
+    @Query("""
+            OPTIONAL MATCH (f:File {id: $id})
+            RETURN f.name
+            """)
+    Optional<String> getNameById(String id);
 }

@@ -47,7 +47,7 @@ public class Post {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     @Relationship(type = "HAS_HISTORY", direction = Relationship.Direction.OUTGOING)
-    List<File> contentHistory;
+    List<History> contentHistory;
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     @Relationship(type = "SHARED", direction = Relationship.Direction.OUTGOING)
@@ -55,4 +55,8 @@ public class Post {
 
     public static final int MAX_CONTENT_LENGTH = 10000;
     public static final int MAX_ATTACH_FILES = 10;
+
+    public boolean isSharedPost() {
+        return originalPost != null;
+    }
 }

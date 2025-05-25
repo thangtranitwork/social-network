@@ -80,18 +80,13 @@ public class RegisterServiceImpl implements RegisterService {
 
     @Override
     public void resend(String email) {
-        accountRepository.findByEmail(email)
-                .ifPresentOrElse(
-                        account -> {
-                            VerifyCode code = account.getVerifyCode();
-                            if(account.isVerified() || code == null) throw new ApiException(ErrorCode.INVALID_OR_EXPIRED_REFRESH_TOKEN);
-                            code.setExpiryTime(LocalDateTime.now().plusSeconds(VERIFY_EMAIL_VALIDITY_SECONDS));
-                            verifyCodeRepository.save(code);
-                            sendVerifyEmail(email, code);
-                        },
-                        () -> {
-                            throw new ApiException(ErrorCode.ACCOUNT_NOT_FOUND);
-                        });
+        Account account = accountRepository.findByEmail(email)
+                .orElseThrow(() -> new ApiException(ErrorCode.ACCOUNT_NOT_FOUND));
+        VerifyCode code = account.getVerifyCode();
+        if (account.isVerified() || code == null) throw new ApiException(ErrorCode.ACCOUNT_VERIFIED);
+        code.setExpiryTime(LocalDateTime.now().plusSeconds(VERIFY_EMAIL_VALIDITY_SECONDS));
+        verifyCodeRepository.save(code);
+        sendVerifyEmail(email, code);
     }
 
     private void validateRegister(RegisterRequest request) {

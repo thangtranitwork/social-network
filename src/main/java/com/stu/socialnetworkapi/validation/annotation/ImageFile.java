@@ -1,7 +1,7 @@
 package com.stu.socialnetworkapi.validation.annotation;
 
 
-import com.stu.socialnetworkapi.validation.validatior.ImageFileValidator;
+import com.stu.socialnetworkapi.validation.validator.ImageFileValidator;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 

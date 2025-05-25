@@ -1,4 +1,4 @@
-package com.stu.socialnetworkapi.validation.validatior;
+package com.stu.socialnetworkapi.validation.validator;
 
 import com.stu.socialnetworkapi.validation.annotation.ValidFileList;
 import jakarta.validation.ConstraintValidator;
@@ -17,8 +17,7 @@ public class ValidFileListValidator implements ConstraintValidator<ValidFileList
     @Override
     public boolean isValid(Collection<MultipartFile> files, ConstraintValidatorContext context) {
         if (files == null || files.isEmpty()) {
-
-            return false;
+            return true;
         }
 
         for (MultipartFile file : files) {

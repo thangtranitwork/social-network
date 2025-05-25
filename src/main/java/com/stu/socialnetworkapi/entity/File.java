@@ -2,12 +2,16 @@ package com.stu.socialnetworkapi.entity;
 
 import com.stu.socialnetworkapi.enums.FilePrivacy;
 import com.stu.socialnetworkapi.enums.FileType;
+import java.util.Collections;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
 import org.springframework.data.neo4j.core.schema.Relationship;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Node
 @Builder
@@ -43,5 +47,17 @@ public class File {
                 .path("/v1/files/")
                 .path(id)
                 .toUriString();
+    }
+
+    public static List<String> getPath(List<File> attachedFiles) {
+        if (attachedFiles == null) return Collections.emptyList();
+        return attachedFiles.stream()
+                .map(File::getPath)
+                .toList();
+    }
+
+    public static String getId(String path) {
+        if (path == null) return null;
+        return path.substring(path.lastIndexOf('/') + 1);
     }
 }

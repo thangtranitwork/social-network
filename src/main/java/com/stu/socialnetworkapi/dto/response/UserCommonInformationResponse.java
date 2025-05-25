@@ -19,6 +19,7 @@ public class UserCommonInformationResponse {
     String familyName;
     String profilePictureUrl;
     boolean isFriend;
-    ZonedDateTime lastSeen;
+    boolean isOnline;
+    ZonedDateTime lastOnline;
     int mutualFriendsCount;
 }

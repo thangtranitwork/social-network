@@ -24,7 +24,7 @@ public class RegisterController {
 
     @PostMapping("/resend-email")
     public ApiResponse<Void> resend(
-            @RequestParam
+            @RequestParam(required = false)
             @NotBlank(message = "EMAIL_REQUIRED")
             @Email(message = "INVALID_EMAIL")
             String email) {

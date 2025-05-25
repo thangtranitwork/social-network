@@ -11,6 +11,7 @@ public interface UserService {
     User getCurrentUserRequiredAuthentication();
     User getUser(String username);
     User getUser(UUID id);
+    UUID getUserId(String username);
     UUID getCurrentUserId();
     UUID getCurrentUserIdRequiredAuthentication();
     UserProfileResponse getUserProfile(String username);

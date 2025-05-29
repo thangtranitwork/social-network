@@ -1,6 +1,10 @@
 spring:
   application:
     name: social-network-api
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 105MB
   neo4j:
     uri: ${NEO4J_URI}
     authentication:

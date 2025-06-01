@@ -23,6 +23,7 @@ public class Comment {
     UUID id;
     String content;
     int likeCount;
+    int replyCount;
     @Builder.Default
     ZonedDateTime createdAt = ZonedDateTime.now();
     @Builder.Default
@@ -46,6 +47,10 @@ public class Comment {
     Comment originalComment;
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @Relationship(type = "REPLIED", direction = Relationship.Direction.INCOMING)
+    List<Comment> repliedComments;
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     @Relationship(type = "ATTACH_FILE", direction = Relationship.Direction.OUTGOING)
     File attachedFile;
     @ToString.Exclude
@@ -55,4 +60,7 @@ public class Comment {
 
     public static final int MAX_CONTENT_LENGTH = 10000;
 
+    public boolean isRepliedComment() {
+        return originalComment != null;
+    }
 }

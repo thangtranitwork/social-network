@@ -13,8 +13,8 @@ import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -24,55 +24,56 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
     private JwtUtil jwtUtil;
     @Autowired
     private IsOnlineRedisRepository isOnlineRedisRepository;
+    private static final String AUTHORIZATION_HEADER = "Authorization";
+    private static final String BEARER_PREFIX = "Bearer ";
+    private static final String USER_ID_KEY = "userId";
+    private static final String ROLE_KEY = "role";
+    private static final String USER_ID_JWT_KEY = "sub";
+    private static final String ROLE_JWT_KEY = "scope";
 
     @Override
-    public Message<?> preSend(Message<?> message, MessageChannel channel) {
+    public Message<?> preSend(Message<?>message, MessageChannel channel) {
         StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
 
         if (accessor == null) {
             return message;
         }
-        String token = accessor.getFirstNativeHeader("Authorization");
-        if (token != null && token.startsWith("Bearer ")) {
+        String token = accessor.getFirstNativeHeader(AUTHORIZATION_HEADER);
+        if (token != null && token.startsWith(BEARER_PREFIX)) {
             token = token.substring(7);
         }
         StompCommand command = accessor.getCommand();
+        Map<String, Object> attributes = Optional.ofNullable(accessor.getSessionAttributes())
+                .orElse(new HashMap<>());
         if (StompCommand.CONNECT.equals(command)) {
             // Xác thực token và lưu thông tin user vào session
-            try {
-                Map<String, Object> claims = jwtUtil.validateToken(token);
-                accessor.getSessionAttributes().put("userId", claims.get("sub"));
-                accessor.getSessionAttributes().put("role", claims.get("scope"));
-                isOnlineRedisRepository.save(UUID.fromString(claims.get("sub").toString()), true);
-            } catch (Exception e) {
-                throw new IllegalArgumentException("Token không hợp lệ");
-            }
+            Map<String, Object> claims = jwtUtil.validateToken(token);
+            Object userId = claims.get(USER_ID_JWT_KEY);
+            Object role = claims.get(ROLE_JWT_KEY);
+            attributes.put(USER_ID_KEY, userId);
+            attributes.put(ROLE_KEY, role);
+            isOnlineRedisRepository.save(UUID.fromString(userId.toString()), true);
         }
-        // Quan trọng: Xác thực khi SUBSCRIBE
+        //Xác thực khi SUBSCRIBE
         else if (StompCommand.SUBSCRIBE.equals(command)) {
-            // Lấy destination mà client muốn subscribe
-            String destination = accessor.getDestination();
-
-            // Xác thực token cho mỗi lần subscribe
-            try {
-                Map<String, Object> claims = jwtUtil.validateToken(token);
-
-                if (!authorizeSubscription(Objects.requireNonNull(destination), claims, accessor)) {
-                    throw new ApiException(ErrorCode.UNAUTHORIZED);
-                }
-            } catch (Exception e) {
+            if (!authorizeSubscription(accessor)) {
                 throw new ApiException(ErrorCode.UNAUTHORIZED);
             }
+
         } else if (StompCommand.DISCONNECT.equals(command)) {
-            UUID userId = UUID.fromString(accessor.getSessionAttributes().get("userId").toString());
+            UUID userId = UUID.fromString(attributes.get(USER_ID_KEY).toString());
             isOnlineRedisRepository.save(userId, false);
         }
 
         return message;
     }
 
-    private boolean authorizeSubscription(String destination, Map<String, Object> claims, StompHeaderAccessor accessor) {
-        String userId = Optional.ofNullable(accessor.getSessionAttributes().get("userId"))
+    private boolean authorizeSubscription(StompHeaderAccessor accessor) {
+        String destination = Optional.ofNullable(accessor.getDestination())
+                .orElseThrow(() -> new ApiException(ErrorCode.INVALID_WEBSOCKET_CHANNEL));
+        Map<String, Object> attributes = Optional.ofNullable(accessor.getSessionAttributes())
+                .orElseThrow(() -> new ApiException(ErrorCode.UNAUTHORIZED));
+        String userId = Optional.ofNullable(attributes.get(USER_ID_KEY))
                 .map(Object::toString)
                 .orElseThrow(() -> new ApiException(ErrorCode.UNAUTHORIZED));
         if (destination.startsWith(WebSocketConfig.NOTIFICATION_CHANNEL_PREFIX)) {

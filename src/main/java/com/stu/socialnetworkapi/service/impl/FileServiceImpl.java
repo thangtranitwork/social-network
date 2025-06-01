@@ -170,10 +170,6 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public void deleteFile(File file) {
-        if (!file.getUploader().getId().equals(jwtUtil.getUserId())) {
-            throw new ApiException(ErrorCode.UNAUTHORIZED);
-        }
-
         try {
             Path filePath = root.resolve(file.getId());
             Files.deleteIfExists(filePath);

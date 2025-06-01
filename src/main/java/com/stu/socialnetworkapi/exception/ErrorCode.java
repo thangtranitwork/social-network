@@ -53,7 +53,7 @@ public enum ErrorCode {
     REQUIRED_IMAGE_FILE(3007, "Required image file", HttpStatus.BAD_REQUEST),
     INVALID_FILE_SIZE(3008, "Invalid file size", HttpStatus.BAD_REQUEST),
     LIST_CONTAINS_INVALID_FILE(3009, "List contains invalid file", HttpStatus.BAD_REQUEST),
-    
+
     CAN_NOT_MAKE_SELF_REQUEST(4000, "Can't make self request", HttpStatus.BAD_REQUEST),
     SENT_ADD_FRIEND_REQUEST_FAILED(4001, "Sent add friend request failed", HttpStatus.BAD_REQUEST),
     ADD_FRIEND_REQUEST_SENT_LIMIT_REACHED(4002, "Add friend request sent limit reached", HttpStatus.BAD_REQUEST),
@@ -72,7 +72,6 @@ public enum ErrorCode {
     INVALID_POST_CONTENT_LENGTH(5001, "Invalid post content length", HttpStatus.BAD_REQUEST),
     INVALID_NUMBER_OF_POST_ATTACHMENTS(5002, "Invalid number of post attachments", HttpStatus.BAD_REQUEST),
     POST_NOT_FOUND(5003, "Post not found", HttpStatus.BAD_REQUEST),
-    NOT_HAVE_PERMISSION_TO_VIEW_OR_MODIFY_THIS_POST(5004, "Not have permission", HttpStatus.BAD_REQUEST),
     ONLY_PUBLIC_POST_CAN_BE_SHARED(5005, "Only public post can be shared", HttpStatus.BAD_REQUEST),
     PRIVACY_UNCHANGED(5006, "Privacy unchanged", HttpStatus.BAD_REQUEST),
     INVALID_DELETE_ATTACHMENT(5007, "Invalid delete attachment", HttpStatus.BAD_REQUEST),
@@ -85,6 +84,16 @@ public enum ErrorCode {
     NOT_STORED_POST(5014, "Not stored", HttpStatus.BAD_REQUEST),
     STORED_POST_LIMIT_REACHED(5015, "Stored post limit reached", HttpStatus.BAD_REQUEST),
 
+    COMMENT_NOT_FOUND(6000, "Comment not found", HttpStatus.NOT_FOUND),
+    COMMENT_CONTENT_AND_ATTACH_FILE_BOTH_EMPTY(6001, "Comment content and attach file cannot be empty", HttpStatus.BAD_REQUEST),
+    INVALID_COMMENT_CONTENT_LENGTH(6002, "Invalid comment content length", HttpStatus.BAD_REQUEST),
+    POST_ID_REQUIRED(6003, "Post id is required", HttpStatus.BAD_REQUEST),
+    ORIGINAL_COMMENT_ID_REQUIRED(6004, "Original comment id is required", HttpStatus.BAD_REQUEST),
+    LIKED_COMMENT(6005, "Liked comment", HttpStatus.BAD_REQUEST),
+    NOT_LIKED_COMMENT(6006, "Not liked comment", HttpStatus.BAD_REQUEST),
+    CAN_NOT_REPLY_REPLIED_COMMENT(6007, "Can't reply replied comment", HttpStatus.BAD_REQUEST),
+
+    INVALID_WEBSOCKET_CHANNEL(5016, "Invalid websocket channel", HttpStatus.BAD_REQUEST),
     ONLY_LETTER_ACCEPTED(9993, "Only letter accepted", HttpStatus.BAD_REQUEST),
     UNAUTHORIZED(9994, "Unauthorized", HttpStatus.UNAUTHORIZED),
     INVALID_INPUT(9995, "Invalid input", HttpStatus.BAD_REQUEST),

@@ -27,9 +27,9 @@ public class PostController {
         return ApiResponse.success(postService.getSuggestedPosts());
     }
 
-    @GetMapping("/author/{authorUsername}")
-    public ApiResponse<Slice<PostResponse>> getPosts(@PathVariable @Username String authorUsername, Pageable pageable) {
-        return ApiResponse.success(postService.getPostsOfUser(authorUsername, pageable));
+    @GetMapping("/of-user/{username}")
+    public ApiResponse<Slice<PostResponse>> getPosts(@PathVariable @Username String username, Pageable pageable) {
+        return ApiResponse.success(postService.getPostsOfUser(username, pageable));
     }
 
     @GetMapping("/{id}")

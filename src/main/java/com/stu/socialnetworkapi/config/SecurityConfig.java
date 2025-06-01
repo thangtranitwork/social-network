@@ -38,6 +38,10 @@ public class SecurityConfig {
             "/v1/users/{username}",
             "/v1/files/{id}",
             "/v1/notifications/send",
+            "/v1/posts/newsfeed",
+            "/v1/posts/{id}",
+            "/v1/posts/of-user/{username}",
+            "/v1/comments/of-post/{postId}",
             "/ws/**" //authorize in handshake interceptor
     };
 

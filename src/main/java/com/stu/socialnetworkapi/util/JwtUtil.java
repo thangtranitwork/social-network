@@ -132,4 +132,9 @@ public class JwtUtil {
             throw new ApiException(ErrorCode.INVALID_TOKEN);
         }
     }
+
+    public boolean isAdmin() {
+        return SecurityContextHolder.getContext().getAuthentication().getAuthorities()
+                .stream().anyMatch(authority -> authority.getAuthority().equals(AccountRole.ADMIN.name()));
+    }
 }

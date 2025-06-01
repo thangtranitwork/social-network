@@ -40,7 +40,7 @@ public class PostServiceImpl implements PostService {
     @Override
     public PostResponse get(UUID postId) {
         Post post = getPostById(postId);
-        validateViewPost(post);
+        validateViewPost(post, userService.getCurrentUserId());
         return postMapper.toPostResponse(post);
     }
 
@@ -193,7 +193,7 @@ public class PostServiceImpl implements PostService {
     public void store(UUID postId) {
         User user = userService.getCurrentUserRequiredAuthentication();
         Post post = getPostById(postId);
-        validateViewPost(post);
+        validateViewPost(post, userService.getCurrentUserIdRequiredAuthentication());
         if (postRepository.isStored(postId, user.getId())) {
             throw new ApiException(ErrorCode.STORED_POST);
         }
@@ -231,15 +231,26 @@ public class PostServiceImpl implements PostService {
         postRepository.save(post);
     }
 
-    private static void validatePostRequest(String content, List<MultipartFile> files) {
+    @Override
+    public void validateViewPost(UUID postId, UUID viewerId) {
+        Post post = getPostById(postId);
+        validateViewPost(post, viewerId);
+    }
 
-        boolean isContentEmpty = content == null || content.isEmpty();
-        boolean hasNoAttachment = files == null || files.isEmpty();
+    @Override
+    public Post getPostById(UUID postId) {
+        return postRepository.findById(postId)
+                .orElseThrow(() -> new ApiException(ErrorCode.POST_NOT_FOUND));
+    }
+
+    private static void validatePostRequest(String content, List<MultipartFile> files) {
+        boolean isContentEmpty = (content == null || content.trim().isEmpty());
+        boolean hasNoAttachment = (files == null || files.isEmpty());
         if (isContentEmpty && hasNoAttachment) {
             throw new ApiException(ErrorCode.POST_CONTENT_AND_ATTACH_FILES_BOTH_EMPTY);
         }
 
-        if (content != null && content.length() > Post.MAX_CONTENT_LENGTH) {
+        if (content != null && content.trim().length() > Post.MAX_CONTENT_LENGTH) {
             throw new ApiException(ErrorCode.INVALID_POST_CONTENT_LENGTH);
         }
 
@@ -248,30 +259,34 @@ public class PostServiceImpl implements PostService {
         }
     }
 
-    private void validateViewPost(Post post) {
-        UUID currentUserId = userService.getCurrentUserId();
+    private void validateUpdateContentPost(Post post, PostUpdateContentRequest request) {
+        if (post.isSharedPost()) validateSharedPost(post, request);
+        else validateUpdateContentNormalPost(post, request);
+    }
+
+    private void validateViewPost(Post post, UUID viewerId) {
         PostPrivacy privacy = post.getPrivacy();
         UUID authorId = post.getAuthor().getId();
 
-        boolean isAuthenticated = currentUserId != null;
-        boolean isAuthor = isAuthenticated && currentUserId.equals(authorId);
+        boolean isAuthenticated = viewerId != null;
+        boolean isAuthor = isAuthenticated && viewerId.equals(authorId);
 
         if (isAuthor) {
             return;
         }
         if (PostPrivacy.PUBLIC.equals(privacy)) {
-            if (isAuthenticated) blockService.validateBlock(currentUserId, authorId);
+            if (isAuthenticated) blockService.validateBlock(viewerId, authorId);
             return;
         }
         // Friend can not be blocked
         if (PostPrivacy.FRIEND.equals(privacy)) {
-            if (!isAuthenticated || !friendService.isFriend(currentUserId, authorId)) {
-                throw new ApiException(ErrorCode.NOT_HAVE_PERMISSION_TO_VIEW_OR_MODIFY_THIS_POST);
+            if (!isAuthenticated || !friendService.isFriend(viewerId, authorId)) {
+                throw new ApiException(ErrorCode.UNAUTHORIZED);
             }
             return;
         }
         //Other case: PRIVATE, ...
-        throw new ApiException(ErrorCode.NOT_HAVE_PERMISSION_TO_VIEW_OR_MODIFY_THIS_POST);
+        throw new ApiException(ErrorCode.UNAUTHORIZED);
     }
 
     private void validateSharePost(String content, UUID currentUserId, UUID originalPostAuthorId, PostPrivacy originalPostPrivacy) {
@@ -284,15 +299,6 @@ public class PostServiceImpl implements PostService {
         blockService.validateBlock(currentUserId, originalPostAuthorId);
     }
 
-    private Post getPostById(UUID postId) {
-        return postRepository.findById(postId)
-                .orElseThrow(() -> new ApiException(ErrorCode.POST_NOT_FOUND));
-    }
-
-    private void validateUpdateContentPost(Post post, PostUpdateContentRequest request) {
-        if (post.isSharedPost()) validateSharedPost(post, request);
-        else validateUpdateContentNormalPost(post, request);
-    }
 
     private static void validateSharedPost(Post post, PostUpdateContentRequest request) {
         if (post.getContent() == null && request.content() == null)
@@ -378,7 +384,7 @@ public class PostServiceImpl implements PostService {
     private void validateAuthor(Post post) {
         UUID currentUserId = userService.getCurrentUserRequiredAuthentication().getId();
         if (!post.getAuthor().getId().equals(currentUserId)) {
-            throw new ApiException(ErrorCode.NOT_HAVE_PERMISSION_TO_VIEW_OR_MODIFY_THIS_POST);
+            throw new ApiException(ErrorCode.UNAUTHORIZED);
         }
     }
 }

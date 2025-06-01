@@ -2,7 +2,6 @@ package com.stu.socialnetworkapi.service.impl;
 
 import com.stu.socialnetworkapi.dto.response.NotificationResponse;
 import com.stu.socialnetworkapi.entity.Notification;
-import com.stu.socialnetworkapi.entity.User;
 import com.stu.socialnetworkapi.mapper.NotificationMapper;
 import com.stu.socialnetworkapi.repository.NotificationRepository;
 import com.stu.socialnetworkapi.service.itf.NotificationService;
@@ -32,8 +31,8 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void send(Notification notification, User target) {
-        String destination = "/notifications/" + target.getId();
+    public void send(Notification notification) {
+        String destination = "/notifications/" + notification.getReceiver().getId();
         messagingTemplate.convertAndSend(destination, save(notification));
     }
 

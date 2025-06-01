@@ -45,7 +45,7 @@ public class RequestServiceImpl implements RequestService {
                 .targetType(ObjectType.REQUEST)
                 .build();
 
-        notificationService.send(notification, target);
+        notificationService.send(notification);
     }
 
     @Override
@@ -95,7 +95,7 @@ public class RequestServiceImpl implements RequestService {
                 .creator(user)
                 .receiver(sender)
                 .build();
-        notificationService.send(notification, sender);
+        notificationService.send(notification);
     }
 
     private void validateSendAddFriendRequest(User requester, User target) {

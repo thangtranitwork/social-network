@@ -86,7 +86,7 @@ public class PostServiceImpl implements PostService {
         validatePostRequest(content, files);
         User author = userService.getCurrentUserRequiredAuthentication();
         List<File> uploadedFiles = files != null && !files.isEmpty()
-                ? fileService.upload(files, FilePrivacy.toFilePrivacy(request.privacy()))
+                ? fileService.upload(files, FilePrivacy.IN_POST)
                 : null;
 
         Post post = Post.builder()
@@ -132,11 +132,6 @@ public class PostServiceImpl implements PostService {
             throw new ApiException(ErrorCode.PRIVACY_UNCHANGED);
         }
         post.setPrivacy(privacy);
-        if (post.getAttachedFiles() != null && !post.getAttachedFiles().isEmpty()) {
-            List<String> ids = post.getAttachedFiles().stream().map(File::getId).toList();
-            FilePrivacy filePrivacy = FilePrivacy.toFilePrivacy(privacy);
-            fileService.modifyPrivacy(ids, filePrivacy);
-        }
         postRepository.save(post);
     }
 
@@ -358,8 +353,7 @@ public class PostServiceImpl implements PostService {
     private void processUpdateFile(PostUpdateContentRequest request, Post post) {
         List<File> addedFiles = new ArrayList<>();
         if (request.newFiles() != null && !request.newFiles().isEmpty()) {
-            FilePrivacy filePrivacy = FilePrivacy.toFilePrivacy(post.getPrivacy());
-            addedFiles.addAll(fileService.upload(request.newFiles(), filePrivacy));
+            addedFiles.addAll(fileService.upload(request.newFiles(), FilePrivacy.IN_POST));
         }
 
         if (request.deleteOldFileUrls() != null && !request.deleteOldFileUrls().isEmpty()) {

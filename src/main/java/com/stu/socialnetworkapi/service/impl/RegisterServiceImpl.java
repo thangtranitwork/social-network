@@ -99,7 +99,7 @@ public class RegisterServiceImpl implements RegisterService {
 
     private void sendVerifyEmail(String email, VerifyCode verifyCode) {
         Map<String, Object> data = new HashMap<>();
-        data.put("verificationLink", String.format("%s/register&email=%s&code=%s", frontEndOrigin, email, verifyCode.getCode()));
+        data.put("verificationLink", String.format("%s/register?email=%s&code=%s", frontEndOrigin, email, verifyCode.getCode()));
         mailService.sendHTML(
                 email,
                 "Email Verification",

@@ -15,11 +15,13 @@ public class TokenRedisRepository {
     private static final String REFRESH_TOKEN_KEY = "refresh_token:";
     private static final String REFRESH_TOKEN_REVERSE_KEY = "refresh_token_reverse:";
     private static final String USER_ROLE_KEY = "user_role:";
+    private static final String USER_USERNAME_KEY = "user_username:";
 
-    public void save(UUID userId, String token, String role, Duration ttl) {
+    public void save(UUID userId, String token, String role, String username, Duration ttl) {
         redisTemplate.opsForValue().set(REFRESH_TOKEN_KEY + userId, token, ttl);
         redisTemplate.opsForValue().set(REFRESH_TOKEN_REVERSE_KEY + token, userId.toString(), ttl);
         redisTemplate.opsForValue().set(USER_ROLE_KEY + userId, role, ttl);
+        redisTemplate.opsForValue().set(USER_USERNAME_KEY + userId, username, ttl);
     }
 
     public Optional<String> getRefreshToken(UUID userId) {
@@ -34,11 +36,16 @@ public class TokenRedisRepository {
         return Optional.ofNullable(redisTemplate.opsForValue().get(USER_ROLE_KEY + userId));
     }
 
+    public Optional<String> getUsername(UUID userId) {
+        return Optional.ofNullable(redisTemplate.opsForValue().get(USER_USERNAME_KEY + userId));
+    }
+
     public void delete(String token) {
         findUserIdByToken(token).ifPresent(userId -> {
             redisTemplate.delete(REFRESH_TOKEN_KEY + userId);
             redisTemplate.delete(USER_ROLE_KEY + userId);
             redisTemplate.delete(REFRESH_TOKEN_REVERSE_KEY + token);
+            redisTemplate.delete(USER_USERNAME_KEY + userId);
         });
     }
 }

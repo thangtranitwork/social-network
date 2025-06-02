@@ -61,8 +61,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     private AuthenticationResponse processLoginSucceed(Account account, HttpServletResponse response) {
         loginAttemptRepository.loginSucceeded(account.getId());
-        String accessToken = jwtUtil.generateAccessToken(account.getId(), account.getRole());
-        jwtUtil.generateAndStoreRefreshToken(account.getId(), account.getRole(), response);
+        String username = account.getUser().getUsername();
+        String accessToken = jwtUtil.generateAccessToken(account.getId(), username, account.getRole());
+        jwtUtil.generateAndStoreRefreshToken(account.getId(), account.getRole(), username, response);
         return new AuthenticationResponse(accessToken);
     }
 

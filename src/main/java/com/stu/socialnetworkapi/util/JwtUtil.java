@@ -37,11 +37,14 @@ public class JwtUtil {
     private String secret;
 
     private final TokenRedisRepository tokenRedisRepository;
+    private static final String SCOPE_CLAIM_KEY = "scope";
+    private static final String USERNAME_CLAIM_KEY = "username";
+    private static final String REFRESH_TOKEN_COOKIE_NAME = "token";
 
     /**
      * Tạo Access Token có thời hạn ngắn, ký bằng secret.
      */
-    public String generateAccessToken(UUID userId, AccountRole role) {
+    public String generateAccessToken(UUID userId, String username, AccountRole role) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + accessTokenValiditySeconds * 1000L);
         String jit = UUID.randomUUID().toString();
@@ -50,7 +53,8 @@ public class JwtUtil {
         return Jwts.builder()
                 .id(jit)
                 .subject(userId.toString())
-                .claim("scope", role.name())
+                .claim(SCOPE_CLAIM_KEY, role.name())
+                .claim(USERNAME_CLAIM_KEY, username)
                 .issuedAt(now)
                 .expiration(expiry)
                 .signWith(Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8)), Jwts.SIG.HS256)
@@ -60,13 +64,13 @@ public class JwtUtil {
     /**
      * Tạo refresh token (UUID), lưu vào Redis, gửi qua cookie HTTPOnly.
      */
-    public void generateAndStoreRefreshToken(UUID userId, AccountRole role, HttpServletResponse response) {
+    public void generateAndStoreRefreshToken(UUID userId, AccountRole role, String username, HttpServletResponse response) {
         String refreshToken = UUID.randomUUID().toString();
         Duration ttl = Duration.ofDays(refreshTokenValidityDays);
 
-        tokenRedisRepository.save(userId, refreshToken, role.name(), ttl);
+        tokenRedisRepository.save(userId, refreshToken, role.name(), username, ttl);
 
-        Cookie cookie = new Cookie("token", refreshToken);
+        Cookie cookie = new Cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken);
         cookie.setHttpOnly(true);
         cookie.setSecure(true); // bật nếu dùng HTTPS
         cookie.setPath("/");
@@ -80,7 +84,7 @@ public class JwtUtil {
      */
     public void revokeRefreshToken(String token, HttpServletResponse response) {
         tokenRedisRepository.delete(token);
-        Cookie cookie = new Cookie("token", null);
+        Cookie cookie = new Cookie(REFRESH_TOKEN_COOKIE_NAME, null);
         cookie.setHttpOnly(true);
         cookie.setPath("/");
         cookie.setMaxAge(0);
@@ -102,7 +106,9 @@ public class JwtUtil {
         AccountRole role = AccountRole.valueOf(
                 tokenRedisRepository.getRole(userId)
                         .orElseThrow(() -> new ApiException(ErrorCode.INVALID_OR_EXPIRED_REFRESH_TOKEN)));
-        return generateAccessToken(userId, role);
+        String username = tokenRedisRepository.getUsername(userId)
+                .orElseThrow(() -> new ApiException(ErrorCode.INVALID_OR_EXPIRED_REFRESH_TOKEN));
+        return generateAccessToken(userId, username, role);
     }
 
     public UUID getUserId() {

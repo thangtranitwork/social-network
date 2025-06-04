@@ -17,28 +17,27 @@ public interface UserRepository extends Neo4jRepository<User, UUID> {
     Optional<UUID> getUserIdByUsername(String username);
 
     @Query("""
-            // Match the user by username
             MATCH (user:User {username: $username})
-            
-            // Optional match for profile picture
             OPTIONAL MATCH (user)-[:HAS_PROFILE_PICTURE]->(profilePic:File)
-            
-            // Optional match for cover picture
             OPTIONAL MATCH (user)-[:HAS_COVER_PICTURE]->(coverPic:File)
             
-            // If current user is provided, check for friendship
             OPTIONAL MATCH (currentUser:User {id: $currentUserId})
+            
+            // Check friendship
             OPTIONAL MATCH (currentUser)-[friendship:FRIEND]->(user)
             
-            // First collect data without mutual friends count
-            WITH user, profilePic, coverPic, currentUser, friendship
+            // Check friend request (outgoing or incoming)
+            OPTIONAL MATCH (currentUser)-[request:REQUEST]-(user)
             
-            // Calculate mutual friends count if current user exists
-            WITH user, profilePic, coverPic, currentUser, friendship,
+            // Check block
+            OPTIONAL MATCH (currentUser)-[block:BLOCKED]->(user)
+            
+            WITH user, profilePic, coverPic, currentUser, friendship, request, block,
+            
                  CASE
-                    WHEN currentUser IS NOT NULL THEN
-                        size([(currentUser)-[:FRIEND]->(mutual:User)<-[:FRIEND]-(user) | mutual])
-                    ELSE 0
+                     WHEN currentUser IS NOT NULL THEN
+                         size([(currentUser)-[:FRIEND]->(mutual:User)<-[:FRIEND]-(user) | mutual])
+                     ELSE 0
                  END AS mutualFriendsCount
             
             RETURN
@@ -54,11 +53,15 @@ public interface UserRepository extends Neo4jRepository<User, UUID> {
                 mutualFriendsCount AS mutualFriendsCount,
                 user.lastSeen AS lastSeen,
                 CASE WHEN friendship IS NOT NULL THEN true ELSE false END AS isFriend,
+                friendship.uuid AS friendId,
+                request.uuid AS requestId,
+                block.uuid AS blockId,
                 COALESCE(user.showFriends, true) AS showFriends,
                 COALESCE(user.allowFriendRequest, true) AS allowFriendRequest
             LIMIT 1
             """)
     Optional<UserProfileProjection> findProfileByUsername(String username, UUID currentUserId);
+
 
     boolean existsByUsername(String username);
 }

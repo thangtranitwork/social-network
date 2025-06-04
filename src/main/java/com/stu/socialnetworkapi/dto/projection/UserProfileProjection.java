@@ -18,6 +18,9 @@ public record UserProfileProjection(
         ZonedDateTime lastSeen,
         boolean isFriend,
         boolean showFriends,
-        boolean allowFriendRequest
-        ) {
+        boolean allowFriendRequest,
+        UUID requestId,
+        UUID friendId,
+        UUID blockId
+) {
 }

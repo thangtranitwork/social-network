@@ -22,4 +22,7 @@ public class UserCommonInformationResponse {
     boolean isOnline;
     ZonedDateTime lastOnline;
     int mutualFriendsCount;
+    UUID requestId;
+    UUID friendId;
+    UUID blockId;
 }

@@ -33,10 +33,16 @@ public class UserMapper {
                 .lastOnline(online.getLastOnlineAt())
                 .isFriend(projection.isFriend())
                 .mutualFriendsCount(projection.mutualFriendsCount())
+                .requestId(projection.requestId())
+                .friendId(projection.friendId())
+                .blockId(projection.blockId())
                 .build();
     }
 
     public UserCommonInformationResponse toUserCommonInformationResponse(final User user) {
+        if (user == null) {
+            return null;
+        }
         OnlineResponse online = isOnlineRedisRepository.getLastSeen(user.getId());
         return UserCommonInformationResponse.builder()
                 .id(user.getId())
@@ -59,12 +65,14 @@ public class UserMapper {
                 .isOnline(online.isOnline())
                 .lastOnline(online.getLastOnlineAt())
                 .isFriend(false)
+                .requestId(projection.requestId())
                 .build();
     }
 
     public UserCommonInformationResponse toUserCommonInformationResponse(final BlockProjection projection) {
         OnlineResponse online = isOnlineRedisRepository.getLastSeen(projection.userId());
         return UserCommonInformationResponse.builder()
+                .blockId(projection.blockId())
                 .id(projection.userId())
                 .givenName(projection.givenName())
                 .familyName(projection.familyName())
@@ -87,6 +95,7 @@ public class UserMapper {
                 .isOnline(online.isOnline())
                 .lastOnline(online.getLastOnlineAt())
                 .isFriend(false)
+                .friendId(projection.friendId())
                 .build();
     }
 
@@ -113,6 +122,38 @@ public class UserMapper {
                 .familyName(projection.familyName())
                 .username(projection.username())
                 .profilePictureUrl(File.getPath(projection.profilePictureId()))
+                .isOnline(online.isOnline())
+                .lastOnline(online.getLastOnlineAt())
+                .build();
+    }
+
+    public UserCommonInformationResponse toSenderUserCommonInformationResponse(final ChatProjection projection) {
+        if (projection == null || projection.latestMessageSenderId() == null) {
+            return null;
+        }
+        OnlineResponse online = isOnlineRedisRepository.getLastSeen(projection.latestMessageSenderId());
+        return UserCommonInformationResponse.builder()
+                .id(projection.latestMessageSenderId())
+                .givenName(projection.latestMessageSenderGivenName())
+                .familyName(projection.latestMessageSenderFamilyName())
+                .username(projection.latestMessageSenderUsername())
+                .profilePictureUrl(File.getPath(projection.latestMessageSenderProfilePictureId()))
+                .isOnline(online.isOnline())
+                .lastOnline(online.getLastOnlineAt())
+                .build();
+    }
+
+    public UserCommonInformationResponse toTargetUserCommonInformationResponse(final ChatProjection projection) {
+        if (projection == null || projection.targetId() == null) {
+            return null;
+        }
+        OnlineResponse online = isOnlineRedisRepository.getLastSeen(projection.targetId());
+        return UserCommonInformationResponse.builder()
+                .id(projection.targetId())
+                .givenName(projection.targetGivenName())
+                .familyName(projection.targetFamilyName())
+                .username(projection.targetUsername())
+                .profilePictureUrl(File.getPath(projection.targetProfilePictureId()))
                 .isOnline(online.isOnline())
                 .lastOnline(online.getLastOnlineAt())
                 .build();

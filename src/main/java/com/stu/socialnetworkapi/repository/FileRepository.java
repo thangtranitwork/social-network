@@ -19,10 +19,6 @@ public interface FileRepository extends Neo4jRepository<File, String> {
                     WHEN currentUser IS NOT NULL AND currentUser.id = uploader.id THEN true
                     WHEN block IS NOT NULL THEN false
                     WHEN file.privacy = 'PUBLIC' THEN true
-                    WHEN file.privacy = 'FRIEND' THEN EXISTS {
-                        MATCH (currentUser)-[:FRIEND]-(uploader)
-                    }
-                    WHEN file.privacy = 'PRIVATE' THEN false
                     WHEN file.privacy = 'IN_CHAT' THEN EXISTS {
                         MATCH (currentUser)-[:IS_MEMBER_OF]->(:Chat)
                               -[:HAS_MESSAGE]->(:Message)

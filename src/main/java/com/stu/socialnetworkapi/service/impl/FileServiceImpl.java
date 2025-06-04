@@ -9,6 +9,7 @@ import com.stu.socialnetworkapi.repository.FileRepository;
 import com.stu.socialnetworkapi.repository.TokenRedisRepository;
 import com.stu.socialnetworkapi.repository.UserRepository;
 import com.stu.socialnetworkapi.service.itf.FileService;
+import com.stu.socialnetworkapi.util.FileAsyncExecutor;
 import com.stu.socialnetworkapi.util.JwtUtil;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,7 @@ public class FileServiceImpl implements FileService {
 
     private final Path root = Paths.get(UPLOAD_DIRECTORY);
     private final JwtUtil jwtUtil;
+    private final FileAsyncExecutor fileAsyncExecutor;
     private final FileRepository fileRepository;
     private final UserRepository userRepository;
     private final TokenRedisRepository tokenRedisRepository;
@@ -84,7 +86,7 @@ public class FileServiceImpl implements FileService {
 
         try {
             String newFileName = UUID.randomUUID() + extension;
-            Files.copy(file.getInputStream(), root.resolve(newFileName));
+            fileAsyncExecutor.save(file, newFileName);
             File newFile = File.builder()
                     .id(newFileName)
                     .name(originalFilename)
@@ -96,7 +98,6 @@ public class FileServiceImpl implements FileService {
         } catch (IOException e) {
             throw new ApiException(ErrorCode.UPLOAD_FILE_FAILED);
         }
-
     }
 
     @Override
@@ -115,7 +116,7 @@ public class FileServiceImpl implements FileService {
                 String originalFilename = file.getOriginalFilename();
                 String extension = getFileExtension(originalFilename);
                 String newFileName = UUID.randomUUID() + extension;
-                Files.copy(file.getInputStream(), root.resolve(newFileName));
+                fileAsyncExecutor.save(file, newFileName);
                 File newFile = File.builder().id(newFileName).name(originalFilename).privacy(privacy).uploader(uploader).build();
                 uploadedFiles.add(newFile);
             }

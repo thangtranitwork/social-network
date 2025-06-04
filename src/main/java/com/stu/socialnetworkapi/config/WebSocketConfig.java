@@ -18,12 +18,18 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     private String frontendOrigin;
     private final WebSocketAuthInterceptor webSocketAuthInterceptor;
 
-    public static final String NOTIFICATION_CHANNEL_PREFIX = "/notifications";
-    public static final String CHAT_CHANNEL_PREFIX = "/chat";
+    public static final String NOTIFICATION_CHANNEL_PREFIX = "/notifications"; // Realtime notification
+    public static final String CHAT_CHANNEL_PREFIX = "/chat"; // Receive new message and chat info state when chat is on screen
+    public static final String CHAT_MESSAGE_CHANNEL_PREFIX = "/chat-message"; // Receive message command like delete, edit, ... when chat is on screen
+    public static final String MESSAGE_CHANNEL_PREFIX = "/message"; // Received new message for notification (chat is not on screen)
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        config.enableSimpleBroker(NOTIFICATION_CHANNEL_PREFIX, CHAT_CHANNEL_PREFIX);
+        config.enableSimpleBroker(
+                NOTIFICATION_CHANNEL_PREFIX,
+                CHAT_CHANNEL_PREFIX,
+                CHAT_MESSAGE_CHANNEL_PREFIX,
+                MESSAGE_CHANNEL_PREFIX);
         config.setApplicationDestinationPrefixes("/app");
         config.setUserDestinationPrefix("/user");
     }

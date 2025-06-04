@@ -11,6 +11,7 @@ import org.springframework.data.neo4j.core.schema.Relationship;
 
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Node
 @Builder
@@ -21,7 +22,7 @@ import java.util.List;
 public class Message {
     @Id
     @GeneratedValue(GeneratedValue.UUIDGenerator.class)
-    String id;
+    UUID id;
     String content;
     @Builder.Default
     ZonedDateTime sentAt = ZonedDateTime.now();
@@ -30,7 +31,7 @@ public class Message {
 
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    @Relationship(type = "BY_USER", direction = Relationship.Direction.OUTGOING)
+    @Relationship(type = "SENT", direction = Relationship.Direction.INCOMING)
     User sender;
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

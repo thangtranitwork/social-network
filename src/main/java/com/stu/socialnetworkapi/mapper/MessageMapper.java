@@ -1,0 +1,43 @@
+package com.stu.socialnetworkapi.mapper;
+
+import com.stu.socialnetworkapi.dto.projection.ChatProjection;
+import com.stu.socialnetworkapi.dto.response.MessageResponse;
+import com.stu.socialnetworkapi.entity.File;
+import com.stu.socialnetworkapi.entity.Message;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
+@Component
+@RequiredArgsConstructor
+public class MessageMapper {
+    private final UserMapper userMapper;
+
+    public MessageResponse toMessageResponse(Message message) {
+        return MessageResponse.builder()
+                .id(message.getId())
+                .chatId(message.getChat().getId())
+                .content(message.getContent())
+                .attachment(File.getPath(message.getAttachedFile()))
+                .type(message.getType())
+                .sentAt(message.getSentAt())
+                .action(message.getAction())
+                .sender(userMapper.toUserCommonInformationResponse(message.getSender()))
+                .target(userMapper.toUserCommonInformationResponse(message.getTarget()))
+                .build();
+    }
+
+    public MessageResponse toMessageResponse(final ChatProjection projection) {
+        if (projection == null || projection.latestMessageId() == null) {
+            return null;
+        }
+        return MessageResponse.builder()
+                .chatId(projection.chatId())
+                .id(projection.latestMessageId())
+                .content(projection.latestMessageContent())
+                .type(projection.latestMessageType())
+                .sentAt(projection.latestMessageSentAt())
+                .action(projection.latestMessageAction())
+                .sender(userMapper.toSenderUserCommonInformationResponse(projection))
+                .build();
+    }
+}

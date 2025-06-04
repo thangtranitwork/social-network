@@ -77,6 +77,10 @@ public class User {
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     List<Post> storedPosts;
+    @Relationship(type = "IS_MEMBER_OF", direction = Relationship.Direction.OUTGOING)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    List<Chat> chats;
 
     // Constant section
     public static final int MAX_FRIEND_COUNT = 5000;

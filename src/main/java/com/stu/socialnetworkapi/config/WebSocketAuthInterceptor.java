@@ -2,6 +2,7 @@ package com.stu.socialnetworkapi.config;
 
 import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
+import com.stu.socialnetworkapi.repository.ChatRepository;
 import com.stu.socialnetworkapi.repository.IsOnlineRedisRepository;
 import com.stu.socialnetworkapi.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,8 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
     private JwtUtil jwtUtil;
     @Autowired
     private IsOnlineRedisRepository isOnlineRedisRepository;
+    @Autowired
+    private ChatRepository chatRepository;
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
     private static final String USER_ID_KEY = "userId";
@@ -32,7 +35,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
     private static final String ROLE_JWT_KEY = "scope";
 
     @Override
-    public Message<?> preSend(Message<?>message, MessageChannel channel) {
+    public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
 
         if (accessor == null) {
@@ -80,8 +83,20 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             String userIdDestination = destination.substring(WebSocketConfig.NOTIFICATION_CHANNEL_PREFIX.length() + 1);
             return userIdDestination.equals(userId);
         }
-        if (destination.startsWith(WebSocketConfig.CHAT_CHANNEL_PREFIX)) {
 
+        if (destination.startsWith(WebSocketConfig.CHAT_CHANNEL_PREFIX)) {
+            String chatId = destination.substring(WebSocketConfig.CHAT_CHANNEL_PREFIX.length() + 1);
+            return chatRepository.existInChat(UUID.fromString(chatId), UUID.fromString(userId));
+        }
+
+        if (destination.startsWith(WebSocketConfig.CHAT_MESSAGE_CHANNEL_PREFIX)) {
+            String chatId = destination.substring(WebSocketConfig.CHAT_MESSAGE_CHANNEL_PREFIX.length() + 1);
+            return chatRepository.existInChat(UUID.fromString(chatId), UUID.fromString(userId));
+        }
+
+        if (destination.startsWith(WebSocketConfig.MESSAGE_CHANNEL_PREFIX)) {
+            String userIdDestination = destination.substring(WebSocketConfig.MESSAGE_CHANNEL_PREFIX.length() + 1);
+            return userIdDestination.equals(userId);
         }
         return false;
     }

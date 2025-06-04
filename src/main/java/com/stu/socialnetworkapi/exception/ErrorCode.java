@@ -93,6 +93,17 @@ public enum ErrorCode {
     NOT_LIKED_COMMENT(6006, "Not liked comment", HttpStatus.BAD_REQUEST),
     CAN_NOT_REPLY_REPLIED_COMMENT(6007, "Can't reply replied comment", HttpStatus.BAD_REQUEST),
 
+    CHAT_NOT_FOUND(7000, "Chat not found", HttpStatus.BAD_REQUEST),
+    INVALID_MESSAGE_CONTENT_LENGTH(7002, "Invalid message content length", HttpStatus.BAD_REQUEST),
+    CHAT_ID_AND_USER_ID_BOTH_EMPTY(7003, "Chat id and user id cannot be empty", HttpStatus.BAD_REQUEST),
+    MESSAGE_NOT_FOUND(7004, "Message not found", HttpStatus.BAD_REQUEST),
+    CAN_NOT_DELETE_MESSAGE(7005, "Can't delete message", HttpStatus.BAD_REQUEST),
+    TEXT_MESSAGE_CONTENT_REQUIRED(7006, "Text message content is required", HttpStatus.BAD_REQUEST),
+    TEXT_MESSAGE_CONTENT_UNCHANGED(7007, "Text message content unchanged", HttpStatus.BAD_REQUEST),
+    CAN_NOT_EDIT_FILE_MESSAGE(7008, "Can't edit file message", HttpStatus.BAD_REQUEST),
+    CAN_NOT_EDIT_MESSAGE(7009, "Can't edit message", HttpStatus.BAD_REQUEST),
+    FILE_MESSAGE_REQUIRED(70010, "File message is required", HttpStatus.BAD_REQUEST),
+
     INVALID_WEBSOCKET_CHANNEL(5016, "Invalid websocket channel", HttpStatus.BAD_REQUEST),
     ONLY_LETTER_ACCEPTED(9993, "Only letter accepted", HttpStatus.BAD_REQUEST),
     UNAUTHORIZED(9994, "Unauthorized", HttpStatus.UNAUTHORIZED),

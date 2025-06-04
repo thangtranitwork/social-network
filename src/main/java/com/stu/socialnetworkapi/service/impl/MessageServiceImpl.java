@@ -1,0 +1,211 @@
+package com.stu.socialnetworkapi.service.impl;
+
+import com.stu.socialnetworkapi.config.WebSocketConfig;
+import com.stu.socialnetworkapi.dto.request.EditMessageRequest;
+import com.stu.socialnetworkapi.dto.request.FileMessageRequest;
+import com.stu.socialnetworkapi.dto.request.TextMessageRequest;
+import com.stu.socialnetworkapi.dto.response.MessageCommand;
+import com.stu.socialnetworkapi.dto.response.MessageResponse;
+import com.stu.socialnetworkapi.entity.Chat;
+import com.stu.socialnetworkapi.entity.File;
+import com.stu.socialnetworkapi.entity.Message;
+import com.stu.socialnetworkapi.entity.User;
+import com.stu.socialnetworkapi.enums.ChatType;
+import com.stu.socialnetworkapi.enums.FilePrivacy;
+import com.stu.socialnetworkapi.enums.MessageType;
+import com.stu.socialnetworkapi.exception.ApiException;
+import com.stu.socialnetworkapi.exception.ErrorCode;
+import com.stu.socialnetworkapi.mapper.MessageMapper;
+import com.stu.socialnetworkapi.repository.ChatRepository;
+import com.stu.socialnetworkapi.repository.MessageRepository;
+import com.stu.socialnetworkapi.service.itf.BlockService;
+import com.stu.socialnetworkapi.service.itf.FileService;
+import com.stu.socialnetworkapi.service.itf.MessageService;
+import com.stu.socialnetworkapi.service.itf.UserService;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.stereotype.Service;
+
+import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.UUID;
+
+@Service
+@Transactional
+@RequiredArgsConstructor
+public class MessageServiceImpl implements MessageService {
+    private final UserService userService;
+    private final FileService fileService;
+    private final BlockService blockService;
+    private final MessageMapper messageMapper;
+    private final ChatRepository chatRepository;
+    private final MessageRepository messageRepository;
+    private final SimpMessagingTemplate messagingTemplate;
+
+    @Override
+    public MessageResponse sendMessage(TextMessageRequest request) {
+        User sender = userService.getCurrentUserRequiredAuthentication();
+        Chat chat = getOrCreateDirectChat(request.chatId(), request.userId(), sender);
+        String content = request.text().trim();
+        if (content.isEmpty()) throw new ApiException(ErrorCode.TEXT_MESSAGE_CONTENT_REQUIRED);
+        if (content.length() > Message.MAX_CONTENT_LENGTH)
+            throw new ApiException(ErrorCode.INVALID_MESSAGE_CONTENT_LENGTH);
+
+        Message message = Message.builder()
+                .chat(chat)
+                .type(MessageType.MESSAGE)
+                .content(content)
+                .sender(sender)
+                .build();
+
+        messageRepository.save(message);
+        // Gửi tin lên đoạn chat (người dùng đang mở đoạn chat trên màn hình)
+        MessageResponse response = messageMapper.toMessageResponse(message);
+        sendMessageNotification(request.chatId(), request.userId(), response, chat, sender);
+        return response;
+    }
+
+    @Override
+    public MessageResponse sendFile(FileMessageRequest request) {
+        User sender = userService.getCurrentUserRequiredAuthentication();
+        Chat chat = getOrCreateDirectChat(request.chatId(), request.userId(), sender);
+        File file = fileService.upload(request.attachment(), FilePrivacy.IN_CHAT);
+        Message message = Message.builder()
+                .sender(sender)
+                .type(MessageType.MESSAGE)
+                .attachedFile(file)
+                .build();
+        messageRepository.save(message);
+        MessageResponse response = messageMapper.toMessageResponse(message);
+        sendMessageNotification(request.chatId(), request.userId(), response, chat, sender);
+        return response;
+    }
+
+    @Override
+    public Slice<MessageResponse> getHistory(UUID chatId, Pageable pageable) {
+        UUID userId = userService.getCurrentUserIdRequiredAuthentication();
+        if (!chatRepository.existInChat(chatId, userId)) {
+            throw new ApiException(ErrorCode.UNAUTHORIZED);
+        }
+        return messageRepository.findAllByChatId(chatId, pageable)
+                .map(messageMapper::toMessageResponse);
+    }
+
+    @Override
+    public void editMessage(EditMessageRequest request) {
+        Message message = messageRepository.findById(request.messagesId())
+                .orElseThrow(() -> new ApiException(ErrorCode.MESSAGE_NOT_FOUND));
+        validateEditMessage(message, request.text());
+        String content = request.text().trim();
+        message.setContent(content);
+        messageRepository.save(message);
+        MessageCommand command = MessageCommand.builder()
+                .id(message.getId())
+                .command(MessageCommand.Command.EDIT)
+                .message(content)
+                .build();
+        sendMessageCommand(message.getChat().getId(), command);
+    }
+
+    private void sendMessageCommand(UUID chatId, MessageCommand command) {
+        messagingTemplate.convertAndSend(WebSocketConfig.CHAT_CHANNEL_PREFIX + "/" + chatId, command);
+    }
+
+    @Override
+    public void deleteMessage(UUID messageId) {
+        User user = userService.getCurrentUserRequiredAuthentication();
+        Message message = messageRepository.findById(messageId)
+                .orElseThrow(() -> new ApiException(ErrorCode.MESSAGE_NOT_FOUND));
+        Chat chat = message.getChat();
+        validateDeleteMessage(message, user, chat);
+        File file = message.getAttachedFile();
+        messageRepository.delete(message);
+        if (file != null) {
+            fileService.deleteFile(file);
+        }
+        MessageCommand command = MessageCommand.builder()
+                .id(messageId)
+                .command(MessageCommand.Command.DELETE)
+                .build();
+        sendMessageCommand(chat.getId(), command);
+    }
+
+    private static void validateDeleteMessage(Message message, User user, Chat chat) {
+        if (!message.getSender().getId().equals(user.getId())) {
+            throw new ApiException(ErrorCode.UNAUTHORIZED);
+        }
+        // User has been removed
+        if (chat.isGroupChat() && !chat.getMembers().contains(user)) {
+            throw new ApiException(ErrorCode.CAN_NOT_DELETE_MESSAGE);
+        }
+        if (message.getSentAt().plusMinutes(Message.MINUTES_TO_DELETE_MESSAGE).isAfter(ZonedDateTime.now())) {
+            throw new ApiException(ErrorCode.CAN_NOT_DELETE_MESSAGE);
+        }
+    }
+
+    private Chat getOrCreateDirectChat(UUID chatId, UUID targetId, User sender) {
+        // Get group chat or existing direct chat
+        if (chatId != null) {
+            return chatRepository.findById(chatId)
+                    .orElseThrow(() -> new ApiException(ErrorCode.CHAT_NOT_FOUND));
+        }
+        // Get direct chat by target id if not exist, create new one
+        if (targetId == null) {
+            throw new ApiException(ErrorCode.CHAT_ID_AND_USER_ID_BOTH_EMPTY);
+        }
+
+        blockService.validateBlock(sender.getId(), targetId);
+
+        UUID existingChatId = chatRepository.getDirectChatIdByMemberIds(sender.getId(), targetId)
+                .orElse(null);
+
+        if (existingChatId != null) {
+            return chatRepository.findById(existingChatId)
+                    .orElseThrow(() -> new ApiException(ErrorCode.CHAT_NOT_FOUND));
+        }
+
+        List<User> members = List.of(sender, userService.getUser(targetId));
+
+        Chat newChat = Chat.builder()
+                .type(ChatType.DIRECT)
+                .members(members)
+                .memberCount(members.size())
+                .build();
+
+        return chatRepository.save(newChat);
+    }
+
+    private void validateEditMessage(Message message, String newContent) {
+        User user = userService.getCurrentUserRequiredAuthentication();
+        String content = newContent.trim();
+        if (!message.getSender().getId().equals(user.getId()))
+            throw new ApiException(ErrorCode.UNAUTHORIZED);
+        if (message.getChat().isGroupChat() && !message.getChat().getMembers().contains(user))
+            throw new ApiException(ErrorCode.UNAUTHORIZED);
+        if (message.getContent() == null && message.getAttachedFile() != null)
+            throw new ApiException(ErrorCode.CAN_NOT_EDIT_FILE_MESSAGE);
+        if (message.getSentAt().plusMinutes(Message.MINUTES_TO_EDIT_MESSAGE).isAfter(ZonedDateTime.now()))
+            throw new ApiException(ErrorCode.CAN_NOT_EDIT_MESSAGE);
+        if (content.isEmpty())
+            throw new ApiException(ErrorCode.TEXT_MESSAGE_CONTENT_REQUIRED);
+        if (content.length() > Message.MAX_CONTENT_LENGTH)
+            throw new ApiException(ErrorCode.INVALID_MESSAGE_CONTENT_LENGTH);
+        if (content.equals(message.getContent()))
+            throw new ApiException(ErrorCode.TEXT_MESSAGE_CONTENT_UNCHANGED);
+    }
+
+    private void sendMessageNotification(UUID chatId, UUID targetId, MessageResponse response, Chat chat, User sender) {
+        messagingTemplate.convertAndSend(WebSocketConfig.CHAT_CHANNEL_PREFIX + "/" + chatId, response);
+        if (ChatType.DIRECT.equals(chat.getType())) {
+            // Gửi thông báo tin nhắn cho người nhận
+            messagingTemplate.convertAndSend(WebSocketConfig.MESSAGE_CHANNEL_PREFIX + "/" + targetId, response);
+        } else {
+            chat.getMembers()
+                    .stream().filter(u -> !u.getId().equals(sender.getId()))
+                    .forEach(member -> messagingTemplate.convertAndSend(WebSocketConfig.MESSAGE_CHANNEL_PREFIX + "/" + member.getId(), response));
+        }
+    }
+}

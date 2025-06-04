@@ -10,6 +10,7 @@ import org.springframework.data.neo4j.core.schema.Relationship;
 
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Node
 @Builder
@@ -20,7 +21,7 @@ import java.util.List;
 public class Chat {
     @Id
     @GeneratedValue(GeneratedValue.UUIDGenerator.class)
-    String id;
+    UUID id;
     String name;
     ChatType type;
     int memberCount;

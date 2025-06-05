@@ -41,6 +41,7 @@ public enum ErrorCode {
     USERNAME_REQUIRED(2011, "Username is required", HttpStatus.BAD_REQUEST),
     USERNAME_ALREADY_EXISTS(2012, "Username already exists", HttpStatus.BAD_REQUEST),
     PROFILE_PICTURE_REQUIRED(2013, "Profile picture is required", HttpStatus.BAD_REQUEST),
+    NOTHING_CHANGED(2014, "Nothing changed", HttpStatus.BAD_REQUEST),
 
     STORAGE_INITIALIZATION_ERROR(3000, "Storage initialization error", HttpStatus.INTERNAL_SERVER_ERROR),
     FILE_REQUIRED(3001, "File is required", HttpStatus.BAD_REQUEST),

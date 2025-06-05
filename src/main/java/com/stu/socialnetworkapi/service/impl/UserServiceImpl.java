@@ -102,7 +102,7 @@ public class UserServiceImpl implements UserService {
                 || processChangeBio(request, user)
                 || processChangeUsername(request, user)
                 || processChangeBirthdate(request, user);
-        if (!hasAnyChange) throw new ApiException(ErrorCode.PROFILE_PICTURE_REQUIRED);
+        if (!hasAnyChange) throw new ApiException(ErrorCode.NOTHING_CHANGED);
         userRepository.save(user);
         return UserProfileResponse.builder()
                 .id(user.getId())
@@ -115,7 +115,7 @@ public class UserServiceImpl implements UserService {
     }
 
     private boolean processChangeBirthdate(UpdateInfoRequest request, User user) {
-        boolean hasBirthdateChange = user.getBirthdate().equals(request.birthdate());
+        boolean hasBirthdateChange = request.birthdate() != null && !user.getBirthdate().equals(request.birthdate());
         if (hasBirthdateChange) {
             if (user.getNextChangeBirthdateDate().isAfter(LocalDate.now()))
                 throw new ApiException(ErrorCode.LESS_THAN_30_DAYS_SINCE_LAST_BIRTHDATE_CHANGE);
@@ -127,7 +127,7 @@ public class UserServiceImpl implements UserService {
     }
 
     private boolean processChangeUsername(UpdateInfoRequest request, User user) {
-        boolean hasUsernameChange = user.getUsername().equals(request.username());
+        boolean hasUsernameChange = request.username() != null && !user.getUsername().equals(request.username());
         if (hasUsernameChange) {
             if (userRepository.existsByUsername(request.username()))
                 throw new ApiException(ErrorCode.USERNAME_ALREADY_EXISTS);
@@ -141,8 +141,9 @@ public class UserServiceImpl implements UserService {
     }
 
     private boolean processChangeBio(UpdateInfoRequest request, User user) {
-        boolean hasBioChange = user.getBio().equals(request.bio());
-        user.setBio(request.bio());
+        String bio = request.bio() != null ? request.bio() : "";
+        boolean hasBioChange = !bio.equals(user.getBio());
+        user.setBio(bio);
         return hasBioChange;
     }
 
@@ -153,14 +154,16 @@ public class UserServiceImpl implements UserService {
         String givenNameAfterTrim = request.givenName() != null
                 ? request.givenName().trim()
                 : "";
-        if (familyNameAfterTrim.isEmpty()) {
-            throw new ApiException(ErrorCode.FAMILY_NAME_REQUIRED);
-        }
-        if (givenNameAfterTrim.isEmpty()) {
-            throw new ApiException(ErrorCode.GIVEN_NAME_REQUIRED);
-        }
-        boolean hasNameChange = user.getFamilyName().equals(familyNameAfterTrim) || user.getGivenName().equals(givenNameAfterTrim);
+        boolean hasNameChange = request.givenName() != null
+                && request.familyName() != null
+                && (!user.getFamilyName().equals(familyNameAfterTrim) || !user.getGivenName().equals(givenNameAfterTrim));
         if (hasNameChange) {
+            if (familyNameAfterTrim.isEmpty()) {
+                throw new ApiException(ErrorCode.FAMILY_NAME_REQUIRED);
+            }
+            if (givenNameAfterTrim.isEmpty()) {
+                throw new ApiException(ErrorCode.GIVEN_NAME_REQUIRED);
+            }
             if (user.getNextChangeNameDate().isAfter(LocalDate.now()))
                 throw new ApiException(ErrorCode.LESS_THAN_30_DAYS_SINCE_LAST_NAME_CHANGE);
             user.setFamilyName(familyNameAfterTrim);

@@ -4,6 +4,7 @@ import com.stu.socialnetworkapi.dto.response.UserProfileResponse;
 import com.stu.socialnetworkapi.entity.User;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 public interface UserService {
@@ -20,6 +21,14 @@ public interface UserService {
     UUID getCurrentUserIdRequiredAuthentication();
 
     UserProfileResponse getUserProfile(String username);
+
+    LocalDate updateUsername(String username);
+
+    LocalDate updateName(String familyName, String givenName);
+
+    LocalDate updateBirthdate(LocalDate birthdate);
+
+    void updateBio(String bio);
 
     String updateProfilePicture(MultipartFile file);
 }

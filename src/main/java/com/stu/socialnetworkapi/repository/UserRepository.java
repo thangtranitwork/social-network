@@ -20,7 +20,6 @@ public interface UserRepository extends Neo4jRepository<User, UUID> {
     @Query("""
             MATCH (user:User {username: $username})
             OPTIONAL MATCH (user)-[:HAS_PROFILE_PICTURE]->(profilePic:File)
-            OPTIONAL MATCH (user)-[:HAS_COVER_PICTURE]->(coverPic:File)
             
             OPTIONAL MATCH (currentUser:User {id: $currentUserId})
             
@@ -33,7 +32,7 @@ public interface UserRepository extends Neo4jRepository<User, UUID> {
             // Check block
             OPTIONAL MATCH (currentUser)-[block:BLOCKED]->(user)
             
-            WITH user, profilePic, coverPic, currentUser, friendship, request, block,
+            WITH user, profilePic, currentUser, friendship, request, block,
             
                  CASE
                      WHEN currentUser IS NOT NULL THEN
@@ -49,7 +48,6 @@ public interface UserRepository extends Neo4jRepository<User, UUID> {
                 user.bio AS bio,
                 user.birthdate AS birthdate,
                 CASE WHEN profilePic IS NOT NULL THEN profilePic.id ELSE NULL END AS profilePictureId,
-                CASE WHEN coverPic IS NOT NULL THEN coverPic.id ELSE NULL END AS coverPictureId,
                 COALESCE(user.friendCount, 0) AS friendCount,
                 mutualFriendsCount AS mutualFriendsCount,
                 user.lastSeen AS lastSeen,

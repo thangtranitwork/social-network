@@ -46,10 +46,6 @@ public class User {
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     File profilePicture;
-    @Relationship(type = "HAS_COVER_PICTURE", direction = Relationship.Direction.OUTGOING)
-    @EqualsAndHashCode.Exclude
-    @ToString.Exclude
-    File coverPicture;
     @Relationship(type = "REQUEST", direction = Relationship.Direction.OUTGOING)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude

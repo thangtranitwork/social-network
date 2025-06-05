@@ -24,7 +24,6 @@ public class UserMapper {
                 .bio(projection.bio())
                 .username(projection.username())
                 .profilePictureUrl(File.getPath(projection.profilePictureId()))
-                .coverPictureUrl(File.getPath(projection.coverPictureId()))
                 .friendCount(projection.friendCount())
                 .birthdate(projection.birthdate())
                 .isOnline(online.isOnline())

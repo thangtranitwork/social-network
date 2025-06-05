@@ -12,7 +12,6 @@ public record UserProfileProjection(
         String bio,
         LocalDate birthdate,
         String profilePictureId,
-        String coverPictureId,
         int friendCount,
         int mutualFriendsCount,
         ZonedDateTime lastSeen,

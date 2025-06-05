@@ -1,6 +1,7 @@
 package com.stu.socialnetworkapi.service.impl;
 
 import com.stu.socialnetworkapi.dto.projection.UserProfileProjection;
+import com.stu.socialnetworkapi.dto.request.UpdateInfoRequest;
 import com.stu.socialnetworkapi.dto.response.UserProfileResponse;
 import com.stu.socialnetworkapi.entity.File;
 import com.stu.socialnetworkapi.entity.User;
@@ -150,23 +151,79 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public String updateCoverPicture(MultipartFile file) {
+    public UserProfileResponse updateInfo(UpdateInfoRequest request) {
         User user = getCurrentUserRequiredAuthentication();
-        File currentPicture = user.getCoverPicture();
-        if (currentPicture == null && file == null) {
-            throw new ApiException(ErrorCode.COVER_PICTURE_REQUIRED);
-        }
-        // Then at least one of them is null
-        File newPicture = file != null
-                ? fileService.upload(file, FilePrivacy.PUBLIC)
-                : null;
-
-        if (currentPicture != null) {
-            fileService.deleteFile(currentPicture);
-        }
-        user.setCoverPicture(newPicture);
+        boolean hasAnyChange = processChangeName(request, user)
+                || processChangeBio(request, user)
+                || processChangeUsername(request, user)
+                || processChangeBirthdate(request, user);
+        if (!hasAnyChange) throw new ApiException(ErrorCode.PROFILE_PICTURE_REQUIRED);
         userRepository.save(user);
-        return File.getPath(newPicture);
+        return UserProfileResponse.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .givenName(user.getGivenName())
+                .familyName(user.getFamilyName())
+                .birthdate(user.getBirthdate())
+                .build();
+
+    }
+
+    private boolean processChangeBirthdate(UpdateInfoRequest request, User user) {
+        boolean hasBirthdateChange = user.getBirthdate().equals(request.birthdate());
+        if (hasBirthdateChange) {
+            if (user.getNextChangeBirthdateDate().isAfter(LocalDate.now()))
+                throw new ApiException(ErrorCode.LESS_THAN_30_DAYS_SINCE_LAST_BIRTHDATE_CHANGE);
+            user.setBirthdate(request.birthdate());
+            LocalDate nextChangeBirthdateDate = LocalDate.now().plusDays(User.CHANGE_BIRTHDATE_COOLDOWN_DAY);
+            user.setNextChangeBirthdateDate(nextChangeBirthdateDate);
+        }
+        return hasBirthdateChange;
+    }
+
+    private boolean processChangeUsername(UpdateInfoRequest request, User user) {
+        boolean hasUsernameChange = user.getUsername().equals(request.username());
+        if (hasUsernameChange) {
+            if (userRepository.existsByUsername(request.username()))
+                throw new ApiException(ErrorCode.USERNAME_ALREADY_EXISTS);
+            if (user.getNextChangeUsernameDate().isAfter(LocalDate.now()))
+                throw new ApiException(ErrorCode.LESS_THAN_30_DAYS_SINCE_LAST_NAME_CHANGE);
+            user.setUsername(request.username());
+            LocalDate nextChangeUsernameDate = LocalDate.now().plusDays(User.CHANGE_USERNAME_COOLDOWN_DAY);
+            user.setNextChangeUsernameDate(nextChangeUsernameDate);
+        }
+        return hasUsernameChange;
+    }
+
+    private boolean processChangeBio(UpdateInfoRequest request, User user) {
+        boolean hasBioChange = user.getBio().equals(request.bio());
+        user.setBio(request.bio());
+        return hasBioChange;
+    }
+
+    private boolean processChangeName(UpdateInfoRequest request, User user) {
+        String familyNameAfterTrim = request.familyName() != null
+                ? request.familyName().trim()
+                : "";
+        String givenNameAfterTrim = request.givenName() != null
+                ? request.givenName().trim()
+                : "";
+        if (familyNameAfterTrim.isEmpty()) {
+            throw new ApiException(ErrorCode.FAMILY_NAME_REQUIRED);
+        }
+        if (givenNameAfterTrim.isEmpty()) {
+            throw new ApiException(ErrorCode.GIVEN_NAME_REQUIRED);
+        }
+        boolean hasNameChange = user.getFamilyName().equals(familyNameAfterTrim) || user.getGivenName().equals(givenNameAfterTrim);
+        if (hasNameChange) {
+            if (user.getNextChangeNameDate().isAfter(LocalDate.now()))
+                throw new ApiException(ErrorCode.LESS_THAN_30_DAYS_SINCE_LAST_NAME_CHANGE);
+            user.setFamilyName(familyNameAfterTrim);
+            user.setGivenName(givenNameAfterTrim);
+            LocalDate nextChangeNameDate = LocalDate.now().plusDays(User.CHANGE_NAME_COOLDOWN_DAY);
+            user.setNextChangeNameDate(nextChangeNameDate);
+        }
+        return hasNameChange;
     }
 
     private void validateGetUserProfile(UUID currentUserId, UUID targetUserId) {

@@ -1,5 +1,6 @@
 package com.stu.socialnetworkapi.service.itf;
 
+import com.stu.socialnetworkapi.dto.request.UpdateInfoRequest;
 import com.stu.socialnetworkapi.dto.response.UserProfileResponse;
 import com.stu.socialnetworkapi.entity.User;
 import org.springframework.web.multipart.MultipartFile;
@@ -32,5 +33,5 @@ public interface UserService {
 
     String updateProfilePicture(MultipartFile file);
 
-    String updateCoverPicture(MultipartFile file);
+    UserProfileResponse updateInfo(UpdateInfoRequest request);
 }

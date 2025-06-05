@@ -76,61 +76,6 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public LocalDate updateUsername(String username) {
-        if (userRepository.existsByUsername(username))
-            throw new ApiException(ErrorCode.USERNAME_ALREADY_EXISTS);
-        User user = getCurrentUserRequiredAuthentication();
-        if (user.getNextChangeUsernameDate().isAfter(LocalDate.now()))
-            throw new ApiException(ErrorCode.LESS_THAN_30_DAYS_SINCE_LAST_NAME_CHANGE);
-        user.setUsername(username);
-        LocalDate nextChangeUsernameDate = LocalDate.now().plusDays(User.CHANGE_USERNAME_COOLDOWN_DAY);
-        user.setNextChangeUsernameDate(nextChangeUsernameDate);
-        userRepository.save(user);
-        return nextChangeUsernameDate;
-    }
-
-    @Override
-    public LocalDate updateName(String familyName, String givenName) {
-        User user = getCurrentUserRequiredAuthentication();
-        if (user.getNextChangeNameDate().isAfter(LocalDate.now()))
-            throw new ApiException(ErrorCode.LESS_THAN_30_DAYS_SINCE_LAST_NAME_CHANGE);
-        String familyNameAfterTrim = familyName.trim();
-        String givenNameAfterTrim = givenName.trim();
-        if (familyNameAfterTrim.isEmpty()) {
-            throw new ApiException(ErrorCode.FAMILY_NAME_REQUIRED);
-        }
-        if (givenNameAfterTrim.isEmpty()) {
-            throw new ApiException(ErrorCode.GIVEN_NAME_REQUIRED);
-        }
-        user.setGivenName(givenNameAfterTrim);
-        user.setFamilyName(familyNameAfterTrim);
-        LocalDate nextChangeNameDate = LocalDate.now().plusDays(User.CHANGE_NAME_COOLDOWN_DAY);
-        user.setNextChangeNameDate(nextChangeNameDate);
-        userRepository.save(user);
-        return nextChangeNameDate;
-    }
-
-    @Override
-    public LocalDate updateBirthdate(LocalDate birthdate) {
-        User user = getCurrentUserRequiredAuthentication();
-        if (user.getNextChangeBirthdateDate().isAfter(LocalDate.now()))
-            throw new ApiException(ErrorCode.LESS_THAN_30_DAYS_SINCE_LAST_BIRTHDATE_CHANGE);
-        user.setBirthdate(birthdate);
-        LocalDate nextChangeBirthdateDate = LocalDate.now().plusDays(User.CHANGE_BIRTHDATE_COOLDOWN_DAY);
-        user.setNextChangeBirthdateDate(nextChangeBirthdateDate);
-        userRepository.save(user);
-        return nextChangeBirthdateDate;
-    }
-
-    @Override
-    public void updateBio(String bio) {
-        User user = userRepository.findById(jwtUtil.getUserIdRequiredAuthentication())
-                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
-        user.setBio(bio);
-        userRepository.save(user);
-    }
-
-    @Override
     public String updateProfilePicture(MultipartFile file) {
         User user = getCurrentUserRequiredAuthentication();
         File currentPicture = user.getProfilePicture();

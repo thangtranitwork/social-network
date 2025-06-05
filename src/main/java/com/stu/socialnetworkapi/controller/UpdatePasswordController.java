@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/v1/update-password")
+@RequestMapping({"/v1/update-password", "/v1/forgot-password"})
 public class UpdatePasswordController {
     private final UpdatePasswordService updatePasswordService;
 

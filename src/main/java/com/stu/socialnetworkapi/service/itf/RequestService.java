@@ -14,5 +14,6 @@ public interface RequestService {
     Slice<RequestResponse> getReceivedRequests(Pageable pageable);
 
     void deleteRequest(UUID uuid);
+
     void acceptRequest(UUID uuid);
 }

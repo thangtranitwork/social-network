@@ -65,7 +65,6 @@ public class SecurityConfig {
 
     @Bean
     public CorsFilter corsFilter() {
-        System.out.println("Start server with front end origin: " + frontEndOrigin);
         CorsConfiguration corsConfiguration = new CorsConfiguration();
         corsConfiguration.setAllowedOrigins(List.of(frontEndOrigin));
         corsConfiguration.addAllowedMethod("*");

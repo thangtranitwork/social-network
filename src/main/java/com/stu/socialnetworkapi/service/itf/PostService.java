@@ -30,12 +30,6 @@ public interface PostService {
 
     PostResponse updateContent(UUID postId, PostUpdateContentRequest request);
 
-    void pin(UUID postId);
-
-    void unpin();
-
-    void store(UUID postId);
-
     void like(UUID postId);
 
     void unlike(UUID postId);

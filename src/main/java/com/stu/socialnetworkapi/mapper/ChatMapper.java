@@ -18,7 +18,6 @@ public class ChatMapper {
                 .name(projection.name())
                 .latestMessage(messageMapper.toMessageResponse(projection))
                 .target(userMapper.toTargetUserCommonInformationResponse(projection))
-                .type(projection.chatType())
                 .notReadMessageCount(projection.notReadMessageCount())
                 .build();
     }

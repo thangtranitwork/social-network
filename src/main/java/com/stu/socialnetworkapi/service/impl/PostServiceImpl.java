@@ -5,7 +5,6 @@ import com.stu.socialnetworkapi.dto.request.PostUpdateContentRequest;
 import com.stu.socialnetworkapi.dto.request.SharePostRequest;
 import com.stu.socialnetworkapi.dto.response.PostResponse;
 import com.stu.socialnetworkapi.entity.File;
-import com.stu.socialnetworkapi.entity.History;
 import com.stu.socialnetworkapi.entity.Post;
 import com.stu.socialnetworkapi.entity.User;
 import com.stu.socialnetworkapi.enums.FilePrivacy;
@@ -79,6 +78,7 @@ public class PostServiceImpl implements PostService {
         return null;
     }
 
+    //TODO: validate content after trim
     @Override
     public PostResponse post(PostRequest request) {
         String content = request.content();
@@ -98,6 +98,7 @@ public class PostServiceImpl implements PostService {
         return postMapper.toPostResponse(postRepository.save(post));
     }
 
+    //TODO: validate content after trim
     @Override
     public PostResponse share(SharePostRequest request) {
         String content = request.content();
@@ -135,67 +136,23 @@ public class PostServiceImpl implements PostService {
         postRepository.save(post);
     }
 
+    //TODO: validate content after trim
     @Override
     public PostResponse updateContent(UUID postId, PostUpdateContentRequest request) {
         Post post = getPostById(postId);
         validateAuthor(post);
         validateUpdateContentPost(post, request);
         if (post.isSharedPost()) {
-            History history = History.builder()
-                    .text(post.getContent())
-                    .createdAt(post.getUpdatedAt())
-                    .build();
             post.setContent(request.content() != null ? request.content().trim() : "");
-            post.getContentHistory()
-                    .add(history);
         } else {
             processUpdateFile(request, post);
             String trimmedContent = request.content() != null
                     ? request.content().trim()
                     : null;
-            History history = History.builder()
-                    .text(post.getContent())
-                    .createdAt(post.getUpdatedAt())
-                    .build();
-            post.getContentHistory().add(history);
             post.setContent(trimmedContent);
         }
         post.setUpdatedAt(ZonedDateTime.now());
         return postMapper.toPostResponse(postRepository.save(post));
-    }
-
-    @Override
-    public void pin(UUID postId) {
-        User user = userService.getCurrentUserRequiredAuthentication();
-        if (user.getPinnedPost() != null) {
-            throw new ApiException(ErrorCode.HAVE_PINNED_A_POST);
-        }
-        Post post = getPostById(postId);
-        validateAuthor(post);
-        postRepository.pinPost(postId, user.getId());
-    }
-
-    @Override
-    public void unpin() {
-        User user = userService.getCurrentUserRequiredAuthentication();
-        if (user.getPinnedPost() == null) {
-            throw new ApiException(ErrorCode.HAVE_NOT_PINNED_A_POST);
-        }
-        postRepository.unpinPost(user.getId());
-    }
-
-    @Override
-    public void store(UUID postId) {
-        User user = userService.getCurrentUserRequiredAuthentication();
-        Post post = getPostById(postId);
-        validateViewPost(post, userService.getCurrentUserIdRequiredAuthentication());
-        if (postRepository.isStored(postId, user.getId())) {
-            throw new ApiException(ErrorCode.STORED_POST);
-        }
-        if (user.getStoredPosts().size() + 1 > User.MAX_STORED_POST_COUNT) {
-            throw new ApiException(ErrorCode.STORED_POST_LIMIT_REACHED);
-        }
-        postRepository.storePost(postId, user.getId());
     }
 
     @Override

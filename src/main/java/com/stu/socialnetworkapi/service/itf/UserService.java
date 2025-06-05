@@ -9,16 +9,28 @@ import java.util.UUID;
 
 public interface UserService {
     User getCurrentUserRequiredAuthentication();
+
     User getUser(String username);
+
     User getUser(UUID id);
+
     UUID getUserId(String username);
+
     UUID getCurrentUserId();
+
     UUID getCurrentUserIdRequiredAuthentication();
+
     UserProfileResponse getUserProfile(String username);
+
     LocalDate updateUsername(String username);
+
     LocalDate updateName(String familyName, String givenName);
+
     LocalDate updateBirthdate(LocalDate birthdate);
+
     void updateBio(String bio);
+
     String updateProfilePicture(MultipartFile file);
+
     String updateCoverPicture(MultipartFile file);
 }

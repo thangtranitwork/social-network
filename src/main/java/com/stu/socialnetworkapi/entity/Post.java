@@ -46,10 +46,6 @@ public class Post {
     List<File> attachedFiles;
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    @Relationship(type = "HAS_HISTORY", direction = Relationship.Direction.OUTGOING)
-    List<History> contentHistory;
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     @Relationship(type = "SHARED", direction = Relationship.Direction.OUTGOING)
     Post originalPost;
 

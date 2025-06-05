@@ -26,8 +26,6 @@ public class UserMapper {
                 .profilePictureUrl(File.getPath(projection.profilePictureId()))
                 .coverPictureUrl(File.getPath(projection.coverPictureId()))
                 .friendCount(projection.friendCount())
-                .showFriends(projection.showFriends())
-                .allowFriendRequest(projection.allowFriendRequest())
                 .birthdate(projection.birthdate())
                 .isOnline(online.isOnline())
                 .lastOnline(online.getLastOnlineAt())

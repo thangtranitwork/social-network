@@ -88,6 +88,7 @@ public class UserServiceImpl implements UserService {
         return nextChangeUsernameDate;
     }
 
+    //TODO: trim string
     @Override
     public LocalDate updateName(String familyName, String givenName) {
         User user = getCurrentUserRequiredAuthentication();

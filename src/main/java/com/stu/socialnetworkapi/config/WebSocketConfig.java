@@ -36,7 +36,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        System.out.println("Config stomp with front end origin: " + frontendOrigin);
         registry.addEndpoint("/ws")
                 .setAllowedOrigins(frontendOrigin)
                 .withSockJS();

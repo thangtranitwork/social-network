@@ -35,5 +35,4 @@ public class Notification {
     User receiver;
     @Builder.Default
     ZonedDateTime sentAt = ZonedDateTime.now();
-    boolean isRead;
 }

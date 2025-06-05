@@ -17,8 +17,6 @@ public record UserProfileProjection(
         int mutualFriendsCount,
         ZonedDateTime lastSeen,
         boolean isFriend,
-        boolean showFriends,
-        boolean allowFriendRequest,
         UUID requestId,
         UUID friendId,
         UUID blockId

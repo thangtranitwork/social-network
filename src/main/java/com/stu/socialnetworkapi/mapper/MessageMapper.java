@@ -18,11 +18,8 @@ public class MessageMapper {
                 .chatId(message.getChat().getId())
                 .content(message.getContent())
                 .attachment(File.getPath(message.getAttachedFile()))
-                .type(message.getType())
                 .sentAt(message.getSentAt())
-                .action(message.getAction())
                 .sender(userMapper.toUserCommonInformationResponse(message.getSender()))
-                .target(userMapper.toUserCommonInformationResponse(message.getTarget()))
                 .build();
     }
 
@@ -34,9 +31,7 @@ public class MessageMapper {
                 .chatId(projection.chatId())
                 .id(projection.latestMessageId())
                 .content(projection.latestMessageContent())
-                .type(projection.latestMessageType())
                 .sentAt(projection.latestMessageSentAt())
-                .action(projection.latestMessageAction())
                 .sender(userMapper.toSenderUserCommonInformationResponse(projection))
                 .build();
     }

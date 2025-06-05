@@ -5,7 +5,7 @@ import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.repository.ChatRepository;
 import com.stu.socialnetworkapi.repository.IsOnlineRedisRepository;
 import com.stu.socialnetworkapi.util.JwtUtil;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -20,13 +20,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Component
+@RequiredArgsConstructor
 public class WebSocketAuthInterceptor implements ChannelInterceptor {
-    @Autowired
-    private JwtUtil jwtUtil;
-    @Autowired
-    private IsOnlineRedisRepository isOnlineRedisRepository;
-    @Autowired
-    private ChatRepository chatRepository;
+    private final JwtUtil jwtUtil;
+    private final IsOnlineRedisRepository isOnlineRedisRepository;
+    private final ChatRepository chatRepository;
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
     private static final String USER_ID_KEY = "userId";

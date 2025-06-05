@@ -53,18 +53,6 @@ public class PostController {
         return ApiResponse.success();
     }
 
-    @PostMapping("/pin/{postId}")
-    public ApiResponse<Void> pinPost(@PathVariable UUID postId) {
-        postService.pin(postId);
-        return ApiResponse.success();
-    }
-
-    @PostMapping("/store/{postId}")
-    public ApiResponse<Void> storePost(@PathVariable UUID postId) {
-        postService.store(postId);
-        return ApiResponse.success();
-    }
-
     @PatchMapping("/update-privacy")
     public ApiResponse<Void> updatePostPrivacy(@RequestParam UUID id, @RequestParam PostPrivacy privacy) {
         postService.updatePrivacy(id, privacy);
@@ -79,12 +67,6 @@ public class PostController {
     @DeleteMapping("/unlike/{postId}")
     public ApiResponse<Void> unlikePost(@PathVariable UUID postId) {
         postService.unlike(postId);
-        return ApiResponse.success();
-    }
-
-    @DeleteMapping("/unpin")
-    public ApiResponse<Void> unpinPost() {
-        postService.unpin();
         return ApiResponse.success();
     }
 

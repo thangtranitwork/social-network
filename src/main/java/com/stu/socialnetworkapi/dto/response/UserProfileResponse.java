@@ -14,6 +14,4 @@ public class UserProfileResponse extends UserCommonInformationResponse {
     LocalDate birthdate;
     String coverPictureUrl;
     int friendCount;
-    boolean showFriends;
-    boolean allowFriendRequest;
 }

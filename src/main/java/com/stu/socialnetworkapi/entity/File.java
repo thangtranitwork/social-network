@@ -1,8 +1,6 @@
 package com.stu.socialnetworkapi.entity;
 
 import com.stu.socialnetworkapi.enums.FilePrivacy;
-import com.stu.socialnetworkapi.enums.FileType;
-import java.util.Collections;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.neo4j.core.schema.Id;
@@ -10,8 +8,8 @@ import org.springframework.data.neo4j.core.schema.Node;
 import org.springframework.data.neo4j.core.schema.Relationship;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Node
 @Builder
@@ -23,7 +21,6 @@ public class File {
     @Id
     String id;
     String name;
-    FileType type;
     FilePrivacy privacy;
 
     @Relationship(type = "UPLOAD_FILE", direction = Relationship.Direction.INCOMING)

@@ -53,10 +53,6 @@ public class Comment {
     @EqualsAndHashCode.Exclude
     @Relationship(type = "ATTACH_FILE", direction = Relationship.Direction.OUTGOING)
     File attachedFile;
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    @Relationship(type = "HAS_HISTORY", direction = Relationship.Direction.OUTGOING)
-    List<History> history;
 
     public static final int MAX_CONTENT_LENGTH = 10000;
 

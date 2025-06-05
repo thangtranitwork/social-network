@@ -10,9 +10,7 @@ import com.stu.socialnetworkapi.entity.Chat;
 import com.stu.socialnetworkapi.entity.File;
 import com.stu.socialnetworkapi.entity.Message;
 import com.stu.socialnetworkapi.entity.User;
-import com.stu.socialnetworkapi.enums.ChatType;
 import com.stu.socialnetworkapi.enums.FilePrivacy;
-import com.stu.socialnetworkapi.enums.MessageType;
 import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.mapper.MessageMapper;
@@ -56,7 +54,6 @@ public class MessageServiceImpl implements MessageService {
 
         Message message = Message.builder()
                 .chat(chat)
-                .type(MessageType.MESSAGE)
                 .content(content)
                 .sender(sender)
                 .build();
@@ -75,7 +72,6 @@ public class MessageServiceImpl implements MessageService {
         File file = fileService.upload(request.attachment(), FilePrivacy.IN_CHAT);
         Message message = Message.builder()
                 .sender(sender)
-                .type(MessageType.MESSAGE)
                 .attachedFile(file)
                 .build();
         messageRepository.save(message);
@@ -137,15 +133,12 @@ public class MessageServiceImpl implements MessageService {
         if (!message.getSender().getId().equals(user.getId())) {
             throw new ApiException(ErrorCode.UNAUTHORIZED);
         }
-        // User has been removed
-        if (chat.isGroupChat() && !chat.getMembers().contains(user)) {
-            throw new ApiException(ErrorCode.CAN_NOT_DELETE_MESSAGE);
-        }
         if (message.getSentAt().plusMinutes(Message.MINUTES_TO_DELETE_MESSAGE).isAfter(ZonedDateTime.now())) {
             throw new ApiException(ErrorCode.CAN_NOT_DELETE_MESSAGE);
         }
     }
 
+    // TODO: use username instead-of user-id, chat-id
     private Chat getOrCreateDirectChat(UUID chatId, UUID targetId, User sender) {
         // Get group chat or existing direct chat
         if (chatId != null) {
@@ -170,9 +163,7 @@ public class MessageServiceImpl implements MessageService {
         List<User> members = List.of(sender, userService.getUser(targetId));
 
         Chat newChat = Chat.builder()
-                .type(ChatType.DIRECT)
                 .members(members)
-                .memberCount(members.size())
                 .build();
 
         return chatRepository.save(newChat);
@@ -182,8 +173,6 @@ public class MessageServiceImpl implements MessageService {
         User user = userService.getCurrentUserRequiredAuthentication();
         String content = newContent.trim();
         if (!message.getSender().getId().equals(user.getId()))
-            throw new ApiException(ErrorCode.UNAUTHORIZED);
-        if (message.getChat().isGroupChat() && !message.getChat().getMembers().contains(user))
             throw new ApiException(ErrorCode.UNAUTHORIZED);
         if (message.getContent() == null && message.getAttachedFile() != null)
             throw new ApiException(ErrorCode.CAN_NOT_EDIT_FILE_MESSAGE);
@@ -199,13 +188,7 @@ public class MessageServiceImpl implements MessageService {
 
     private void sendMessageNotification(UUID chatId, UUID targetId, MessageResponse response, Chat chat, User sender) {
         messagingTemplate.convertAndSend(WebSocketConfig.CHAT_CHANNEL_PREFIX + "/" + chatId, response);
-        if (ChatType.DIRECT.equals(chat.getType())) {
-            // Gửi thông báo tin nhắn cho người nhận
-            messagingTemplate.convertAndSend(WebSocketConfig.MESSAGE_CHANNEL_PREFIX + "/" + targetId, response);
-        } else {
-            chat.getMembers()
-                    .stream().filter(u -> !u.getId().equals(sender.getId()))
-                    .forEach(member -> messagingTemplate.convertAndSend(WebSocketConfig.MESSAGE_CHANNEL_PREFIX + "/" + member.getId(), response));
-        }
+        // Gửi thông báo tin nhắn cho người nhận
+        messagingTemplate.convertAndSend(WebSocketConfig.MESSAGE_CHANNEL_PREFIX + "/" + targetId, response);
     }
 }

@@ -2,7 +2,6 @@ package com.stu.socialnetworkapi.entity;
 
 import com.stu.socialnetworkapi.entity.relationship.Friend;
 import com.stu.socialnetworkapi.entity.relationship.Request;
-import com.stu.socialnetworkapi.enums.PostPrivacy;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.neo4j.core.schema.Id;
@@ -41,12 +40,6 @@ public class User {
     LocalDate nextChangeBirthdateDate = LocalDate.now();
     @Builder.Default
     LocalDate nextChangeUsernameDate = LocalDate.now();
-    @Builder.Default
-    boolean showFriends = true;
-    @Builder.Default
-    boolean allowFriendRequest = true;
-    @Builder.Default
-    PostPrivacy defaultPostPrivacy = PostPrivacy.PUBLIC;
 
     // Relationship section
     @Relationship(type = "HAS_PROFILE_PICTURE", direction = Relationship.Direction.OUTGOING)
@@ -69,25 +62,16 @@ public class User {
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     List<Friend> friends;
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    @Relationship(type = "PINNED", direction = Relationship.Direction.OUTGOING)
-    Post pinnedPost;
-    @Relationship(type = "STORED", direction = Relationship.Direction.OUTGOING)
-    @EqualsAndHashCode.Exclude
-    @ToString.Exclude
-    List<Post> storedPosts;
     @Relationship(type = "IS_MEMBER_OF", direction = Relationship.Direction.OUTGOING)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     List<Chat> chats;
 
     // Constant section
-    public static final int MAX_FRIEND_COUNT = 5000;
-    public static final int MAX_BLOCK_COUNT = 5000;
-    public static final int MAX_SENT_REQUEST_COUNT = 5000;
-    public static final int MAX_RECEIVED_REQUEST_COUNT = 5000;
-    public static final int MAX_STORED_POST_COUNT = 500;
+    public static final int MAX_FRIEND_COUNT = 100;
+    public static final int MAX_BLOCK_COUNT = 100;
+    public static final int MAX_SENT_REQUEST_COUNT = 100;
+    public static final int MAX_RECEIVED_REQUEST_COUNT = 100;
     public static final int CHANGE_NAME_COOLDOWN_DAY = 30;
     public static final int CHANGE_USERNAME_COOLDOWN_DAY = 30;
     public static final int CHANGE_BIRTHDATE_COOLDOWN_DAY = 30;

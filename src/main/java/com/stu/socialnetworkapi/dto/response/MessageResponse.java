@@ -1,7 +1,5 @@
 package com.stu.socialnetworkapi.dto.response;
 
-import com.stu.socialnetworkapi.enums.ChatAction;
-import com.stu.socialnetworkapi.enums.MessageType;
 import lombok.Builder;
 import lombok.Data;
 
@@ -15,9 +13,6 @@ public class MessageResponse {
     UUID chatId;
     String content;
     ZonedDateTime sentAt;
-    MessageType type;
-    ChatAction action;
     UserCommonInformationResponse sender;
-    UserCommonInformationResponse target;
     String attachment;
 }

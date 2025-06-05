@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
-import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -144,10 +143,13 @@ public class UserServiceImpl implements UserService {
     private void validateGetUserProfile(UUID currentUserId, UUID targetUserId) {
         if (currentUserId != null && !currentUserId.equals(targetUserId)) {
             BlockStatus blockStatus = blockRepository.getBlockStatus(currentUserId, targetUserId);
-            if (Objects.requireNonNull(blockStatus) == BlockStatus.BLOCKED) {
-                throw new ApiException(ErrorCode.HAS_BLOCKED);
-            } else if (blockStatus == BlockStatus.HAS_BEEN_BLOCKED) {
-                throw new ApiException(ErrorCode.HAS_BEEN_BLOCKED);
+            switch (blockStatus) {
+                case BLOCKED:
+                    throw new ApiException(ErrorCode.HAS_BLOCKED);
+                case HAS_BEEN_BLOCKED:
+                    throw new ApiException(ErrorCode.HAS_BEEN_BLOCKED);
+                case NORMAL:
+                    userRepository.increaseViewProfile(currentUserId, targetUserId);
             }
         }
     }

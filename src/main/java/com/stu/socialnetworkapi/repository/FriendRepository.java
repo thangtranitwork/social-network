@@ -4,11 +4,11 @@ import com.stu.socialnetworkapi.dto.projection.FriendProjection;
 import com.stu.socialnetworkapi.dto.projection.UserProjection;
 import com.stu.socialnetworkapi.entity.relationship.Friend;
 import org.springframework.data.domain.Pageable;
-import java.util.List;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.UUID;
 
 @Repository
@@ -54,75 +54,83 @@ public interface FriendRepository extends Neo4jRepository<Friend, Long> {
             """)
     boolean isFriend(UUID userId1, UUID userId2);
 
+    /**
+    * Hệ thống gợi ý bạn bè
+    - Số lượng bạn chung: 5 điểm 1 bạn chung
+    - Thông qua quan hệ (User)-[view:VIEW_PROFILE]->(User)
+    dùng thuộc tính view.times * 2 điểm, ở chiều ngược lại view.times * 1 điểm
+    - Độ tuổi chênh lệch mỗi 1 tuổi chênh lệch -2 điểm * số tuổi chênh lệch
+    */
     @Query("""
-            // Match current user
-            MATCH (currentUser:User {id: $userId})
+                MATCH (currentUser:User {id: $userId})
+                MATCH (target:User)
+                WHERE target.id <> $userId
+                  AND NOT EXISTS((currentUser)-[:FRIEND|BLOCK|REQUEST]-(target))
             
-            // Match friends of the current user
-            MATCH (currentUser)-[:FRIEND]->(friend:User)
+                OPTIONAL MATCH (target)-[:HAS_PROFILE_PICTURE]->(pic:File)
+                OPTIONAL MATCH (currentUser)-[:FRIEND]->(mutual:User)-[:FRIEND]->(target)
+                WHERE mutual.id <> target.id
             
-            // Match friends of friends who are not the current user
-            MATCH (friend)-[:FRIEND]->(friendOfFriend:User)
-            WHERE friendOfFriend.id <> $userId
+                OPTIONAL MATCH (currentUser)-[viewOut:VIEW_PROFILE]->(target)
+                OPTIONAL MATCH (target)-[viewIn:VIEW_PROFILE]->(currentUser)
             
-            // Exclude users who are already friends with current user
-            // or who have been blocked by current user or have blocked current user
-            OPTIONAL MATCH (currentUser)-[r:FRIEND]->(friendOfFriend)
-            OPTIONAL MATCH (currentUser)-[:BLOCK]->(friendOfFriend)
-            OPTIONAL MATCH (friendOfFriend)-[:BLOCK]->(currentUser)
-            OPTIONAL MATCH (friendOfFriend)-[:HAS_PROFILE_PICTURE]->(profilePic:File)
-            WITH currentUser, friend, friendOfFriend, profilePic
-            WHERE r IS NULL
-            AND NOT exists((currentUser)-[:BLOCK]->(friendOfFriend))
-            AND NOT exists((friendOfFriend)-[:BLOCK]->(currentUser))
+                WITH currentUser, target, pic,
+                     COALESCE(COUNT(DISTINCT mutual), 0) AS mutualFriendsCount,
+                     COALESCE(viewOut.times, 0) AS viewOutTimes,
+                     COALESCE(viewIn.times, 0) AS viewInTimes
             
-            // Group to count mutual friends and eliminate duplicates
-            WITH friendOfFriend, profilePic, count(DISTINCT friend) AS mutualFriendsCount
+                WITH target, pic, mutualFriendsCount, viewOutTimes, viewInTimes,
+                     currentUser.birthdate.year - target.birthdate.year AS ageDiff
             
-            // Return results ordered by most mutual friends first
-            RETURN
-                friendOfFriend.id AS userId,
-                friendOfFriend.username AS username,
-                friendOfFriend.givenName AS givenName,
-                friendOfFriend.familyName AS familyName,
-                CASE WHEN profilePic IS NOT NULL
-                    THEN profilePic.id
-                    ELSE NULL END AS profilePictureId,
-                false AS isFriend,
-                mutualFriendsCount as mutualFriendsCount
-            ORDER BY mutualFriendsCount DESC
-            SKIP $skip LIMIT $limit
+                WITH target, pic, mutualFriendsCount, viewOutTimes, viewInTimes, ageDiff,
+                     mutualFriendsCount * 5 + viewOutTimes * 2 + viewInTimes - abs(ageDiff) * 2 AS score
+            
+                RETURN
+                    target.id AS userId,
+                    target.username AS username,
+                    target.givenName AS givenName,
+                    target.familyName AS familyName,
+                    CASE WHEN pic IS NOT NULL THEN pic.id ELSE NULL END AS profilePictureId,
+                    mutualFriendsCount AS mutualFriendsCount,
+                    false AS isFriend,
+                    viewOutTimes,
+                    viewInTimes,
+                    ageDiff,
+                    score
+            
+                ORDER BY score DESC
+                SKIP $skip LIMIT $limit
             """)
     List<UserProjection> getSuggestedFriends(UUID userId, Pageable pageable);
 
     @Query("""
-        // Match both users
-        MATCH (user1:User {id: $userId}), (user2:User {id: $targetId})
-        
-        // Find mutual friends (users who are friends with both user1 and user2)
-        MATCH (user1)-[:FRIEND]->(mutualFriend:User)<-[:FRIEND]-(user2)
-        
-        // Get profile picture
-        OPTIONAL MATCH (mutualFriend)-[:HAS_PROFILE_PICTURE]->(profilePic:File)
-        
-        // Calculate mutual friends count between user1 and each mutual friend
-        // (how many friends they have in common)
-        WITH user1, mutualFriend, profilePic,
-             size([(user1)-[:FRIEND]->(commonFriend:User)<-[:FRIEND]-(mutualFriend) | commonFriend]) AS mutualFriendsCount
-        
-        // Return mutual friends
-        RETURN
-            mutualFriend.id AS userId,
-            mutualFriend.username AS username,
-            mutualFriend.givenName AS givenName,
-            mutualFriend.familyName AS familyName,
-            CASE WHEN profilePic IS NOT NULL
-                THEN profilePic.id
-                ELSE NULL END AS profilePictureId,
-            true AS isFriend,
-            mutualFriendsCount AS mutualFriendsCount
-        ORDER BY mutualFriendsCount DESC, mutualFriend.username
-        SKIP $skip LIMIT $limit
-        """)
+            // Match both users
+            MATCH (user1:User {id: $userId}), (user2:User {id: $targetId})
+            
+            // Find mutual friends (users who are friends with both user1 and user2)
+            MATCH (user1)-[:FRIEND]->(mutualFriend:User)<-[:FRIEND]-(user2)
+            
+            // Get profile picture
+            OPTIONAL MATCH (mutualFriend)-[:HAS_PROFILE_PICTURE]->(profilePic:File)
+            
+            // Calculate mutual friends count between user1 and each mutual friend
+            // (how many friends they have in common)
+            WITH user1, mutualFriend, profilePic,
+                 size([(user1)-[:FRIEND]->(commonFriend:User)<-[:FRIEND]-(mutualFriend) | commonFriend]) AS mutualFriendsCount
+            
+            // Return mutual friends
+            RETURN
+                mutualFriend.id AS userId,
+                mutualFriend.username AS username,
+                mutualFriend.givenName AS givenName,
+                mutualFriend.familyName AS familyName,
+                CASE WHEN profilePic IS NOT NULL
+                    THEN profilePic.id
+                    ELSE NULL END AS profilePictureId,
+                true AS isFriend,
+                mutualFriendsCount AS mutualFriendsCount
+            ORDER BY mutualFriendsCount DESC, mutualFriend.username
+            SKIP $skip LIMIT $limit
+            """)
     List<UserProjection> getMutualFriends(UUID userId, UUID targetId, Pageable pageable);
 }

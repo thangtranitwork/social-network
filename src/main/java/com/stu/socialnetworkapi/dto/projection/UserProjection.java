@@ -1,6 +1,5 @@
 package com.stu.socialnetworkapi.dto.projection;
 
-import java.time.ZonedDateTime;
 import java.util.UUID;
 
 public record UserProjection(
@@ -10,7 +9,10 @@ public record UserProjection(
         String familyName,
         String profilePictureId,
         int mutualFriendsCount,
-        ZonedDateTime lastSeen,
-        boolean isFriend
+        boolean isFriend,
+        int viewOutTimes,
+        int viewInTimes,
+        int ageDiff,
+        int score
 ) {
 }

@@ -49,6 +49,10 @@ public class User {
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     File profilePicture;
+    @Relationship(type = "VIEW_PROFILE", direction = Relationship.Direction.OUTGOING)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    List<User> viewedProfile;
     @Relationship(type = "REQUEST", direction = Relationship.Direction.OUTGOING)
     @EqualsAndHashCode.Exclude
     @ToString.Exclude

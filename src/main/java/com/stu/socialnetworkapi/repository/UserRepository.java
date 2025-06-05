@@ -77,4 +77,14 @@ public interface UserRepository extends Neo4jRepository<User, UUID> {
                 LIMIT $limit
             """)
     List<UUID> fullTextSearch(String query, UUID currentUserId, int limit, int skip);
+
+    @Query("""
+            MATCH (u:User {id: $userId})
+            MATCH (t:User {id: $targetId})
+            MERGE (u)-[r:VIEW_PROFILE]->(t)
+            ON CREATE SET r.times = 1
+            ON MATCH SET r.times = r.times + 1
+            """)
+    void increaseViewProfile(UUID userId, UUID targetId);
+
 }

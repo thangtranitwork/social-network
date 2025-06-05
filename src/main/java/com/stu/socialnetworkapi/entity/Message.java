@@ -23,7 +23,7 @@ public class Message {
     String content;
     @Builder.Default
     ZonedDateTime sentAt = ZonedDateTime.now();
-
+    boolean isRead;
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     @Relationship(type = "SENT", direction = Relationship.Direction.INCOMING)

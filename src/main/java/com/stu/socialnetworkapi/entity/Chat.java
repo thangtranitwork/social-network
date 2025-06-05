@@ -21,10 +21,8 @@ public class Chat {
     @Id
     @GeneratedValue(GeneratedValue.UUIDGenerator.class)
     UUID id;
-    String name;
     @Builder.Default
     ZonedDateTime createdAt = ZonedDateTime.now();
-    boolean isRead;
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     @Relationship(type = "IS_MEMBER_OF", direction = Relationship.Direction.INCOMING)

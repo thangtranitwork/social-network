@@ -20,7 +20,7 @@ public class ImageFileValidator implements ConstraintValidator<ImageFile, Multip
 
     @Override
     public boolean isValid(MultipartFile file, ConstraintValidatorContext context) {
-        if (file == null || file.isEmpty()) return false;
+        if (file == null || file.isEmpty()) return true;
 
         String mimeType = file.getContentType();
         if (mimeType != null && IMAGE_MIME_TYPES.contains(mimeType.toLowerCase())) {

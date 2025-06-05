@@ -53,6 +53,7 @@ public enum ErrorCode {
     REQUIRED_IMAGE_FILE(3007, "Required image file", HttpStatus.BAD_REQUEST),
     INVALID_FILE_SIZE(3008, "Invalid file size", HttpStatus.BAD_REQUEST),
     LIST_CONTAINS_INVALID_FILE(3009, "List contains invalid file", HttpStatus.BAD_REQUEST),
+    REQUIRED_IMAGE_OR_VIDEO_FILE(3010, "Required image or video file", HttpStatus.BAD_REQUEST),
 
     CAN_NOT_MAKE_SELF_REQUEST(4000, "Can't make self request", HttpStatus.BAD_REQUEST),
     SENT_ADD_FRIEND_REQUEST_FAILED(4001, "Sent add friend request failed", HttpStatus.BAD_REQUEST),

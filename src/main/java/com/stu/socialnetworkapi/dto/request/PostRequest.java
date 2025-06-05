@@ -1,7 +1,7 @@
 package com.stu.socialnetworkapi.dto.request;
 
 import com.stu.socialnetworkapi.enums.PostPrivacy;
-import com.stu.socialnetworkapi.validation.annotation.ValidFileList;
+import com.stu.socialnetworkapi.validation.annotation.ImagesAndVideosOnly;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -9,7 +9,7 @@ import java.util.List;
 public record PostRequest(
         String content,
         PostPrivacy privacy,
-        @ValidFileList
+        @ImagesAndVideosOnly
         List<MultipartFile> files
 ) {
 }

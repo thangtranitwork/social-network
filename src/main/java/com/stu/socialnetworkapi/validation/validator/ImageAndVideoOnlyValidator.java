@@ -26,7 +26,7 @@ public class ImageAndVideoOnlyValidator implements ConstraintValidator<ImageAndV
 
     @Override
     public boolean isValid(MultipartFile file, ConstraintValidatorContext context) {
-        if (file == null || file.isEmpty()) return false;
+        if (file == null || file.isEmpty()) return true;
 
         String mimeType = file.getContentType();
         if (mimeType != null && ALLOWED_MIME_TYPES.contains(mimeType.toLowerCase())) {

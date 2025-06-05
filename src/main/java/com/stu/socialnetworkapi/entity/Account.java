@@ -25,9 +25,11 @@ public class Account {
     boolean verified;
 
     @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     @Relationship(type = "HAS_VERIFY_CODE", direction = Relationship.Direction.OUTGOING)
     VerifyCode verifyCode;
     @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     @Relationship(type = "HAS_INFO", direction = Relationship.Direction.OUTGOING)
     User user;
 }

@@ -37,6 +37,7 @@ public class UpdatePasswordServiceImpl implements UpdatePasswordService {
         if (code == null)
             code = VerifyCode.builder()
                     .code(UUID.randomUUID())
+                    .account(account)
                     .expiryTime(LocalDateTime.now().plusSeconds(VERIFY_EMAIL_VALIDITY_SECONDS))
                     .build();
         else code.setExpiryTime(LocalDateTime.now().plusSeconds(VERIFY_EMAIL_VALIDITY_SECONDS));

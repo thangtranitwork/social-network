@@ -78,7 +78,6 @@ public class PostServiceImpl implements PostService {
         return null;
     }
 
-    //TODO: validate content after trim
     @Override
     public PostResponse post(PostRequest request) {
         String content = request.content();
@@ -91,14 +90,13 @@ public class PostServiceImpl implements PostService {
 
         Post post = Post.builder()
                 .author(author)
-                .content(content)
+                .content(content.trim())
                 .attachedFiles(uploadedFiles)
                 .privacy(request.privacy())
                 .build();
         return postMapper.toPostResponse(postRepository.save(post));
     }
 
-    //TODO: validate content after trim
     @Override
     public PostResponse share(SharePostRequest request) {
         String content = request.content();
@@ -111,7 +109,7 @@ public class PostServiceImpl implements PostService {
         validateSharePost(content, currentUserId, originalPostAuthorId, originalPostPrivacy);
         Post post = Post.builder()
                 .author(author)
-                .content(content)
+                .content(content.trim())
                 .privacy(request.privacy())
                 .originalPost(originalPost)
                 .build();
@@ -136,7 +134,6 @@ public class PostServiceImpl implements PostService {
         postRepository.save(post);
     }
 
-    //TODO: validate content after trim
     @Override
     public PostResponse updateContent(UUID postId, PostUpdateContentRequest request) {
         Post post = getPostById(postId);

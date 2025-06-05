@@ -9,6 +9,7 @@ import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 
 @Repository
@@ -22,28 +23,22 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
     boolean isLiked(UUID postId, UUID likerId);
 
     @Query("""
-            MATCH (u:User {id: $userId})
-            MATCH (p:Post {id: $postId})
-            CREATE (u)-[:PINNED]->(p)
+                MATCH (me:User {id: $userId})
+                CALL db.index.fulltext.queryNodes("postSearchIndex", $query + "*")
+                YIELD node AS post, score
+                MATCH (author:User)-[:POSTED]->(post)
+                WHERE NOT (author)-[:BLOCKED]->(me)
+                  AND NOT (me)-[:BLOCKED]->(author)
+                RETURN post.id
+                ORDER BY score DESC
+                SKIP $skip
+                LIMIT $limit
             """)
-    void pinPost(UUID postId, UUID userId);
+    List<UUID> fullTextSearch(
+            String query,
+            UUID userId,
+            int limit,
+            int skip
+    );
 
-    @Query("""
-            MATCH (u:User {id: $userId})-[pin:PINNED]-()
-            DELETE pin
-            """)
-    void unpinPost(UUID userId);
-
-    @Query("""
-            MATCH (p:Post {id: $postId})<-[store:STORED]-(u:User {id: $userId})
-            RETURN COUNT(store) > 0
-            """)
-    boolean isStored(UUID postId, UUID userId);
-
-    @Query("""
-            MATCH (u:User {id: $userId})
-            MATCH (p:Post {id: $postId})
-            CREATE (u)-[:STORED]->(p)
-            """)
-    void storePost(UUID postId, UUID userId);
 }

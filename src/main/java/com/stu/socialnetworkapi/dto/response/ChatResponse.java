@@ -1,5 +1,6 @@
 package com.stu.socialnetworkapi.dto.response;
 
+import com.stu.socialnetworkapi.enums.BlockStatus;
 import lombok.Builder;
 import lombok.Data;
 
@@ -13,4 +14,5 @@ public class ChatResponse {
     MessageResponse latestMessage;
     UserCommonInformationResponse target;
     int notReadMessageCount;
+    BlockStatus blockStatus;
 }

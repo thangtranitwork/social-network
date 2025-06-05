@@ -42,13 +42,17 @@ public class UserMapper {
             return null;
         }
         OnlineResponse online = isOnlineRedisRepository.getLastSeen(user.getId());
+        String profilePictureUrl = user.getProfilePicture() != null
+                ? File.getPath(user.getProfilePicture().getId())
+                : null;
         return UserCommonInformationResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .givenName(user.getGivenName())
+                .familyName(user.getFamilyName())
                 .isOnline(online.isOnline())
                 .lastOnline(online.getLastOnlineAt())
-                .profilePictureUrl(File.getPath(user.getProfilePicture().getId()))
+                .profilePictureUrl(profilePictureUrl)
                 .build();
     }
 
@@ -154,6 +158,7 @@ public class UserMapper {
                 .profilePictureUrl(File.getPath(projection.targetProfilePictureId()))
                 .isOnline(online.isOnline())
                 .lastOnline(online.getLastOnlineAt())
+                .isFriend(projection.isFriend())
                 .build();
     }
 }

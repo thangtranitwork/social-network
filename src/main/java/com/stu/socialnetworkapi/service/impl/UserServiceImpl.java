@@ -88,14 +88,21 @@ public class UserServiceImpl implements UserService {
         return nextChangeUsernameDate;
     }
 
-    //TODO: trim string
     @Override
     public LocalDate updateName(String familyName, String givenName) {
         User user = getCurrentUserRequiredAuthentication();
         if (user.getNextChangeNameDate().isAfter(LocalDate.now()))
             throw new ApiException(ErrorCode.LESS_THAN_30_DAYS_SINCE_LAST_NAME_CHANGE);
-        user.setGivenName(givenName);
-        user.setFamilyName(familyName);
+        String familyNameAfterTrim = familyName.trim();
+        String givenNameAfterTrim = givenName.trim();
+        if (familyNameAfterTrim.isEmpty()) {
+            throw new ApiException(ErrorCode.FAMILY_NAME_REQUIRED);
+        }
+        if (givenNameAfterTrim.isEmpty()) {
+            throw new ApiException(ErrorCode.GIVEN_NAME_REQUIRED);
+        }
+        user.setGivenName(givenNameAfterTrim);
+        user.setFamilyName(familyNameAfterTrim);
         LocalDate nextChangeNameDate = LocalDate.now().plusDays(User.CHANGE_NAME_COOLDOWN_DAY);
         user.setNextChangeNameDate(nextChangeNameDate);
         userRepository.save(user);

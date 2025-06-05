@@ -31,6 +31,7 @@ public class MessageMapper {
                 .chatId(projection.chatId())
                 .id(projection.latestMessageId())
                 .content(projection.latestMessageContent())
+                .attachment(File.getPath(projection.latestMessageFileId()))
                 .sentAt(projection.latestMessageSentAt())
                 .sender(userMapper.toSenderUserCommonInformationResponse(projection))
                 .build();

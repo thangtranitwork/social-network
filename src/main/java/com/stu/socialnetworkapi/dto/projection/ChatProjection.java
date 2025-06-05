@@ -1,5 +1,7 @@
 package com.stu.socialnetworkapi.dto.projection;
 
+import com.stu.socialnetworkapi.enums.BlockStatus;
+
 import java.time.ZonedDateTime;
 import java.util.UUID;
 
@@ -20,6 +22,8 @@ public record ChatProjection(
         String targetGivenName,
         String targetFamilyName,
         String targetProfilePictureId,
-        int notReadMessageCount
+        int notReadMessageCount,
+        boolean isFriend,
+        BlockStatus blockStatus
 ) {
 }

@@ -46,7 +46,8 @@ public class MessageServiceImpl implements MessageService {
     @Override
     public MessageResponse sendMessage(TextMessageRequest request) {
         User sender = userService.getCurrentUserRequiredAuthentication();
-        Chat chat = getOrCreateDirectChat(request.chatId(), request.userId(), sender);
+        User receiver = userService.getUser(request.username());
+        Chat chat = getOrCreateDirectChat(sender, receiver);
         String content = request.text().trim();
         if (content.isEmpty()) throw new ApiException(ErrorCode.TEXT_MESSAGE_CONTENT_REQUIRED);
         if (content.length() > Message.MAX_CONTENT_LENGTH)
@@ -61,14 +62,15 @@ public class MessageServiceImpl implements MessageService {
         messageRepository.save(message);
         // Gửi tin lên đoạn chat (người dùng đang mở đoạn chat trên màn hình)
         MessageResponse response = messageMapper.toMessageResponse(message);
-        sendMessageNotification(request.chatId(), request.userId(), response, chat, sender);
+        sendMessageNotification(chat.getId(), receiver.getId(), response);
         return response;
     }
 
     @Override
     public MessageResponse sendFile(FileMessageRequest request) {
         User sender = userService.getCurrentUserRequiredAuthentication();
-        Chat chat = getOrCreateDirectChat(request.chatId(), request.userId(), sender);
+        User receiver = userService.getUser(request.username());
+        Chat chat = getOrCreateDirectChat(sender, receiver);
         File file = fileService.upload(request.attachment(), FilePrivacy.IN_CHAT);
         Message message = Message.builder()
                 .sender(sender)
@@ -76,7 +78,7 @@ public class MessageServiceImpl implements MessageService {
                 .build();
         messageRepository.save(message);
         MessageResponse response = messageMapper.toMessageResponse(message);
-        sendMessageNotification(request.chatId(), request.userId(), response, chat, sender);
+        sendMessageNotification(chat.getId(), receiver.getId(), response);
         return response;
     }
 
@@ -116,7 +118,7 @@ public class MessageServiceImpl implements MessageService {
         Message message = messageRepository.findById(messageId)
                 .orElseThrow(() -> new ApiException(ErrorCode.MESSAGE_NOT_FOUND));
         Chat chat = message.getChat();
-        validateDeleteMessage(message, user, chat);
+        validateDeleteMessage(message, user);
         File file = message.getAttachedFile();
         messageRepository.delete(message);
         if (file != null) {
@@ -129,30 +131,20 @@ public class MessageServiceImpl implements MessageService {
         sendMessageCommand(chat.getId(), command);
     }
 
-    private static void validateDeleteMessage(Message message, User user, Chat chat) {
+    private static void validateDeleteMessage(Message message, User user) {
         if (!message.getSender().getId().equals(user.getId())) {
             throw new ApiException(ErrorCode.UNAUTHORIZED);
         }
+
         if (message.getSentAt().plusMinutes(Message.MINUTES_TO_DELETE_MESSAGE).isAfter(ZonedDateTime.now())) {
             throw new ApiException(ErrorCode.CAN_NOT_DELETE_MESSAGE);
         }
     }
 
-    // TODO: use username instead-of user-id, chat-id
-    private Chat getOrCreateDirectChat(UUID chatId, UUID targetId, User sender) {
-        // Get group chat or existing direct chat
-        if (chatId != null) {
-            return chatRepository.findById(chatId)
-                    .orElseThrow(() -> new ApiException(ErrorCode.CHAT_NOT_FOUND));
-        }
-        // Get direct chat by target id if not exist, create new one
-        if (targetId == null) {
-            throw new ApiException(ErrorCode.CHAT_ID_AND_USER_ID_BOTH_EMPTY);
-        }
+    private Chat getOrCreateDirectChat(User sender, User receiver) {
+        blockService.validateBlock(sender.getId(), receiver.getId());
 
-        blockService.validateBlock(sender.getId(), targetId);
-
-        UUID existingChatId = chatRepository.getDirectChatIdByMemberIds(sender.getId(), targetId)
+        UUID existingChatId = chatRepository.getDirectChatIdByMemberIds(sender.getId(), receiver.getId())
                 .orElse(null);
 
         if (existingChatId != null) {
@@ -160,7 +152,7 @@ public class MessageServiceImpl implements MessageService {
                     .orElseThrow(() -> new ApiException(ErrorCode.CHAT_NOT_FOUND));
         }
 
-        List<User> members = List.of(sender, userService.getUser(targetId));
+        List<User> members = List.of(sender, receiver);
 
         Chat newChat = Chat.builder()
                 .members(members)
@@ -186,7 +178,7 @@ public class MessageServiceImpl implements MessageService {
             throw new ApiException(ErrorCode.TEXT_MESSAGE_CONTENT_UNCHANGED);
     }
 
-    private void sendMessageNotification(UUID chatId, UUID targetId, MessageResponse response, Chat chat, User sender) {
+    private void sendMessageNotification(UUID chatId, UUID targetId, MessageResponse response) {
         messagingTemplate.convertAndSend(WebSocketConfig.CHAT_CHANNEL_PREFIX + "/" + chatId, response);
         // Gửi thông báo tin nhắn cho người nhận
         messagingTemplate.convertAndSend(WebSocketConfig.MESSAGE_CHANNEL_PREFIX + "/" + targetId, response);

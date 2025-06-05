@@ -6,6 +6,7 @@ import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -62,6 +63,18 @@ public interface UserRepository extends Neo4jRepository<User, UUID> {
             """)
     Optional<UserProfileProjection> findProfileByUsername(String username, UUID currentUserId);
 
-
     boolean existsByUsername(String username);
+
+    @Query("""
+                MATCH (currentUser:User {id: $currentUserId})
+                CALL db.index.fulltext.queryNodes("userSearchIndex", $query + "*")
+                YIELD node, score
+                WHERE NOT (currentUser)-[:BLOCK]->(node)
+                  AND NOT (node)-[:BLOCK]->(currentUser)
+                RETURN node.id AS user
+                ORDER BY score DESC
+                SKIP $skip
+                LIMIT $limit
+            """)
+    List<UUID> fullTextSearch(String query, UUID currentUserId, int limit, int skip);
 }

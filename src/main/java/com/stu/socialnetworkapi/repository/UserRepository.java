@@ -18,46 +18,48 @@ public interface UserRepository extends Neo4jRepository<User, UUID> {
     Optional<UUID> getUserIdByUsername(String username);
 
     @Query("""
-            MATCH (user:User {username: $username})
-            OPTIONAL MATCH (user)-[:HAS_PROFILE_PICTURE]->(profilePic:File)
+                MATCH (user:User {username: $username})
+                OPTIONAL MATCH (user)-[:HAS_PROFILE_PICTURE]->(profilePic:File)
             
-            OPTIONAL MATCH (currentUser:User {id: $currentUserId})
+                OPTIONAL MATCH (currentUser:User {id: $currentUserId})
             
-            // Check friendship
-            OPTIONAL MATCH (currentUser)-[friendship:FRIEND]->(user)
+                // Check friendship
+                OPTIONAL MATCH (currentUser)-[friendship:FRIEND]->(user)
             
-            // Check friend request (outgoing or incoming)
-            OPTIONAL MATCH (currentUser)-[request:REQUEST]-(user)
+                // Check friend request (outgoing or incoming)
+                OPTIONAL MATCH (currentUser)-[request:REQUEST]-(user)
             
-            // Check block
-            OPTIONAL MATCH (currentUser)-[block:BLOCKED]->(user)
+                // Check block
+                OPTIONAL MATCH (currentUser)-[block:BLOCKED]->(user)
             
-            WITH user, profilePic, currentUser, friendship, request, block,
+                // Count mutual friends
+                WITH user, profilePic, currentUser, friendship, request, block,
+                     size([(currentUser)-[:FRIEND]->(mutual:User)<-[:FRIEND]-(user) | mutual]) AS mutualFriendsCount
             
-                 CASE
-                     WHEN currentUser IS NOT NULL THEN
-                         size([(currentUser)-[:FRIEND]->(mutual:User)<-[:FRIEND]-(user) | mutual])
-                     ELSE 0
-                 END AS mutualFriendsCount
+                // Count posts
+                OPTIONAL MATCH (user)-[:POSTED]->(post:Post)
+                WITH user, profilePic, currentUser, friendship, request, block, mutualFriendsCount,
+                     count(post) AS postCount
             
-            RETURN
-                user.id AS userId,
-                user.username AS username,
-                user.givenName AS givenName,
-                user.familyName AS familyName,
-                user.bio AS bio,
-                user.birthdate AS birthdate,
-                CASE WHEN profilePic IS NOT NULL THEN profilePic.id ELSE NULL END AS profilePictureId,
-                COALESCE(user.friendCount, 0) AS friendCount,
-                mutualFriendsCount AS mutualFriendsCount,
-                user.lastSeen AS lastSeen,
-                CASE WHEN friendship IS NOT NULL THEN true ELSE false END AS isFriend,
-                friendship.uuid AS friendId,
-                request.uuid AS requestId,
-                block.uuid AS blockId,
-                COALESCE(user.showFriends, true) AS showFriends,
-                COALESCE(user.allowFriendRequest, true) AS allowFriendRequest
-            LIMIT 1
+                RETURN
+                    user.id AS userId,
+                    user.username AS username,
+                    user.givenName AS givenName,
+                    user.familyName AS familyName,
+                    user.bio AS bio,
+                    user.birthdate AS birthdate,
+                    CASE WHEN profilePic IS NOT NULL THEN profilePic.id ELSE NULL END AS profilePictureId,
+                    COALESCE(user.friendCount, 0) AS friendCount,
+                    mutualFriendsCount AS mutualFriendsCount,
+                    postCount AS postCount,
+                    user.lastSeen AS lastSeen,
+                    CASE WHEN friendship IS NOT NULL THEN true ELSE false END AS isFriend,
+                    friendship.uuid AS friendId,
+                    request.uuid AS requestId,
+                    block.uuid AS blockId,
+                    COALESCE(user.showFriends, true) AS showFriends,
+                    COALESCE(user.allowFriendRequest, true) AS allowFriendRequest
+                LIMIT 1
             """)
     Optional<UserProfileProjection> findProfileByUsername(String username, UUID currentUserId);
 

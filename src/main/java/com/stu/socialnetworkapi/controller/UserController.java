@@ -77,12 +77,4 @@ public class UserController {
     ) {
         return ApiResponse.success(userService.updateProfilePicture(file));
     }
-
-    @PatchMapping("/update-cover-picture")
-    public ApiResponse<String> updateCoverPicture(
-            @ImageFile
-            MultipartFile file
-    ) {
-        return ApiResponse.success(userService.updateCoverPicture(file));
-    }
 }

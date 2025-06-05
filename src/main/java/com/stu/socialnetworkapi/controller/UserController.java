@@ -30,8 +30,7 @@ public class UserController {
     }
 
     @PutMapping("/update-info")
-    public ApiResponse<Void> updateInfo(@Valid @RequestBody UpdateInfoRequest request) {
-        userService.updateInfo(request);
-        return ApiResponse.success();
+    public ApiResponse<UserProfileResponse> updateInfo(@Valid @RequestBody UpdateInfoRequest request) {
+        return ApiResponse.success(userService.updateInfo(request));
     }
 }

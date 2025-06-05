@@ -33,6 +33,7 @@ public class UserMapper {
                 .requestId(projection.requestId())
                 .friendId(projection.friendId())
                 .blockId(projection.blockId())
+                .postCount(projection.postCount())
                 .build();
     }
 

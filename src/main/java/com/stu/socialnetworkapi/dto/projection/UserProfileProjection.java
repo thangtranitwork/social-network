@@ -18,6 +18,7 @@ public record UserProfileProjection(
         boolean isFriend,
         UUID requestId,
         UUID friendId,
-        UUID blockId
+        UUID blockId,
+        int postCount
 ) {
 }

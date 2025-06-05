@@ -15,4 +15,5 @@ public class UserProfileResponse extends UserCommonInformationResponse {
     String bio;
     LocalDate birthdate;
     int friendCount;
+    int postCount;
 }

@@ -8,11 +8,11 @@ import com.stu.socialnetworkapi.service.itf.NotificationService;
 import com.stu.socialnetworkapi.service.itf.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -37,10 +37,11 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public Slice<NotificationResponse> getNotifications(Pageable pageable) {
+    public List<NotificationResponse> getNotifications(Pageable pageable) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
-        return notificationRepository.getNotifications(currentUserId, pageable)
-                .map(notificationMapper::toNotificationResponse);
+        return notificationRepository.getNotifications(currentUserId, pageable).stream()
+                .map(notificationMapper::toNotificationResponse)
+                .toList();
 
     }
 }

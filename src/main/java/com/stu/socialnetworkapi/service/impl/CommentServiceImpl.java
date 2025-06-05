@@ -17,7 +17,6 @@ import com.stu.socialnetworkapi.util.JwtUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -152,10 +151,11 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
-    public Slice<CommentResponse> getComments(UUID postId, Pageable pageable) {
+    public List<CommentResponse> getComments(UUID postId, Pageable pageable) {
         postService.validateViewPost(postId, userService.getCurrentUserId());
-        return commentRepository.findAllByPostId(postId, pageable)
-                .map(commentMapper::toCommentResponse);
+        return commentRepository.findAllByPostId(postId, pageable).stream()
+                .map(commentMapper::toCommentResponse)
+                .toList();
     }
 
     private Comment getCommentById(UUID id) {

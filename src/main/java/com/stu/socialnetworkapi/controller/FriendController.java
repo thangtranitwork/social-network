@@ -7,7 +7,7 @@ import com.stu.socialnetworkapi.service.itf.FriendService;
 import com.stu.socialnetworkapi.validation.annotation.Username;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
+import java.util.List;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -19,17 +19,17 @@ public class FriendController {
     private final FriendService friendService;
 
     @GetMapping
-    public ApiResponse<Slice<FriendResponse>> getFriends(Pageable pageable) {
+    public ApiResponse<List<FriendResponse>> getFriends(Pageable pageable) {
         return ApiResponse.success(friendService.getFriends(pageable));
     }
 
     @GetMapping("/suggested")
-    public ApiResponse<Slice<UserCommonInformationResponse>> getSuggestedFriends(Pageable pageable) {
+    public ApiResponse<List<UserCommonInformationResponse>> getSuggestedFriends(Pageable pageable) {
         return ApiResponse.success(friendService.getSuggestedFriends(pageable));
     }
 
     @GetMapping("/mutual-friends/{username}")
-    public ApiResponse<Slice<UserCommonInformationResponse>> getMutualFriends(@PathVariable @Username String username, Pageable pageable) {
+    public ApiResponse<List<UserCommonInformationResponse>> getMutualFriends(@PathVariable @Username String username, Pageable pageable) {
         return ApiResponse.success(friendService.getMutualFriends(username, pageable));
     }
 

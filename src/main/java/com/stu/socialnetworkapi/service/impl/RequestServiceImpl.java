@@ -15,7 +15,7 @@ import com.stu.socialnetworkapi.service.itf.UserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
+import java.util.List;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -49,17 +49,19 @@ public class RequestServiceImpl implements RequestService {
     }
 
     @Override
-    public Slice<RequestResponse> getSentRequests(Pageable pageable) {
+    public List<RequestResponse> getSentRequests(Pageable pageable) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
-        return requestRepository.getSentRequest(currentUserId, pageable)
-                .map(requestMapper::toRequestResponse);
+        return requestRepository.getSentRequest(currentUserId, pageable).stream()
+                .map(requestMapper::toRequestResponse)
+                .toList();
     }
 
     @Override
-    public Slice<RequestResponse> getReceivedRequests(Pageable pageable) {
+    public List<RequestResponse> getReceivedRequests(Pageable pageable) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
-        return requestRepository.getReceivedRequest(currentUserId, pageable)
-                .map(requestMapper::toRequestResponse);
+        return requestRepository.getReceivedRequest(currentUserId, pageable).stream()
+                .map(requestMapper::toRequestResponse)
+                .toList();
     }
 
     @Override

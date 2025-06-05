@@ -11,9 +11,9 @@ import com.stu.socialnetworkapi.service.itf.BlockService;
 import com.stu.socialnetworkapi.service.itf.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -71,9 +71,10 @@ public class BlockServiceImpl implements BlockService {
     }
 
     @Override
-    public Slice<BlockResponse> getBlockedUsers(Pageable pageable) {
+    public List<BlockResponse> getBlockedUsers(Pageable pageable) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
-        return blockRepository.getBlockedUsers(currentUserId, pageable)
-                .map(blockMapper::toBlockResponse);
+        return blockRepository.getBlockedUsers(currentUserId, pageable).stream()
+                .map(blockMapper::toBlockResponse)
+                .toList();
     }
 }

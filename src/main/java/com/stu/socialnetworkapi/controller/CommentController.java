@@ -8,7 +8,7 @@ import com.stu.socialnetworkapi.service.itf.CommentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
+import java.util.List;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -20,7 +20,7 @@ public class CommentController {
     private final CommentService commentService;
 
     @GetMapping("/of-post/{postId}")
-    public ApiResponse<Slice<CommentResponse>> getCommentsByPost(@PathVariable UUID postId, Pageable pageable) {
+    public ApiResponse<List<CommentResponse>> getCommentsByPost(@PathVariable UUID postId, Pageable pageable) {
         return ApiResponse.success(commentService.getComments(postId, pageable));
     }
 

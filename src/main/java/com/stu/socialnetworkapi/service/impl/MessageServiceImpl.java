@@ -23,7 +23,6 @@ import com.stu.socialnetworkapi.service.itf.UserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -83,13 +82,14 @@ public class MessageServiceImpl implements MessageService {
     }
 
     @Override
-    public Slice<MessageResponse> getHistory(UUID chatId, Pageable pageable) {
+    public List<MessageResponse> getHistory(UUID chatId, Pageable pageable) {
         UUID userId = userService.getCurrentUserIdRequiredAuthentication();
         if (!chatRepository.existInChat(chatId, userId)) {
             throw new ApiException(ErrorCode.UNAUTHORIZED);
         }
-        return messageRepository.findAllByChatId(chatId, pageable)
-                .map(messageMapper::toMessageResponse);
+        return messageRepository.findAllByChatId(chatId, pageable).stream()
+                .map(messageMapper::toMessageResponse)
+                .toList();
     }
 
     @Override

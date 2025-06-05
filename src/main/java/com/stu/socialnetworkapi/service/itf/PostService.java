@@ -7,8 +7,8 @@ import com.stu.socialnetworkapi.dto.response.PostResponse;
 import com.stu.socialnetworkapi.entity.Post;
 import com.stu.socialnetworkapi.enums.PostPrivacy;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface PostService {
@@ -16,9 +16,9 @@ public interface PostService {
 
     PostResponse get(UUID postId);
 
-    Slice<PostResponse> getPostsOfUser(String authorUsername, Pageable pageable);
+    List<PostResponse> getPostsOfUser(String authorUsername, Pageable pageable);
 
-    Slice<PostResponse> getSuggestedPosts();
+    List<PostResponse> getSuggestedPosts(Pageable pageable);
 
     PostResponse post(PostRequest request);
 

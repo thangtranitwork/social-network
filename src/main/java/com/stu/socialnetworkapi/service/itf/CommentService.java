@@ -4,7 +4,7 @@ import com.stu.socialnetworkapi.dto.request.CommentRequest;
 import com.stu.socialnetworkapi.dto.request.ReplyCommentRequest;
 import com.stu.socialnetworkapi.dto.response.CommentResponse;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
+import java.util.List;
 
 import java.util.UUID;
 
@@ -19,5 +19,5 @@ public interface CommentService {
 
     void delete(UUID id);
 
-    Slice<CommentResponse> getComments(UUID postId, Pageable pageable);
+    List<CommentResponse> getComments(UUID postId, Pageable pageable);
 }

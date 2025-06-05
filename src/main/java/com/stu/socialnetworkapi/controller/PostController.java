@@ -11,9 +11,9 @@ import com.stu.socialnetworkapi.validation.annotation.Username;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -23,12 +23,12 @@ public class PostController {
     private final PostService postService;
 
     @GetMapping("/newsfeed")
-    public ApiResponse<Slice<PostResponse>> getPosts() {
-        return ApiResponse.success(postService.getSuggestedPosts());
+    public ApiResponse<List<PostResponse>> getPosts(Pageable pageable) {
+        return ApiResponse.success(postService.getSuggestedPosts(pageable));
     }
 
     @GetMapping("/of-user/{username}")
-    public ApiResponse<Slice<PostResponse>> getPosts(@PathVariable @Username String username, Pageable pageable) {
+    public ApiResponse<List<PostResponse>> getPosts(@PathVariable @Username String username, Pageable pageable) {
         return ApiResponse.success(postService.getPostsOfUser(username, pageable));
     }
 

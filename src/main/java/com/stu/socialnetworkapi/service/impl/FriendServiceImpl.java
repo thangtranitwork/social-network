@@ -11,7 +11,7 @@ import com.stu.socialnetworkapi.service.itf.FriendService;
 import com.stu.socialnetworkapi.service.itf.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
+import java.util.List;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -25,10 +25,11 @@ public class FriendServiceImpl implements FriendService {
     private final FriendRepository friendRepository;
 
     @Override
-    public Slice<FriendResponse> getFriends(Pageable pageable) {
+    public List<FriendResponse> getFriends(Pageable pageable) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
-        return friendRepository.getFriends(currentUserId, pageable)
-                .map(friendMapper::toFriendResponse);
+        return friendRepository.getFriends(currentUserId, pageable).stream()
+                .map(friendMapper::toFriendResponse)
+                .toList();
     }
 
     @Override
@@ -46,17 +47,19 @@ public class FriendServiceImpl implements FriendService {
     }
 
     @Override
-    public Slice<UserCommonInformationResponse> getSuggestedFriends(Pageable pageable) {
+    public List<UserCommonInformationResponse> getSuggestedFriends(Pageable pageable) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
-        return friendRepository.getSuggestedFriends(currentUserId, pageable)
-                .map(userMapper::toUserCommonInformationResponse);
+        return friendRepository.getSuggestedFriends(currentUserId, pageable).stream()
+                .map(userMapper::toUserCommonInformationResponse)
+                .toList();
     }
 
     @Override
-    public Slice<UserCommonInformationResponse> getMutualFriends(String username, Pageable pageable) {
+    public List<UserCommonInformationResponse> getMutualFriends(String username, Pageable pageable) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
         UUID targetUserId = userService.getUser(username).getId();
-        return friendRepository.getMutualFriends(currentUserId, targetUserId, pageable)
-                .map(userMapper::toUserCommonInformationResponse);
+        return friendRepository.getMutualFriends(currentUserId, targetUserId, pageable).stream()
+                .map(userMapper::toUserCommonInformationResponse)
+                .toList();
     }
 }

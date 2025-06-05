@@ -3,12 +3,12 @@ package com.stu.socialnetworkapi.service.itf;
 import com.stu.socialnetworkapi.dto.response.NotificationResponse;
 import com.stu.socialnetworkapi.entity.Notification;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
+import java.util.List;
 
 public interface NotificationService {
     NotificationResponse save(Notification notification);
 
     void send(Notification notification);
 
-    Slice<NotificationResponse> getNotifications(Pageable pageable);
+    List<NotificationResponse> getNotifications(Pageable pageable);
 }

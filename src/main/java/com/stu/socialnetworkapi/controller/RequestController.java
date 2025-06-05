@@ -5,7 +5,7 @@ import com.stu.socialnetworkapi.dto.response.RequestResponse;
 import com.stu.socialnetworkapi.service.itf.RequestService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
+import java.util.List;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -17,12 +17,12 @@ public class RequestController {
     private final RequestService requestService;
 
     @GetMapping("/sent-requests")
-    public ApiResponse<Slice<RequestResponse>> getSentRequest(Pageable pageable) {
+    public ApiResponse<List<RequestResponse>> getSentRequest(Pageable pageable) {
         return ApiResponse.success(requestService.getSentRequests(pageable));
     }
 
     @GetMapping("/received-requests")
-    public ApiResponse<Slice<RequestResponse>> getReceivedRequest(Pageable pageable) {
+    public ApiResponse<List<RequestResponse>> getReceivedRequest(Pageable pageable) {
         return ApiResponse.success(requestService.getReceivedRequests(pageable));
     }
 

@@ -11,7 +11,6 @@ import com.stu.socialnetworkapi.service.itf.MessageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,7 +29,7 @@ public class ChatController {
     }
 
     @GetMapping("/messages/{chatId}")
-    public ApiResponse<Slice<MessageResponse>> getMessages(@PathVariable UUID chatId, Pageable pageable) {
+    public ApiResponse<List<MessageResponse>> getMessages(@PathVariable UUID chatId, Pageable pageable) {
         return ApiResponse.success(messageService.getHistory(chatId, pageable));
     }
 

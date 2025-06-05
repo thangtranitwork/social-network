@@ -4,7 +4,7 @@ import com.stu.socialnetworkapi.dto.projection.FriendProjection;
 import com.stu.socialnetworkapi.dto.projection.UserProjection;
 import com.stu.socialnetworkapi.entity.relationship.Friend;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
+import java.util.List;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.stereotype.Repository;
@@ -25,7 +25,7 @@ public interface FriendRepository extends Neo4jRepository<Friend, Long> {
                     profile.id AS profilePictureId
             SKIP $skip LIMIT $limit
             """)
-    Slice<FriendProjection> getFriends(UUID userId, Pageable pageable);
+    List<FriendProjection> getFriends(UUID userId, Pageable pageable);
 
     @Query("""
             MATCH (user:User {id: $userId})-[friend:FRIEND {uuid: $friendId}]->()
@@ -54,7 +54,6 @@ public interface FriendRepository extends Neo4jRepository<Friend, Long> {
             """)
     boolean isFriend(UUID userId1, UUID userId2);
 
-    //TODO: 2. Combine scores from liked posts
     @Query("""
             // Match current user
             MATCH (currentUser:User {id: $userId})
@@ -94,7 +93,7 @@ public interface FriendRepository extends Neo4jRepository<Friend, Long> {
             ORDER BY mutualFriendsCount DESC
             SKIP $skip LIMIT $limit
             """)
-    Slice<UserProjection> getSuggestedFriends(UUID userId, Pageable pageable);
+    List<UserProjection> getSuggestedFriends(UUID userId, Pageable pageable);
 
     @Query("""
         // Match both users
@@ -125,5 +124,5 @@ public interface FriendRepository extends Neo4jRepository<Friend, Long> {
         ORDER BY mutualFriendsCount DESC, mutualFriend.username
         SKIP $skip LIMIT $limit
         """)
-    Slice<UserProjection> getMutualFriends(UUID userId, UUID targetId, Pageable pageable);
+    List<UserProjection> getMutualFriends(UUID userId, UUID targetId, Pageable pageable);
 }

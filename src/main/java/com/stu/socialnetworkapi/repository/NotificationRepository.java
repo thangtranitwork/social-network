@@ -3,7 +3,7 @@ package com.stu.socialnetworkapi.repository;
 import com.stu.socialnetworkapi.dto.projection.NotificationProjection;
 import com.stu.socialnetworkapi.entity.Notification;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
+import java.util.List;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.stereotype.Repository;
@@ -40,6 +40,6 @@ public interface NotificationRepository extends Neo4jRepository<Notification, UU
                        creator.familyName AS familyName,
                        CASE WHEN pf IS NOT NULL THEN pf.id ELSE NULL END AS profilePictureId
             """)
-    Slice<NotificationProjection> getNotifications(UUID userId, Pageable pageable);
+    List<NotificationProjection> getNotifications(UUID userId, Pageable pageable);
 
 }

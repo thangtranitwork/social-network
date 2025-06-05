@@ -17,7 +17,6 @@ import com.stu.socialnetworkapi.service.itf.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -44,7 +43,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public Slice<PostResponse> getPostsOfUser(String authorUsername, Pageable pageable) {
+    public List<PostResponse> getPostsOfUser(String authorUsername, Pageable pageable) {
         UUID currentUserId = userService.getCurrentUserId();
         UUID targetId = userService.getUserId(authorUsername);
         boolean isAuthenticated = currentUserId != null;
@@ -68,14 +67,17 @@ public class PostServiceImpl implements PostService {
         }
 
         return postRepository
-                .findAllByAuthorIdAndPrivacyIsIn(targetId, visiblePrivacies, pageable)
-                .map(postMapper::toPostResponse);
+                .findAllByAuthorIdAndPrivacyIsIn(targetId, visiblePrivacies, pageable).stream()
+                .map(postMapper::toPostResponse)
+                .toList();
     }
 
 
     @Override
-    public Slice<PostResponse> getSuggestedPosts() {
-        return null;
+    public List<PostResponse> getSuggestedPosts(Pageable pageable) {
+        UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
+        return postRepository.findAllById(postRepository.getSuggestedPosts(currentUserId, pageable))
+                .stream().map(postMapper::toPostResponse).toList();
     }
 
     @Override

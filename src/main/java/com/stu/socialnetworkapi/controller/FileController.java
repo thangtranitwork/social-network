@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.nio.file.Files;
 
-
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/v1/files")
@@ -18,7 +17,7 @@ public class FileController {
     private final FileService fileService;
 
     @GetMapping("/{id}")
-    public ResponseEntity<Resource> load(@PathVariable String id, @CookieValue(name = "token", required = false) String token){
+    public ResponseEntity<Resource> load(@PathVariable String id, @RequestParam(name = "token", required = false) String token) {
         Resource resource = fileService.load(id, token);
         String contentType;
         try {

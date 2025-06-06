@@ -9,10 +9,6 @@ public record UserProjection(
         String familyName,
         String profilePictureId,
         int mutualFriendsCount,
-        boolean isFriend,
-        int viewOutTimes,
-        int viewInTimes,
-        int ageDiff,
-        int score
+        boolean isFriend
 ) {
 }

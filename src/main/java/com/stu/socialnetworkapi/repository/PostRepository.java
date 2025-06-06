@@ -35,7 +35,7 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
             """)
     List<UUID> fullTextSearch(String query, UUID userId, int limit, int skip);
 
-    /*
+    /**
     Hệ thống chấm điểm
     - Bài viết mới 24 giờ: 200 điểm
     - Bài viết của bạn user: 100 điểm
@@ -48,46 +48,38 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
 
     @Query("""
             MATCH (u:User {id: $userId})
+            MATCH (author:User)-[:POSTED]->(post:Post)
             
-            // Bài viết của bạn (FRIEND)
-            OPTIONAL MATCH (u)-[:FRIEND]-(f:User)-[:POSTED]->(p1:Post)
-            WHERE p1.privacy IN ['PUBLIC', 'FRIENDS_ONLY']
-              AND NOT (u)-[:BLOCKED]->(f)
-              AND NOT (f)-[:BLOCKED]->(u)
-            WITH u, collect({post: p1, author: f}) AS friendPosts
+            // Điều kiện xem được bài viết
+            WHERE (
+                post.privacy = 'PUBLIC'
+                OR (post.privacy = 'FRIEND' AND (u)-[:FRIEND]-(author))
+            )
+            // Loại bỏ bài viết của tác giả đã chặn hoặc bị chặn
+            AND NOT (u)-[:BLOCK]-(author)
             
-            // Bài viết của bạn của bạn (FOAF)
-            OPTIONAL MATCH (u)-[:FRIEND]-(f1:User)-[:FRIEND]-(f2:User)-[:POSTED]->(p2:Post)
-            WHERE NOT (u)-[:FRIEND]-(f2)
-              AND p2.privacy = 'PUBLIC'
-              AND NOT (u)-[:BLOCKED]->(f2)
-              AND NOT (f2)-[:BLOCKED]->(u)
-            WITH u, friendPosts + collect({post: p2, author: f2}) AS foafPosts
+            // Tính điểm theo từng tiêu chí
+            WITH post, author,
+                 // Bài viết mới 24 giờ: 200 điểm
+                 CASE WHEN post.createdAt > datetime() - duration('P1D') THEN 200 ELSE 0 END AS newPostScore,
             
-            // Bài viết công khai của người lạ
-            OPTIONAL MATCH (stranger:User)-[:POSTED]->(p3:Post)
-            WHERE p3.privacy = 'PUBLIC'
-              AND NOT (u)-[:FRIEND]-(stranger)
-              AND NOT (u)-[:FRIEND]-()-[:FRIEND]-(stranger)
-              AND NOT (u)-[:BLOCKED]->(stranger)
-              AND NOT (stranger)-[:BLOCKED]->(u)
-            WITH friendPosts + foafPosts + collect({post: p3, author: stranger}) AS allPosts
+                 // Điểm theo mối quan hệ với tác giả
+                 CASE
+                     WHEN (u)-[:FRIEND]-(author) THEN 100  // Bài viết của bạn: 100 điểm
+                     WHEN (u)-[:FRIEND]-()-[:FRIEND]-(author) AND NOT (u)-[:FRIEND]-(author) THEN 50  // Bài viết của bạn của bạn: 50 điểm
+                     ELSE 0
+                 END AS relationshipScore,
             
-            UNWIND allPosts AS entry
-            WITH entry.post AS post, entry.author AS author
+                 // Điểm tương tác
+                 post.likeCount * 2 AS likeScore,      // Số like: 2 điểm
+                 post.commentCount * 3 AS commentScore, // Số comment: 3 điểm
+                 post.shareCount * 5 AS shareScore     // Số share: 5 điểm
             
             WITH post,
-              CASE WHEN post.createdAt > datetime().minusDays(1) THEN 200 ELSE 0 END +
-              CASE
-                WHEN ( (author)-[:FRIEND]-(:User {id: $userId}) ) THEN 100
-                WHEN ( (author)-[:FRIEND]-()-[:FRIEND]-(:User {id: $userId}) ) THEN 50
-                ELSE 0
-              END +
-              post.likeCount * 2 +
-              post.commentCount * 3 +
-              post.shareCount * 5 AS score
+                 newPostScore + relationshipScore + likeScore + commentScore + shareScore AS totalScore
             
-            ORDER BY score DESC, post.createdAt DESC
+            ORDER BY totalScore DESC, post.createdAt DESC
+            
             RETURN post.id AS id
             SKIP $skip
             LIMIT $limit

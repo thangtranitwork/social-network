@@ -69,6 +69,7 @@ public class PostServiceImpl implements PostService {
         return postRepository
                 .findAllByAuthorIdAndPrivacyIsIn(targetId, visiblePrivacies, pageable).stream()
                 .map(postMapper::toPostResponse)
+                .map(post -> mapIsLiked(post, currentUserId))
                 .toList();
     }
 
@@ -76,8 +77,10 @@ public class PostServiceImpl implements PostService {
     @Override
     public List<PostResponse> getSuggestedPosts(Pageable pageable) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
-        return postRepository.findAllById(postRepository.getSuggestedPosts(currentUserId, pageable))
-                .stream().map(postMapper::toPostResponse).toList();
+        return postRepository.findAllById(postRepository.getSuggestedPosts(currentUserId, pageable)).stream()
+                .map(postMapper::toPostResponse)
+                .map(post -> mapIsLiked(post, currentUserId))
+                .toList();
     }
 
     @Override
@@ -151,7 +154,9 @@ public class PostServiceImpl implements PostService {
             post.setContent(trimmedContent);
         }
         post.setUpdatedAt(ZonedDateTime.now());
-        return postMapper.toPostResponse(postRepository.save(post));
+        PostResponse response = postMapper.toPostResponse(postRepository.save(post));
+        mapIsLiked(response, post.getAuthor().getId());
+        return response;
     }
 
     @Override
@@ -336,5 +341,10 @@ public class PostServiceImpl implements PostService {
         if (!post.getAuthor().getId().equals(currentUserId)) {
             throw new ApiException(ErrorCode.UNAUTHORIZED);
         }
+    }
+
+    private PostResponse mapIsLiked(PostResponse post, UUID userId) {
+        post.setLiked(postRepository.isLiked(post.getId(), userId));
+        return post;
     }
 }

@@ -55,35 +55,42 @@ public interface FriendRepository extends Neo4jRepository<Friend, Long> {
     boolean isFriend(UUID userId1, UUID userId2);
 
     /**
-    * Hệ thống gợi ý bạn bè
-    - Số lượng bạn chung: 5 điểm 1 bạn chung
-    - Thông qua quan hệ (User)-[view:VIEW_PROFILE]->(User)
-    dùng thuộc tính view.times * 2 điểm, ở chiều ngược lại view.times * 1 điểm
-    - Độ tuổi chênh lệch mỗi 1 tuổi chênh lệch -2 điểm * số tuổi chênh lệch
-    */
+     * Hệ thống gợi ý bạn bè
+     * - Số lượng bạn chung: 5 điểm 1 bạn chung
+     * - Thông qua quan hệ (User)-[view:VIEW_PROFILE]->(User)
+     * dùng thuộc tính view.times * 2 điểm, ở chiều ngược lại view.times * 1 điểm
+     * - Độ tuổi chênh lệch mỗi 1 tuổi chênh lệch -2 điểm * số tuổi chênh lệch
+     * - Đã từng chat với nhau nhưng chưa kết bạn: 30 điểm
+     */
     @Query("""
                 MATCH (currentUser:User {id: $userId})
                 MATCH (target:User)
                 WHERE target.id <> $userId
                   AND NOT EXISTS((currentUser)-[:FRIEND|BLOCK|REQUEST]-(target))
             
-                OPTIONAL MATCH (target)-[:HAS_PROFILE_PICTURE]->(pic:File)
                 OPTIONAL MATCH (currentUser)-[:FRIEND]->(mutual:User)-[:FRIEND]->(target)
                 WHERE mutual.id <> target.id
             
                 OPTIONAL MATCH (currentUser)-[viewOut:VIEW_PROFILE]->(target)
                 OPTIONAL MATCH (target)-[viewIn:VIEW_PROFILE]->(currentUser)
+                OPTIONAL MATCH (target)-[:HAS_PROFILE_PICTURE]->(pic:File)
             
-                WITH currentUser, target, pic,
+                OPTIONAL MATCH (currentUser)-[:IS_MEMBER_OF]->(chat)<-[:IS_MEMBER_OF]-(target)
+            
+                WITH currentUser, target, pic, chat,
                      COALESCE(COUNT(DISTINCT mutual), 0) AS mutualFriendsCount,
                      COALESCE(viewOut.times, 0) AS viewOutTimes,
-                     COALESCE(viewIn.times, 0) AS viewInTimes
+                     COALESCE(viewIn.times, 0) AS viewInTimes,
             
-                WITH target, pic, mutualFriendsCount, viewOutTimes, viewInTimes,
+                WITH target, pic, mutualFriendsCount, viewOutTimes, viewInTimes, chat,
                      currentUser.birthdate.year - target.birthdate.year AS ageDiff
             
-                WITH target, pic, mutualFriendsCount, viewOutTimes, viewInTimes, ageDiff,
-                     mutualFriendsCount * 5 + viewOutTimes * 2 + viewInTimes - abs(ageDiff) * 2 AS score
+                WITH target, pic, mutualFriendsCount, viewOutTimes, viewInTimes, sharedChatsCount, ageDiff,
+                     mutualFriendsCount * 5
+                     + viewOutTimes * 2
+                     + viewInTimes
+                     - abs(ageDiff) * 2
+                     + CASE WHEN chat IS NOT NULL THEN 30 ELSE 0 END AS score
             
                 RETURN
                     target.id AS userId,
@@ -92,10 +99,7 @@ public interface FriendRepository extends Neo4jRepository<Friend, Long> {
                     target.familyName AS familyName,
                     CASE WHEN pic IS NOT NULL THEN pic.id ELSE NULL END AS profilePictureId,
                     mutualFriendsCount AS mutualFriendsCount,
-                    false AS isFriend,
-                    viewOutTimes,
-                    viewInTimes,
-                    ageDiff,
+                    false AS isFriend
                     score
             
                 ORDER BY score DESC

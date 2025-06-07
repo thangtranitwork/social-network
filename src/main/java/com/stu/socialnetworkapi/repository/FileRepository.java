@@ -13,21 +13,22 @@ public interface FileRepository extends Neo4jRepository<File, String> {
     @Query("""
                 MATCH (file:File {id: $fileId})<-[:UPLOAD_FILE]-(uploader:User)
                 OPTIONAL MATCH (currentUser:User {id: $userId})
-                OPTIONAL MATCH (currentUser)-[block:BLOCKED]-(uploader)
+                OPTIONAL MATCH (currentUser)-[block:BLOCK]-(uploader)
                 OPTIONAL MATCH (file)<-[:ATTACH_FILES]-(post:Post)
                 RETURN CASE
                     WHEN currentUser IS NOT NULL AND currentUser.id = uploader.id THEN true
-                    WHEN block IS NOT NULL THEN false
-                    WHEN file.privacy = 'PUBLIC' THEN true
                     WHEN file.privacy = 'IN_CHAT' THEN EXISTS {
                         MATCH (currentUser)-[:IS_MEMBER_OF]->(:Chat)
                               -[:HAS_MESSAGE]->(:Message)
-                              -[:ATTACH_FILES]->(file)
+                              -[:ATTACH_FILE]->(file)
                     }
+                    WHEN block IS NOT NULL THEN false
+                    WHEN file.privacy = 'PUBLIC' THEN true
                     WHEN file.privacy = 'IN_POST' AND post IS NOT NULL AND post.privacy = 'FRIEND' THEN EXISTS {
                         MATCH (currentUser)-[:FRIEND]-(uploader)
                     }
                     WHEN file.privacy = 'IN_POST' AND post IS NOT NULL AND post.privacy = 'PRIVATE' THEN false
+                    WHEN file.privacy = 'IN_POST' AND post IS NOT NULL AND post.privacy = 'PUBLIC' THEN true
                     ELSE false
                 END AS canRead
             """)

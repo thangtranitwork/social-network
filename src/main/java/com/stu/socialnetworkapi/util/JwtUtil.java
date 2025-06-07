@@ -119,6 +119,15 @@ public class JwtUtil {
         return null;
     }
 
+    public UUID getUserId(String token) {
+        try {
+            Claims claims = validateToken(token);
+            return UUID.fromString(claims.getSubject());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     public UUID getUserIdRequiredAuthentication() {
         UUID userId = getUserId();
         if (userId == null) throw new ApiException(ErrorCode.UNAUTHENTICATED);

@@ -6,7 +6,6 @@ import com.stu.socialnetworkapi.enums.FilePrivacy;
 import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.repository.FileRepository;
-import com.stu.socialnetworkapi.repository.TokenRedisRepository;
 import com.stu.socialnetworkapi.repository.UserRepository;
 import com.stu.socialnetworkapi.service.itf.FileService;
 import com.stu.socialnetworkapi.util.FileAsyncExecutor;
@@ -40,7 +39,6 @@ public class FileServiceImpl implements FileService {
     private final FileAsyncExecutor fileAsyncExecutor;
     private final FileRepository fileRepository;
     private final UserRepository userRepository;
-    private final TokenRedisRepository tokenRedisRepository;
 
     @PostConstruct
     private void init() {
@@ -58,9 +56,7 @@ public class FileServiceImpl implements FileService {
         try {
             Path file = root.resolve(id);
             Resource resource = new UrlResource(file.toUri());
-            UUID userId = tokenRedisRepository.findUserIdByToken(token)
-                    .map(UUID::fromString)
-                    .orElse(null);
+            UUID userId = jwtUtil.getUserId(token);
             if (!resource.exists() || !resource.isReadable()) {
                 throw new ApiException(ErrorCode.FILE_NOT_FOUND);
             }

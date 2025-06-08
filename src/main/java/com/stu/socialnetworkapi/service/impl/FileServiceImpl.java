@@ -1,8 +1,8 @@
 package com.stu.socialnetworkapi.service.impl;
 
+import com.stu.socialnetworkapi.dto.request.FileResponse;
 import com.stu.socialnetworkapi.entity.File;
 import com.stu.socialnetworkapi.entity.User;
-import com.stu.socialnetworkapi.enums.FilePrivacy;
 import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.repository.FileRepository;
@@ -36,9 +36,9 @@ public class FileServiceImpl implements FileService {
 
     private final Path root = Paths.get(UPLOAD_DIRECTORY);
     private final JwtUtil jwtUtil;
-    private final FileAsyncExecutor fileAsyncExecutor;
     private final FileRepository fileRepository;
     private final UserRepository userRepository;
+    private final FileAsyncExecutor fileAsyncExecutor;
 
     @PostConstruct
     private void init() {
@@ -52,41 +52,39 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public Resource load(String id, String token) {
+    public FileResponse load(String id) {
         try {
             Path file = root.resolve(id);
             Resource resource = new UrlResource(file.toUri());
-            UUID userId = jwtUtil.getUserId(token);
             if (!resource.exists() || !resource.isReadable()) {
                 throw new ApiException(ErrorCode.FILE_NOT_FOUND);
             }
-            if (fileRepository.canUserReadFile(id, userId)) return resource;
-            else throw new ApiException(ErrorCode.UNAUTHORIZED);
+            File fileEntity = fileRepository.findById(id)
+                    .orElseThrow(() -> new ApiException(ErrorCode.FILE_NOT_FOUND));
+            return FileResponse.builder()
+                    .name(fileEntity.getName())
+                    .contentType(fileEntity.getContentType())
+                    .resource(resource)
+                    .build();
         } catch (MalformedURLException e) {
             throw new ApiException(ErrorCode.LOAD_FILE_FAILED);
         }
     }
 
     @Override
-    public String getFilename(String id) {
-        return fileRepository.getNameById(id)
-                .orElseThrow(() -> new ApiException(ErrorCode.FILE_NOT_FOUND));
-    }
-
-    @Override
-    public File upload(MultipartFile file, FilePrivacy privacy) {
+    public File upload(MultipartFile file) {
         if (file.isEmpty()) throw new ApiException(ErrorCode.FILE_REQUIRED);
 
-        String originalFilename = file.getOriginalFilename();
-        String extension = getFileExtension(originalFilename);
-
         try {
+            String originalFilename = file.getOriginalFilename();
+            String extension = getFileExtension(originalFilename);
+            String contentType = file.getContentType();
             String newFileName = UUID.randomUUID() + extension;
             fileAsyncExecutor.save(file, newFileName);
             File newFile = File.builder()
                     .id(newFileName)
                     .name(originalFilename)
-                    .privacy(privacy)
+                    .contentType(contentType)
                     .uploader(getCurrentUserRequiredAuthentication())
                     .build();
 
@@ -97,7 +95,7 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public List<File> upload(List<MultipartFile> files, FilePrivacy privacy) {
+    public List<File> upload(List<MultipartFile> files) {
         if (files == null || files.isEmpty()) {
             throw new ApiException(ErrorCode.FILE_REQUIRED);
         }
@@ -112,8 +110,14 @@ public class FileServiceImpl implements FileService {
                 String originalFilename = file.getOriginalFilename();
                 String extension = getFileExtension(originalFilename);
                 String newFileName = UUID.randomUUID() + extension;
+                String contentType = file.getContentType();
                 fileAsyncExecutor.save(file, newFileName);
-                File newFile = File.builder().id(newFileName).name(originalFilename).privacy(privacy).uploader(uploader).build();
+                File newFile = File.builder()
+                        .id(newFileName)
+                        .name(originalFilename)
+                        .contentType(contentType)
+                        .uploader(uploader)
+                        .build();
                 uploadedFiles.add(newFile);
             }
 
@@ -129,34 +133,6 @@ public class FileServiceImpl implements FileService {
                 throw new ApiException(ErrorCode.UPLOAD_FILE_FAILED);
             }
         }
-    }
-
-    @Override
-    public void modifyPrivacy(String id, FilePrivacy privacy) {
-        File file = fileRepository.findById(id)
-                .orElseThrow(() -> new ApiException(ErrorCode.FILE_NOT_FOUND));
-
-        if (!file.getUploader().getId().equals(jwtUtil.getUserId())) {
-            throw new ApiException(ErrorCode.UNAUTHORIZED);
-        }
-
-        file.setPrivacy(privacy);
-        fileRepository.save(file);
-    }
-
-    @Override
-    public void modifyPrivacy(List<String> ids, FilePrivacy privacy) {
-        List<File> files = fileRepository.findAllById(ids);
-        UUID currentUserId = jwtUtil.getUserId();
-
-        for (File file : files) {
-            if (!file.getUploader().getId().equals(currentUserId)) {
-                throw new ApiException(ErrorCode.UNAUTHORIZED);
-            }
-            file.setPrivacy(privacy);
-        }
-
-        fileRepository.saveAll(files);
     }
 
     @Override

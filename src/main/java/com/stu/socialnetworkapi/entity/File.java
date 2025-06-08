@@ -1,6 +1,5 @@
 package com.stu.socialnetworkapi.entity;
 
-import com.stu.socialnetworkapi.enums.FilePrivacy;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.neo4j.core.schema.Id;
@@ -21,7 +20,7 @@ public class File {
     @Id
     String id;
     String name;
-    FilePrivacy privacy;
+    String contentType;
 
     @Relationship(type = "UPLOAD_FILE", direction = Relationship.Direction.INCOMING)
     @EqualsAndHashCode.Exclude

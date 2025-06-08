@@ -151,9 +151,11 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public List<CommentResponse> getComments(UUID postId, Pageable pageable) {
-        postService.validateViewPost(postId, userService.getCurrentUserId());
+        UUID currentUserId = userService.getCurrentUserId();
+        postService.validateViewPost(postId, currentUserId);
         return commentRepository.findAllByPostId(postId, pageable).stream()
                 .map(commentMapper::toCommentResponse)
+                .map(response -> mapIsLiked(response, currentUserId))
                 .toList();
     }
 
@@ -200,4 +202,8 @@ public class CommentServiceImpl implements CommentService {
         }
     }
 
+    private CommentResponse mapIsLiked(CommentResponse response, UUID userId) {
+        response.setLiked(commentRepository.isLiked(response.getId(), userId));
+        return response;
+    }
 }

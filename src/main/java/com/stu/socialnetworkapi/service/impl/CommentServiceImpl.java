@@ -4,7 +4,6 @@ import com.stu.socialnetworkapi.dto.request.CommentRequest;
 import com.stu.socialnetworkapi.dto.request.ReplyCommentRequest;
 import com.stu.socialnetworkapi.dto.response.CommentResponse;
 import com.stu.socialnetworkapi.entity.*;
-import com.stu.socialnetworkapi.enums.FilePrivacy;
 import com.stu.socialnetworkapi.enums.NotificationAction;
 import com.stu.socialnetworkapi.enums.ObjectType;
 import com.stu.socialnetworkapi.exception.ApiException;
@@ -45,7 +44,7 @@ public class CommentServiceImpl implements CommentService {
         postService.validateViewPost(request.postId(), author.getId());
         Post post = postService.getPostById(request.postId());
         File attachment = request.file() != null
-                ? fileService.upload(request.file(), FilePrivacy.IN_POST)
+                ? fileService.upload(request.file())
                 : null;
         Comment comment = Comment.builder()
                 .author(author)
@@ -71,7 +70,7 @@ public class CommentServiceImpl implements CommentService {
         postService.validateViewPost(post.getId(), author.getId());
         blockService.validateBlock(post.getId(), author.getId());
         File attachment = request.file() != null
-                ? fileService.upload(request.file(), FilePrivacy.PUBLIC)
+                ? fileService.upload(request.file())
                 : null;
         Comment comment = Comment.builder()
                 .author(author)

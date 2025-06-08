@@ -5,7 +5,6 @@ import com.stu.socialnetworkapi.dto.response.UserProfileResponse;
 import com.stu.socialnetworkapi.entity.File;
 import com.stu.socialnetworkapi.entity.User;
 import com.stu.socialnetworkapi.enums.BlockStatus;
-import com.stu.socialnetworkapi.enums.FilePrivacy;
 import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.mapper.UserMapper;
@@ -129,7 +128,7 @@ public class UserServiceImpl implements UserService {
         }
         // Then at least one of them is null
         File newPicture = file != null
-                ? fileService.upload(file, FilePrivacy.PUBLIC)
+                ? fileService.upload(file)
                 : null;
 
         if (currentPicture != null) {

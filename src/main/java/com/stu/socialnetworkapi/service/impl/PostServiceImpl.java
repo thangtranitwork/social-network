@@ -7,7 +7,6 @@ import com.stu.socialnetworkapi.dto.response.PostResponse;
 import com.stu.socialnetworkapi.entity.File;
 import com.stu.socialnetworkapi.entity.Post;
 import com.stu.socialnetworkapi.entity.User;
-import com.stu.socialnetworkapi.enums.FilePrivacy;
 import com.stu.socialnetworkapi.enums.PostPrivacy;
 import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
@@ -90,7 +89,7 @@ public class PostServiceImpl implements PostService {
         validatePostRequest(content, files);
         User author = userService.getCurrentUserRequiredAuthentication();
         List<File> uploadedFiles = files != null && !files.isEmpty()
-                ? fileService.upload(files, FilePrivacy.IN_POST)
+                ? fileService.upload(files)
                 : null;
 
         Post post = Post.builder()
@@ -314,7 +313,7 @@ public class PostServiceImpl implements PostService {
     private void processUpdateFile(PostUpdateContentRequest request, Post post) {
         List<File> addedFiles = new ArrayList<>();
         if (request.newFiles() != null && !request.newFiles().isEmpty()) {
-            addedFiles.addAll(fileService.upload(request.newFiles(), FilePrivacy.IN_POST));
+            addedFiles.addAll(fileService.upload(request.newFiles()));
         }
 
         if (request.deleteOldFileUrls() != null && !request.deleteOldFileUrls().isEmpty()) {

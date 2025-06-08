@@ -10,7 +10,6 @@ import com.stu.socialnetworkapi.entity.Chat;
 import com.stu.socialnetworkapi.entity.File;
 import com.stu.socialnetworkapi.entity.Message;
 import com.stu.socialnetworkapi.entity.User;
-import com.stu.socialnetworkapi.enums.FilePrivacy;
 import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.mapper.MessageMapper;
@@ -70,7 +69,7 @@ public class MessageServiceImpl implements MessageService {
         User sender = userService.getCurrentUserRequiredAuthentication();
         User receiver = userService.getUser(request.username());
         Chat chat = getOrCreateDirectChat(sender, receiver);
-        File file = fileService.upload(request.attachment(), FilePrivacy.IN_CHAT);
+        File file = fileService.upload(request.attachment());
         Message message = Message.builder()
                 .sender(sender)
                 .attachedFile(file)

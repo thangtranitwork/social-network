@@ -13,6 +13,7 @@ public class CommentResponse {
     String content;
     int likeCount;
     int replyCount;
+    boolean liked;
     ZonedDateTime createdAt;
     ZonedDateTime updatedAt;
     UserCommonInformationResponse author;

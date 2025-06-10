@@ -1,11 +1,13 @@
 package com.stu.socialnetworkapi.exception;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @Getter
+@NoArgsConstructor(force = true)
 public class ApiException extends RuntimeException {
 
     private final ErrorCode errorCode;

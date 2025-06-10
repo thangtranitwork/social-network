@@ -22,6 +22,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public static final String CHAT_CHANNEL_PREFIX = "/chat"; // /chat/{chatid} Receive new message and chat info state when chat is on screen
     public static final String CHAT_COMMAND_CHANNEL_PREFIX = "/chat-command"; // /chat-command/{chatid} Receive message command like delete, edit, ... when chat is on screen
     public static final String MESSAGE_CHANNEL_PREFIX = "/message"; // /message/{userid} Received new message for notification (chat is not on screen)
+    public static final String USER_WEBSOCKET_ERROR_CHANNEL_PREFIX = "/errors"; // Send websocket error
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
@@ -29,7 +30,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 NOTIFICATION_CHANNEL_PREFIX,
                 CHAT_CHANNEL_PREFIX,
                 CHAT_COMMAND_CHANNEL_PREFIX,
-                MESSAGE_CHANNEL_PREFIX);
+                MESSAGE_CHANNEL_PREFIX,
+                USER_WEBSOCKET_ERROR_CHANNEL_PREFIX);
         config.setApplicationDestinationPrefixes("/app");
         config.setUserDestinationPrefix("/user");
     }

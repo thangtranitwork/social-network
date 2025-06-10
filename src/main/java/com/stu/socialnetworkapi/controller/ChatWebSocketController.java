@@ -6,10 +6,9 @@ import com.stu.socialnetworkapi.service.itf.MessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.stereotype.Controller;
 
-import java.util.Map;
+import java.security.Principal;
 import java.util.UUID;
 
 @Controller
@@ -18,9 +17,8 @@ public class ChatWebSocketController {
     private final MessageService messageService;
 
     @MessageMapping("/chat")
-    public MessageResponse sendMessage(@Payload TextMessageRequest text, SimpMessageHeaderAccessor headerAccessor) {
-        Map<String, Object> sessionAttributes = headerAccessor.getSessionAttributes();
-        UUID userId = UUID.fromString(sessionAttributes.get("userId").toString());
+    public MessageResponse sendMessage(@Payload TextMessageRequest text, Principal principal) {
+        UUID userId = UUID.fromString(principal.getName());
         return messageService.sendMessage(text, userId);
     }
 }

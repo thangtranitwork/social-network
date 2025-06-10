@@ -12,6 +12,7 @@ import com.stu.socialnetworkapi.entity.Message;
 import com.stu.socialnetworkapi.entity.User;
 import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
+import com.stu.socialnetworkapi.exception.WebSocketException;
 import com.stu.socialnetworkapi.mapper.MessageMapper;
 import com.stu.socialnetworkapi.repository.ChatRepository;
 import com.stu.socialnetworkapi.repository.MessageRepository;
@@ -70,9 +71,9 @@ public class MessageServiceImpl implements MessageService {
         User receiver = userService.getUser(request.username());
         Chat chat = getOrCreateDirectChat(sender, receiver);
         String content = request.text().trim();
-        if (content.isEmpty()) throw new ApiException(ErrorCode.TEXT_MESSAGE_CONTENT_REQUIRED);
+        if (content.isEmpty()) throw new WebSocketException(ErrorCode.TEXT_MESSAGE_CONTENT_REQUIRED);
         if (content.length() > Message.MAX_CONTENT_LENGTH)
-            throw new ApiException(ErrorCode.INVALID_MESSAGE_CONTENT_LENGTH);
+            throw new WebSocketException(ErrorCode.INVALID_MESSAGE_CONTENT_LENGTH);
 
         Message message = Message.builder()
                 .chat(chat)

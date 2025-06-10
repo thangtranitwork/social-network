@@ -1,10 +1,11 @@
 package com.stu.socialnetworkapi.config;
 
-import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
+import com.stu.socialnetworkapi.exception.WebSocketException;
 import com.stu.socialnetworkapi.repository.ChatRepository;
 import com.stu.socialnetworkapi.repository.IsOnlineRedisRepository;
 import com.stu.socialnetworkapi.util.JwtUtil;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -33,7 +34,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
     private static final String ROLE_JWT_KEY = "scope";
 
     @Override
-    public Message<?> preSend(Message<?> message, MessageChannel channel) {
+    public Message<?> preSend(@NonNull Message<?> message, @NonNull MessageChannel channel) {
         StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
 
         if (accessor == null) {
@@ -46,6 +47,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
         StompCommand command = accessor.getCommand();
         Map<String, Object> attributes = Optional.ofNullable(accessor.getSessionAttributes())
                 .orElse(new HashMap<>());
+
         if (StompCommand.CONNECT.equals(command)) {
             // Xác thực token và lưu thông tin user vào session
             Map<String, Object> claims = jwtUtil.validateToken(token);
@@ -60,7 +62,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
         //Xác thực khi SUBSCRIBE
         else if (StompCommand.SUBSCRIBE.equals(command)) {
             if (!authorizeSubscription(accessor)) {
-                throw new ApiException(ErrorCode.UNAUTHORIZED);
+                throw new WebSocketException(ErrorCode.UNAUTHORIZED);
             }
 
         } else if (StompCommand.DISCONNECT.equals(command)) {
@@ -73,12 +75,12 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
 
     private boolean authorizeSubscription(StompHeaderAccessor accessor) {
         String destination = Optional.ofNullable(accessor.getDestination())
-                .orElseThrow(() -> new ApiException(ErrorCode.INVALID_WEBSOCKET_CHANNEL));
+                .orElseThrow(() -> new WebSocketException(ErrorCode.INVALID_WEBSOCKET_CHANNEL));
         Map<String, Object> attributes = Optional.ofNullable(accessor.getSessionAttributes())
-                .orElseThrow(() -> new ApiException(ErrorCode.UNAUTHORIZED));
+                .orElseThrow(() -> new WebSocketException(ErrorCode.UNAUTHORIZED));
         String userId = Optional.ofNullable(attributes.get(USER_ID_KEY))
                 .map(Object::toString)
-                .orElseThrow(() -> new ApiException(ErrorCode.UNAUTHORIZED));
+                .orElseThrow(() -> new WebSocketException(ErrorCode.UNAUTHORIZED));
         if (destination.startsWith(WebSocketConfig.NOTIFICATION_CHANNEL_PREFIX)) {
             String userIdDestination = destination.substring(WebSocketConfig.NOTIFICATION_CHANNEL_PREFIX.length() + 1);
             return userIdDestination.equals(userId);
@@ -98,6 +100,12 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             String userIdDestination = destination.substring(WebSocketConfig.MESSAGE_CHANNEL_PREFIX.length() + 1);
             return userIdDestination.equals(userId);
         }
+
+        if (destination.startsWith(WebSocketConfig.USER_WEBSOCKET_ERROR_CHANNEL_PREFIX)) {
+            // Always success for receive error
+            return true;
+        }
+
         return false;
     }
 

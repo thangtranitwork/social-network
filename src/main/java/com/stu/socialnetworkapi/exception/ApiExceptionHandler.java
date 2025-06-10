@@ -1,10 +1,15 @@
 package com.stu.socialnetworkapi.exception;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.stu.socialnetworkapi.config.WebSocketConfig;
 import com.stu.socialnetworkapi.dto.response.ApiResponse;
+import com.stu.socialnetworkapi.dto.response.WebSocketExceptionResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -13,13 +18,28 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import java.security.Principal;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
 @Slf4j
 @ControllerAdvice
+@RequiredArgsConstructor
 public class ApiExceptionHandler {
+    private final SimpMessagingTemplate messagingTemplate;
+
+    @MessageExceptionHandler(WebSocketException.class)
+    public Void handleWebSocketException(WebSocketException exception, Principal principal) {
+        ErrorCode errorCode = exception.getErrorCode();
+        WebSocketExceptionResponse response = WebSocketExceptionResponse.builder()
+                .code(errorCode.getCode())
+                .message(errorCode.getMessage())
+                .build();
+        messagingTemplate.convertAndSend(WebSocketConfig.USER_WEBSOCKET_ERROR_CHANNEL_PREFIX + "/" + principal.getName(), response);
+        return null;
+    }
+
     @ExceptionHandler(ApiException.class)
     private ResponseEntity<ApiResponse<Map<String, Object>>> handlerAppException(ApiException exception) {
         ErrorCode errorCode = exception.getErrorCode();

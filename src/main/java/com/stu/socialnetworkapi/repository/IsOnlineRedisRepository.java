@@ -15,10 +15,26 @@ public class IsOnlineRedisRepository {
     private final RedisTemplate<String, String> redisTemplate;
     private static final String IS_ONLINE_KEY = "is_online:";
     private static final String LAST_ONLINE_KEY = "last_online:";
+    private static final String ONLINE_COUNT_KEY = "online_user_count";
 
     public void save(UUID userId, boolean isOnline) {
-        redisTemplate.opsForValue().set(IS_ONLINE_KEY + userId, isOnline ? "true" : "false");
-        redisTemplate.opsForValue().set(LAST_ONLINE_KEY + userId, ZonedDateTime.now().toString());
+        String id = userId.toString();
+
+        boolean wasOnline = Optional.ofNullable(redisTemplate.opsForValue().get(IS_ONLINE_KEY + id))
+                .map(Boolean::valueOf)
+                .orElse(false);
+
+        redisTemplate.opsForValue().set(IS_ONLINE_KEY + id, String.valueOf(isOnline));
+        redisTemplate.opsForValue().set(LAST_ONLINE_KEY + id, ZonedDateTime.now().toString());
+
+        // Chỉ thay đổi count khi trạng thái thực sự thay đổi
+        if (isOnline && !wasOnline) {
+            redisTemplate.opsForValue().increment(ONLINE_COUNT_KEY);
+        } else if (!isOnline && wasOnline) {
+            redisTemplate.opsForValue().decrement(ONLINE_COUNT_KEY);
+        }
+
+        System.out.println("User " + id + " is " + (isOnline ? "online" : "offline"));
     }
 
     public OnlineResponse getLastSeen(UUID userId) {
@@ -34,5 +50,8 @@ public class IsOnlineRedisRepository {
                 .build();
     }
 
-
+    public int countOnlineUsers() {
+        String countStr = redisTemplate.opsForValue().get(ONLINE_COUNT_KEY);
+        return countStr != null ? Integer.parseInt(countStr) : 0;
+    }
 }

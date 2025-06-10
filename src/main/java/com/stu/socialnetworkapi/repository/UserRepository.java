@@ -1,11 +1,14 @@
 package com.stu.socialnetworkapi.repository;
 
+import com.stu.socialnetworkapi.dto.projection.CountDataProjection;
 import com.stu.socialnetworkapi.dto.projection.UserProfileProjection;
+import com.stu.socialnetworkapi.dto.response.UserStatisticsResponse;
 import com.stu.socialnetworkapi.entity.User;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.stereotype.Repository;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -87,4 +90,75 @@ public interface UserRepository extends Neo4jRepository<User, UUID> {
             """)
     void increaseViewProfile(UUID userId, UUID targetId);
 
+    @Query("""
+            WITH datetime() AS today
+            WITH today,
+                 datetime({year: today.year, month: today.month, day: 1}) AS startOfMonth,
+                 datetime({year: today.year, month: 1, day: 1}) AS startOfYear,
+                 datetime($startOfWeek) AS startOfWeek
+            
+            MATCH (u:User)<-[:HAS_INFO]-(account:Account)
+            
+            RETURN
+              count(u) AS totalUsers,
+              count(CASE WHEN u.createdAt = today THEN 1 END) AS newUsersToday,
+              count(CASE WHEN u.createdAt >= startOfWeek THEN 1 END) AS newUsersThisWeek,
+              count(CASE WHEN u.createdAt >= startOfMonth THEN 1 END) AS newUsersThisMonth,
+              count(CASE WHEN u.createdAt >= startOfYear THEN 1 END) AS newUsersThisYear,
+              count(CASE WHEN account.verified = false THEN 1 END) AS notVerifiedUsers
+            """)
+    UserStatisticsResponse getCommonUserStatistics(ZonedDateTime startOfWeek);
+
+    @Query("""
+            WITH range(1, 7) AS dayNumbers
+            UNWIND dayNumbers AS dow
+            WITH dow, datetime($startOfWeek) + duration({days: dow - 1, hours: 23, minutes: 59, seconds: 59}) AS endOfDay
+            MATCH (u:User)
+            WHERE u.createdAt <= endOfDay
+            WITH dow, count(u) AS count
+            RETURN dow AS key, count
+            ORDER BY key ASC
+            """)
+    List<CountDataProjection> getThisWeekStatistics(ZonedDateTime startOfWeek);
+
+    @Query("""
+            WITH range(1, $daysInMonth) AS dayNumbers
+            UNWIND dayNumbers AS dayNum
+            WITH dayNum,
+                 datetime($startOfMonth) + duration({days: dayNum - 1, hours: 23, minutes: 59, seconds: 59}) AS endOfDay
+            MATCH (u:User)
+            WHERE u.createdAt <= endOfDay
+            WITH dayNum, count(u) AS count
+            RETURN dayNum AS key, count
+            ORDER BY key ASC
+            """)
+    List<CountDataProjection> getThisMonthStatistics(ZonedDateTime startOfMonth, int daysInMonth);
+
+    @Query("""
+            WITH range(1, 12) AS monthNumbers
+            UNWIND monthNumbers AS monthNum
+            WITH monthNum,
+                 datetime({year: $year, month: monthNum, day: 1}) + duration({months: 1, seconds: -1}) AS endOfMonth
+            MATCH (u:User)
+            WHERE u.createdAt <= endOfMonth
+            WITH monthNum, count(u) AS count
+            RETURN monthNum AS key, count
+            ORDER BY key ASC
+            """)
+    List<CountDataProjection> getThisYearStatistics(int year);
+
+    @Query("""
+            MATCH (u:User)
+            WITH min(u.createdAt.year) AS minYear, max(u.createdAt.year) AS maxYear
+            WITH range(minYear, maxYear) AS yearNumbers
+            UNWIND yearNumbers AS yearNum
+            WITH yearNum,
+                 datetime({year: yearNum + 1, month: 1, day: 1}) + duration({seconds: -1}) AS endOfYear
+            MATCH (u:User)
+            WHERE u.createdAt <= endOfYear
+            WITH yearNum, count(u) AS count
+            RETURN yearNum AS key, count
+            ORDER BY key ASC
+            """)
+    List<CountDataProjection> getAllTimeYearlyStatistics();
 }

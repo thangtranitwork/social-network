@@ -9,15 +9,16 @@ import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.mapper.RequestMapper;
 import com.stu.socialnetworkapi.repository.RequestRepository;
+import com.stu.socialnetworkapi.service.itf.ChatService;
 import com.stu.socialnetworkapi.service.itf.NotificationService;
 import com.stu.socialnetworkapi.service.itf.RequestService;
 import com.stu.socialnetworkapi.service.itf.UserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
-import java.util.List;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -25,6 +26,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class RequestServiceImpl implements RequestService {
     private final UserService userService;
+    private final ChatService chatService;
     private final RequestMapper requestMapper;
     private final RequestRepository requestRepository;
     private final NotificationService notificationService;
@@ -89,7 +91,7 @@ public class RequestServiceImpl implements RequestService {
         UUID senderId = requestRepository.getSenderId(requestId);
         User sender = userService.getUser(senderId);
         requestRepository.acceptRequest(requestId);
-
+        chatService.createChatIfNotExist(sender, target);
         Notification notification = Notification.builder()
                 .action(NotificationAction.BE_FRIEND)
                 .targetId(target.getId())

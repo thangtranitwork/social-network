@@ -53,6 +53,8 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             Object role = claims.get(ROLE_JWT_KEY);
             attributes.put(USER_ID_KEY, userId);
             attributes.put(ROLE_KEY, role);
+            accessor.setUser(userId::toString);
+
             isOnlineRedisRepository.save(UUID.fromString(userId.toString()), true);
         }
         //Xác thực khi SUBSCRIBE
@@ -87,8 +89,8 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             return chatRepository.existInChat(UUID.fromString(chatId), UUID.fromString(userId));
         }
 
-        if (destination.startsWith(WebSocketConfig.CHAT_MESSAGE_CHANNEL_PREFIX)) {
-            String chatId = destination.substring(WebSocketConfig.CHAT_MESSAGE_CHANNEL_PREFIX.length() + 1);
+        if (destination.startsWith(WebSocketConfig.CHAT_COMMAND_CHANNEL_PREFIX)) {
+            String chatId = destination.substring(WebSocketConfig.CHAT_COMMAND_CHANNEL_PREFIX.length() + 1);
             return chatRepository.existInChat(UUID.fromString(chatId), UUID.fromString(userId));
         }
 

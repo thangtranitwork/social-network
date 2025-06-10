@@ -65,6 +65,28 @@ public class MessageServiceImpl implements MessageService {
     }
 
     @Override
+    public MessageResponse sendMessage(TextMessageRequest request, UUID userId) {
+        User sender = userService.getUser(userId);
+        User receiver = userService.getUser(request.username());
+        Chat chat = getOrCreateDirectChat(sender, receiver);
+        String content = request.text().trim();
+        if (content.isEmpty()) throw new ApiException(ErrorCode.TEXT_MESSAGE_CONTENT_REQUIRED);
+        if (content.length() > Message.MAX_CONTENT_LENGTH)
+            throw new ApiException(ErrorCode.INVALID_MESSAGE_CONTENT_LENGTH);
+
+        Message message = Message.builder()
+                .chat(chat)
+                .content(content)
+                .sender(sender)
+                .build();
+
+        messageRepository.save(message);
+        MessageResponse response = messageMapper.toMessageResponse(message);
+        sendMessageNotification(chat.getId(), receiver.getId(), response);
+        return response;
+    }
+
+    @Override
     public MessageResponse sendFile(FileMessageRequest request) {
         User sender = userService.getCurrentUserRequiredAuthentication();
         User receiver = userService.getUser(request.username());

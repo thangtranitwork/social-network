@@ -10,7 +10,9 @@ import java.util.List;
 import java.util.UUID;
 
 public interface MessageService {
-    MessageResponse sendMessage(TextMessageRequest message);
+    MessageResponse sendMessage(TextMessageRequest request);
+
+    MessageResponse sendMessage(TextMessageRequest request, UUID userId);
 
     MessageResponse sendFile(FileMessageRequest message);
 

@@ -1,7 +1,5 @@
 package com.stu.socialnetworkapi.entity;
 
-import com.stu.socialnetworkapi.entity.relationship.Friend;
-import com.stu.socialnetworkapi.entity.relationship.Request;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.neo4j.core.schema.Id;
@@ -10,7 +8,6 @@ import org.springframework.data.neo4j.core.schema.Relationship;
 
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
-import java.util.List;
 import java.util.UUID;
 
 @Node
@@ -33,7 +30,6 @@ public class User {
     int blockCount;
     int requestSentCount;
     int requestReceivedCount;
-    int postStoredCount;
 
     @Builder.Default
     ZonedDateTime createdAt = ZonedDateTime.now();
@@ -49,26 +45,6 @@ public class User {
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     File profilePicture;
-    @Relationship(type = "VIEW_PROFILE", direction = Relationship.Direction.OUTGOING)
-    @EqualsAndHashCode.Exclude
-    @ToString.Exclude
-    List<User> viewedProfile;
-    @Relationship(type = "REQUEST", direction = Relationship.Direction.OUTGOING)
-    @EqualsAndHashCode.Exclude
-    @ToString.Exclude
-    List<Request> sentRequests;
-    @Relationship(type = "REQUEST", direction = Relationship.Direction.INCOMING)
-    @EqualsAndHashCode.Exclude
-    @ToString.Exclude
-    List<Request> receivedRequests;
-    @Relationship(type = "FRIEND", direction = Relationship.Direction.INCOMING)
-    @EqualsAndHashCode.Exclude
-    @ToString.Exclude
-    List<Friend> friends;
-    @Relationship(type = "IS_MEMBER_OF", direction = Relationship.Direction.OUTGOING)
-    @EqualsAndHashCode.Exclude
-    @ToString.Exclude
-    List<Chat> chats;
 
     // Constant section
     public static final int MAX_FRIEND_COUNT = 100;

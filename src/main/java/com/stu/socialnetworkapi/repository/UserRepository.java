@@ -105,7 +105,7 @@ public interface UserRepository extends Neo4jRepository<User, UUID> {
               count(CASE WHEN u.createdAt >= startOfWeek THEN 1 END) AS newUsersThisWeek,
               count(CASE WHEN u.createdAt >= startOfMonth THEN 1 END) AS newUsersThisMonth,
               count(CASE WHEN u.createdAt >= startOfYear THEN 1 END) AS newUsersThisYear,
-              count(CASE WHEN account.verified = false THEN 1 END) AS notVerifiedUsers
+              count(CASE WHEN account.isVerified = false THEN 1 END) AS notVerifiedUsers
             """)
     UserStatisticsResponse getCommonUserStatistics(ZonedDateTime startOfWeek);
 

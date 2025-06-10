@@ -22,7 +22,7 @@ public class Account {
     String password;
     @Builder.Default
     AccountRole role = AccountRole.USER;
-    boolean verified;
+    boolean isVerified;
 
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

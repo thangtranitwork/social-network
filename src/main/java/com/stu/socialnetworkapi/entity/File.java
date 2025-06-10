@@ -27,21 +27,6 @@ public class File {
     @ToString.Exclude
     User uploader;
 
-    @Relationship(type = "ATTACH_FILE", direction = Relationship.Direction.INCOMING)
-    @EqualsAndHashCode.Exclude
-    @ToString.Exclude
-    Chat chat;
-
-    @Relationship(type = "ATTACH_FILES", direction = Relationship.Direction.INCOMING)
-    @EqualsAndHashCode.Exclude
-    @ToString.Exclude
-    Post post;
-
-    @Relationship(type = "ATTACH_FILE", direction = Relationship.Direction.INCOMING)
-    @EqualsAndHashCode.Exclude
-    @ToString.Exclude
-    Comment comment;
-
     public static String getPath(File file) {
         if (file == null) return null;
 

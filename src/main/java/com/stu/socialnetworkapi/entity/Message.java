@@ -2,10 +2,7 @@ package com.stu.socialnetworkapi.entity;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.springframework.data.neo4j.core.schema.GeneratedValue;
-import org.springframework.data.neo4j.core.schema.Id;
-import org.springframework.data.neo4j.core.schema.Node;
-import org.springframework.data.neo4j.core.schema.Relationship;
+import org.springframework.data.neo4j.core.schema.*;
 
 import java.time.ZonedDateTime;
 import java.util.UUID;
@@ -23,6 +20,7 @@ public class Message {
     String content;
     @Builder.Default
     ZonedDateTime sentAt = ZonedDateTime.now();
+    @Property(name = "isRead")
     boolean isRead;
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

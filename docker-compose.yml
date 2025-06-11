@@ -10,6 +10,8 @@ services:
       - "7687:7687"
     environment:
       - NEO4J_AUTH=${NEO4J_USER}/${NEO4J_PASS}
+      - USER=${NEO4J_USER}
+      - PASS=${NEO4J_PASS}
     volumes:
       - neo4j_data:/data
       - ./neo4j.dump:/var/lib/neo4j/import/neo4j.dump

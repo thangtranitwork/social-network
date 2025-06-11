@@ -43,6 +43,9 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
      * - Bài viết mới 24 giờ: 200 điểm
      * - Bài viết của bạn user: 100 điểm
      * - Bài viết của bạn của bạn của user: 50 điểm
+     * - Độ dài đường đi ngắn nhất từ user đến bài viết >= 2: 120 / độ dài
+     * - user xem trang cá nhân của tác giả: 2 điểm * số lần
+     * - author xem trang cá nhân user: 1 điểm * số lần
      * - Số like: 2 điểm
      * - Số comment: 3 điểm
      * - Số share: 5 điểm
@@ -50,42 +53,52 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
      */
 
     @Query("""
-            MATCH (u:User {id: $userId})
+                MATCH (u:User {id: $userId})
             MATCH (author:User)-[:POSTED]->(post:Post)
-            
-            // Điều kiện xem được bài viết
             WHERE (
                 post.privacy = 'PUBLIC'
                 OR (post.privacy = 'FRIEND' AND (u)-[:FRIEND]-(author))
             )
-            // Loại bỏ bài viết của tác giả đã chặn hoặc bị chặn
             AND NOT (u)-[:BLOCK]-(author)
             
-            // Tính điểm theo từng tiêu chí
-            WITH post, author,
-                 // Bài viết mới 24 giờ: 200 điểm
+            OPTIONAL MATCH p = shortestPath((u)-[*1..4]->(post))
+            
+            OPTIONAL MATCH (u)-[vu:VIEW_PROFILE]->(author)
+            OPTIONAL MATCH (author)-[uv:VIEW_PROFILE]->(u)
+            
+            WITH u, post, author,
+                 CASE WHEN p IS NULL THEN NULL ELSE length(p) END AS shortestPathLength,
+                 coalesce(vu.times, 0) AS viewForward,
+                 coalesce(uv.times, 0) AS viewBackward
+            
+            WITH post, author, u, shortestPathLength, viewForward, viewBackward,
+            
                  CASE WHEN post.createdAt > datetime() - duration('P1D') THEN 200 ELSE 0 END AS newPostScore,
             
-                 // Điểm theo mối quan hệ với tác giả
                  CASE
-                     WHEN (u)-[:FRIEND]-(author) THEN 100  // Bài viết của bạn: 100 điểm
-                     WHEN (u)-[:FRIEND]-()-[:FRIEND]-(author) AND NOT (u)-[:FRIEND]-(author) THEN 50  // Bài viết của bạn của bạn: 50 điểm
+                     WHEN (u)-[:FRIEND]-(author) THEN 100
+                     WHEN (u)-[:FRIEND]-()-[:FRIEND]-(author) AND NOT (u)-[:FRIEND]-(author) OR (u)-[:REQUEST]-(author) THEN 50
                      ELSE 0
-                 END AS relationshipScore,
+                 END
+                 + 2 * viewForward
+                 + 1 * viewBackward AS relationshipScore,
             
-                 // Điểm tương tác
-                 post.likeCount * 2 AS likeScore,      // Số like: 2 điểm
-                 post.commentCount * 3 AS commentScore, // Số comment: 3 điểm
-                 post.shareCount * 5 AS shareScore     // Số share: 5 điểm
+                 CASE
+                     WHEN shortestPathLength IS NULL OR shortestPathLength = 1 THEN 0
+                     ELSE 120.0 / shortestPathLength
+                 END AS pathScore,
             
-            WITH post,
-                 newPostScore + relationshipScore + likeScore + commentScore + shareScore AS totalScore
+                 post.likeCount * 2 AS likeScore,
+                 post.commentCount * 3 AS commentScore,
+                 post.shareCount * 5 AS shareScore
             
-            ORDER BY totalScore DESC, post.createdAt DESC
+                WITH post,
+                     pathScore + newPostScore + relationshipScore + likeScore + commentScore + shareScore AS totalScore
             
-            RETURN post.id AS id
-            SKIP $skip
-            LIMIT $limit
+                ORDER BY totalScore DESC, post.createdAt DESC
+                RETURN post.id AS id
+                SKIP $skip
+                LIMIT $limit
             """)
     List<UUID> getSuggestedPosts(UUID userId, Pageable pageable);
 
@@ -140,7 +153,7 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
     @Query("""
             WITH range(1, $daysInMonth) AS dayNumbers
             UNWIND dayNumbers AS dayNum
-            WITH dayNum, 
+            WITH dayNum,
                  datetime($startOfMonth) + duration({days: dayNum - 1, hours: 23, minutes: 59, seconds: 59}) AS endOfDay
             MATCH (post:Post)
             WHERE post.createdAt <= endOfDay

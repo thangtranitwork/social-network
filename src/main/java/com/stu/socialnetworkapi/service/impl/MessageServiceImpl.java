@@ -59,7 +59,6 @@ public class MessageServiceImpl implements MessageService {
                 .build();
 
         messageRepository.save(message);
-        // Gửi tin lên đoạn chat (người dùng đang mở đoạn chat trên màn hình)
         MessageResponse response = messageMapper.toMessageResponse(message);
         sendMessageNotification(chat.getId(), receiver.getId(), response);
         return response;
@@ -109,9 +108,12 @@ public class MessageServiceImpl implements MessageService {
         if (!chatRepository.existInChat(chatId, userId)) {
             throw new ApiException(ErrorCode.UNAUTHORIZED);
         }
-        return messageRepository.findAllByChatId(chatId, pageable).stream()
+        List<MessageResponse> messages = messageRepository.findAllByChatId(chatId, pageable).stream()
                 .map(messageMapper::toMessageResponse)
                 .toList();
+
+        if (pageable.getPageNumber() == 0) messageRepository.markAsRead(chatId, userId);
+        return messages;
     }
 
     @Override
@@ -201,6 +203,7 @@ public class MessageServiceImpl implements MessageService {
     }
 
     private void sendMessageNotification(UUID chatId, UUID targetId, MessageResponse response) {
+        // Gửi tin lên đoạn chat (người dùng đang mở đoạn chat trên màn hình)
         messagingTemplate.convertAndSend(WebSocketConfig.CHAT_CHANNEL_PREFIX + "/" + chatId, response);
         // Gửi thông báo tin nhắn cho người nhận
         messagingTemplate.convertAndSend(WebSocketConfig.MESSAGE_CHANNEL_PREFIX + "/" + targetId, response);

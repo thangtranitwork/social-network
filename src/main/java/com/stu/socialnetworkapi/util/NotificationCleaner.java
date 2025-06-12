@@ -18,7 +18,7 @@ public class NotificationCleaner {
     @Transactional
     public void clean() {
         ZonedDateTime cutOff = ZonedDateTime.now().minusDays(Notification.DAY_ALIVE);
-        int deleted = notificationRepository.deleteOldNotifications(cutOff);
-        System.out.println("Deleted " + deleted + " notifications");
+        notificationRepository.deleteOldNotifications(cutOff);
+        System.out.println("Deleted notifications before " + cutOff);
     }
 }

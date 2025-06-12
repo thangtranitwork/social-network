@@ -53,7 +53,7 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
      */
 
     @Query("""
-                MATCH (u:User {id: $userId})
+            MATCH (u:User {id: $userId})
             MATCH (author:User)-[:POSTED]->(post:Post)
             WHERE (
                 post.privacy = 'PUBLIC'

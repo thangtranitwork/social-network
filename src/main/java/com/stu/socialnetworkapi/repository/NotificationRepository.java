@@ -49,13 +49,9 @@ public interface NotificationRepository extends Neo4jRepository<Notification, UU
     @Query("""
             MATCH (n:Notification)
             WHERE n.sentAt < $cutoffDate
-            WITH count(n) as totalCount
-            MATCH (n:Notification)
-            WHERE n.sentAt < $cutoffDate
             DETACH DELETE n
-            RETURN totalCount
             """)
-    int deleteOldNotifications(ZonedDateTime cutoffDate);
+    void deleteOldNotifications(ZonedDateTime cutoffDate);
 
     @Query("""
             MATCH (creator:User {id: $creatorId})-[:BY_USER]->(n:Notification)<-[:HAS_NOTIFICATION]-(receiver:User {id: $receiverId})

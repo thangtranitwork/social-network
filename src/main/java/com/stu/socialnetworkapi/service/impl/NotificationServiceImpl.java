@@ -64,7 +64,7 @@ public class NotificationServiceImpl implements NotificationService {
     public void send(Notification notification) {
         if (notification.getCreator().equals(notification.getReceiver())) return;
         if (actionCanBeRepeated.contains(notification.getAction())) {
-            Optional<Notification> optional = notificationRepository
+            Optional<UUID> optional = notificationRepository
                     .findExistingNotification(
                             notification.getCreator().getId(),
                             notification.getReceiver().getId(),
@@ -72,7 +72,7 @@ public class NotificationServiceImpl implements NotificationService {
                             notification.getTargetId(),
                             notification.getTargetType());
             if (optional.isPresent()) {
-                notification = optional.get();
+                notification.setId(optional.get());
                 notification.setSentAt(ZonedDateTime.now());
             }
         }

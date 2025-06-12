@@ -58,10 +58,10 @@ public interface NotificationRepository extends Neo4jRepository<Notification, UU
             WHERE n.action = $action
             AND n.targetId = $targetId
             AND n.targetType = $targetType
-            RETURN n
+            RETURN n.id
             LIMIT 1
             """)
-    Optional<Notification> findExistingNotification(
+    Optional<UUID> findExistingNotification(
             UUID creatorId,
             UUID receiverId,
             NotificationAction action,

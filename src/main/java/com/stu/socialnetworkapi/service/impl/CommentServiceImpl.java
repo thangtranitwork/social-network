@@ -95,6 +95,7 @@ public class CommentServiceImpl implements CommentService {
         comment.getLiker().add(liker);
         comment.setLikeCount(comment.getLikeCount() + 1);
         commentRepository.save(comment);
+        sendNotificationWhenLikeComment(id, liker);
     }
 
     @Override
@@ -187,6 +188,16 @@ public class CommentServiceImpl implements CommentService {
                 .targetType(ObjectType.COMMENT)
                 .build();
         notificationService.send(notification);
+    }
+
+    private void sendNotificationWhenLikeComment(UUID id, User liker) {
+        Notification notification = Notification.builder()
+                .creator(liker)
+                .targetId(id)
+                .targetType(ObjectType.COMMENT)
+                .action(NotificationAction.LIKE_COMMENT)
+                .build();
+        notificationService.sendToFriends(notification);
     }
 
     private void validateCommentContent(String content, MultipartFile attachment) {

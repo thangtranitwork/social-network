@@ -15,8 +15,8 @@ import java.util.UUID;
 @Node
 @Builder
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Notification {
     @Id
@@ -35,4 +35,16 @@ public class Notification {
     User receiver;
     @Builder.Default
     ZonedDateTime sentAt = ZonedDateTime.now();
+
+    public Notification(Notification other) {
+        this.id = other.id;
+        this.action = other.action;
+        this.targetType = other.targetType;
+        this.targetId = other.targetId;
+        this.creator = other.creator;
+        this.receiver = other.receiver;
+        this.sentAt = other.sentAt;
+    }
+
+    public static final int DAY_ALIVE = 30;
 }

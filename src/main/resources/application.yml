@@ -17,8 +17,6 @@ spring:
       timeout: 60000
       repositories:
         enabled: true
-  jpa:
-    show-sql: true
   mail:
     port: 587
     username: ${MAIL}

@@ -8,6 +8,7 @@ import org.springframework.data.neo4j.core.schema.Relationship;
 
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Node
@@ -45,6 +46,11 @@ public class User {
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     File profilePicture;
+
+    @Relationship(type = "FRIEND", direction = Relationship.Direction.OUTGOING)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    List<User> friends;
 
     // Constant section
     public static final int MAX_FRIEND_COUNT = 100;

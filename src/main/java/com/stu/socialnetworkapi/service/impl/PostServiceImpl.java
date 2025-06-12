@@ -5,8 +5,11 @@ import com.stu.socialnetworkapi.dto.request.PostUpdateContentRequest;
 import com.stu.socialnetworkapi.dto.request.SharePostRequest;
 import com.stu.socialnetworkapi.dto.response.PostResponse;
 import com.stu.socialnetworkapi.entity.File;
+import com.stu.socialnetworkapi.entity.Notification;
 import com.stu.socialnetworkapi.entity.Post;
 import com.stu.socialnetworkapi.entity.User;
+import com.stu.socialnetworkapi.enums.NotificationAction;
+import com.stu.socialnetworkapi.enums.ObjectType;
 import com.stu.socialnetworkapi.enums.PostPrivacy;
 import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
@@ -33,6 +36,7 @@ public class PostServiceImpl implements PostService {
     private final FriendService friendService;
     private final BlockService blockService;
     private final PostRepository postRepository;
+    private final NotificationService notificationService;
 
     @Override
     public PostResponse get(UUID postId) {
@@ -72,7 +76,6 @@ public class PostServiceImpl implements PostService {
                 .toList();
     }
 
-
     @Override
     public List<PostResponse> getSuggestedPosts(Pageable pageable) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
@@ -98,7 +101,11 @@ public class PostServiceImpl implements PostService {
                 .attachedFiles(uploadedFiles)
                 .privacy(request.privacy())
                 .build();
-        return postMapper.toPostResponse(postRepository.save(post));
+        PostResponse response = postMapper.toPostResponse(postRepository.save(post));
+
+        sendNotificationWhenPost(author, post);
+
+        return response;
     }
 
     @Override
@@ -120,6 +127,9 @@ public class PostServiceImpl implements PostService {
 
         originalPost.setShareCount(originalPost.getShareCount() + 1);
         postRepository.saveAll(List.of(post, originalPost));
+
+        sendNotificationWhenSharePost(author, originalPost, post);
+
         return postMapper.toPostResponse(post);
     }
 
@@ -170,6 +180,7 @@ public class PostServiceImpl implements PostService {
         post.getLiker().add(user);
         post.setLikeCount(post.getLikeCount() + 1);
         postRepository.save(post);
+        sendNotificationWhenLikePost(postId, user, post);
     }
 
     @Override
@@ -345,5 +356,49 @@ public class PostServiceImpl implements PostService {
     private PostResponse mapIsLiked(PostResponse post, UUID userId) {
         post.setLiked(postRepository.isLiked(post.getId(), userId));
         return post;
+    }
+
+    private void sendNotificationWhenPost(User author, Post post) {
+        Notification notification = Notification.builder()
+                .creator(author)
+                .targetId(post.getId())
+                .targetType(ObjectType.POST)
+                .action(NotificationAction.POST)
+                .sentAt(post.getCreatedAt())
+                .build();
+        notificationService.sendToFriends(notification);
+    }
+
+    private void sendNotificationWhenSharePost(User author, Post originalPost, Post post) {
+        Notification notificationToAuthor = Notification.builder()
+                .creator(author)
+                .receiver(originalPost.getAuthor())
+                .targetId(post.getId())
+                .targetType(ObjectType.POST)
+                .action(NotificationAction.SHARE)
+                .sentAt(post.getCreatedAt())
+                .build();
+
+        Notification notificationToFriend = Notification.builder()
+                .creator(author)
+                .targetId(post.getId())
+                .targetType(ObjectType.POST)
+                .action(NotificationAction.POST)
+                .sentAt(post.getCreatedAt())
+                .build();
+
+        notificationService.send(notificationToAuthor);
+        notificationService.sendToFriends(notificationToFriend);
+    }
+
+    private void sendNotificationWhenLikePost(UUID postId, User user, Post post) {
+        Notification notification = Notification.builder()
+                .targetId(postId)
+                .targetType(ObjectType.POST)
+                .creator(user)
+                .receiver(post.getAuthor())
+                .action(NotificationAction.LIKE_POST)
+                .build();
+        notificationService.send(notification);
     }
 }

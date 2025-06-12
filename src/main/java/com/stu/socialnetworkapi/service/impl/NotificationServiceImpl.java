@@ -1,7 +1,10 @@
 package com.stu.socialnetworkapi.service.impl;
 
+import com.stu.socialnetworkapi.config.WebSocketConfig;
 import com.stu.socialnetworkapi.dto.response.NotificationResponse;
 import com.stu.socialnetworkapi.entity.Notification;
+import com.stu.socialnetworkapi.entity.User;
+import com.stu.socialnetworkapi.enums.NotificationAction;
 import com.stu.socialnetworkapi.mapper.NotificationMapper;
 import com.stu.socialnetworkapi.repository.NotificationRepository;
 import com.stu.socialnetworkapi.service.itf.NotificationService;
@@ -12,8 +15,9 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.UUID;
+import java.time.ZonedDateTime;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @Transactional
@@ -24,6 +28,11 @@ public class NotificationServiceImpl implements NotificationService {
     private final SimpMessagingTemplate messagingTemplate;
     private final NotificationRepository notificationRepository;
 
+    private final Set<NotificationAction> actionCanBeRepeated = new HashSet<>(List.of(
+            NotificationAction.LIKE_POST,
+            NotificationAction.LIKE_COMMENT
+    ));
+
     @Override
     public NotificationResponse save(Notification notification) {
         notificationRepository.save(notification);
@@ -31,8 +40,43 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    public void sendToFriends(Notification notification) {
+        List<User> friends = notification.getCreator().getFriends();
+        List<Notification> notifications = friends.stream()
+                .map(friend -> {
+                    Notification noti = new Notification(notification);
+                    noti.setReceiver(friend);
+                    return noti;
+                })
+                .toList();
+
+        notificationRepository.saveAll(notifications);
+
+        notifications.forEach(noti ->
+                CompletableFuture.runAsync(() -> {
+                    String destination = WebSocketConfig.NOTIFICATION_CHANNEL_PREFIX + "/" + noti.getReceiver().getId();
+                    messagingTemplate.convertAndSend(destination, noti);
+                })
+        );
+    }
+
+    @Override
     public void send(Notification notification) {
-        String destination = "/notifications/" + notification.getReceiver().getId();
+        if (notification.getCreator().equals(notification.getReceiver())) return;
+        if (actionCanBeRepeated.contains(notification.getAction())) {
+            Optional<Notification> optional = notificationRepository
+                    .findExistingNotification(
+                            notification.getCreator().getId(),
+                            notification.getReceiver().getId(),
+                            notification.getAction(),
+                            notification.getTargetId(),
+                            notification.getTargetType());
+            if (optional.isPresent()) {
+                notification = optional.get();
+                notification.setSentAt(ZonedDateTime.now());
+            }
+        }
+        String destination = WebSocketConfig.NOTIFICATION_CHANNEL_PREFIX + "/" + notification.getReceiver().getId();
         messagingTemplate.convertAndSend(destination, save(notification));
     }
 

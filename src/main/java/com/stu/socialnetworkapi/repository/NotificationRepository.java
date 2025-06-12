@@ -2,12 +2,16 @@ package com.stu.socialnetworkapi.repository;
 
 import com.stu.socialnetworkapi.dto.projection.NotificationProjection;
 import com.stu.socialnetworkapi.entity.Notification;
+import com.stu.socialnetworkapi.enums.NotificationAction;
+import com.stu.socialnetworkapi.enums.ObjectType;
 import org.springframework.data.domain.Pageable;
-import java.util.List;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.stereotype.Repository;
 
+import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -42,4 +46,30 @@ public interface NotificationRepository extends Neo4jRepository<Notification, UU
             """)
     List<NotificationProjection> getNotifications(UUID userId, Pageable pageable);
 
+    @Query("""
+            MATCH (n:Notification)
+            WHERE n.sentAt < $cutoffDate
+            WITH count(n) as totalCount
+            MATCH (n:Notification)
+            WHERE n.sentAt < $cutoffDate
+            DETACH DELETE n
+            RETURN totalCount
+            """)
+    int deleteOldNotifications(ZonedDateTime cutoffDate);
+
+    @Query("""
+            MATCH (creator:User {id: $creatorId})-[:BY_USER]->(n:Notification)<-[:HAS_NOTIFICATION]-(receiver:User {id: $receiverId})
+            WHERE n.action = $action
+            AND n.targetId = $targetId
+            AND n.targetType = $targetType
+            RETURN n
+            LIMIT 1
+            """)
+    Optional<Notification> findExistingNotification(
+            UUID creatorId,
+            UUID receiverId,
+            NotificationAction action,
+            UUID targetId,
+            ObjectType targetType
+    );
 }

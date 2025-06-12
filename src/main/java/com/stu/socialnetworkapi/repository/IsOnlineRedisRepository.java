@@ -2,6 +2,7 @@ package com.stu.socialnetworkapi.repository;
 
 import com.stu.socialnetworkapi.dto.response.OnlineResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -9,6 +10,7 @@ import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @Repository
 @RequiredArgsConstructor
 public class IsOnlineRedisRepository {
@@ -34,7 +36,7 @@ public class IsOnlineRedisRepository {
             redisTemplate.opsForValue().decrement(ONLINE_COUNT_KEY);
         }
 
-        System.out.println("User " + id + " is " + (isOnline ? "online" : "offline"));
+        log.debug("User {} is {}", id, (isOnline ? "online" : "offline"));
     }
 
     public OnlineResponse getLastSeen(UUID userId) {

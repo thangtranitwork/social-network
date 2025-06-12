@@ -49,3 +49,4 @@ front-end:
 logging:
   level:
     root: error
+    com.stu.socialnetworkapi: debug

@@ -35,10 +35,9 @@ public class ConstrainsAndIndexInitializer {
                     ON EACH [p.content]
                     """);
             session.run("""
-                                SHOW INDEXES YIELD name, type
-                                RETURN name, type
-                            """)
-                    .forEachRemaining(System.out::println);
+                        SHOW INDEXES YIELD name, type
+                        RETURN name, type
+                    """);
         } catch (Exception e) {
             log.error("Failed to create constraints and indexes", e);
             throw new RuntimeException("Database initialization failed", e);

@@ -160,7 +160,7 @@ public class MessageServiceImpl implements MessageService {
             throw new ApiException(ErrorCode.UNAUTHORIZED);
         }
 
-        if (message.getSentAt().plusMinutes(Message.MINUTES_TO_DELETE_MESSAGE).isAfter(ZonedDateTime.now())) {
+        if (ZonedDateTime.now().isAfter(message.getSentAt().plusMinutes(Message.MINUTES_TO_DELETE_MESSAGE))) {
             throw new ApiException(ErrorCode.CAN_NOT_DELETE_MESSAGE);
         }
     }

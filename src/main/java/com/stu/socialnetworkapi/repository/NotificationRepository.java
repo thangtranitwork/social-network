@@ -54,7 +54,7 @@ public interface NotificationRepository extends Neo4jRepository<Notification, UU
     void deleteOldNotifications(ZonedDateTime cutoffDate);
 
     @Query("""
-            MATCH (creator:User {id: $creatorId})-[:BY_USER]->(n:Notification)<-[:HAS_NOTIFICATION]-(receiver:User {id: $receiverId})
+            MATCH (creator:User {id: $creatorId})<-[:BY_USER]-(n:Notification)<-[:HAS_NOTIFICATION]-(receiver:User {id: $receiverId})
             WHERE n.action = $action
             AND n.targetId = $targetId
             AND n.targetType = $targetType

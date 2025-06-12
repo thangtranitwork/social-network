@@ -3,6 +3,7 @@ package com.stu.socialnetworkapi.service.impl;
 import com.stu.socialnetworkapi.config.WebSocketConfig;
 import com.stu.socialnetworkapi.dto.request.EditMessageRequest;
 import com.stu.socialnetworkapi.dto.request.FileMessageRequest;
+import com.stu.socialnetworkapi.dto.request.Neo4jPageable;
 import com.stu.socialnetworkapi.dto.request.TextMessageRequest;
 import com.stu.socialnetworkapi.dto.response.MessageCommand;
 import com.stu.socialnetworkapi.dto.response.MessageResponse;
@@ -22,7 +23,6 @@ import com.stu.socialnetworkapi.service.itf.MessageService;
 import com.stu.socialnetworkapi.service.itf.UserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -103,16 +103,17 @@ public class MessageServiceImpl implements MessageService {
     }
 
     @Override
-    public List<MessageResponse> getHistory(UUID chatId, Pageable pageable) {
+    public List<MessageResponse> getHistory(UUID chatId, Neo4jPageable pageable) {
         UUID userId = userService.getCurrentUserIdRequiredAuthentication();
         if (!chatRepository.existInChat(chatId, userId)) {
             throw new ApiException(ErrorCode.UNAUTHORIZED);
         }
-        List<MessageResponse> messages = messageRepository.findAllByChatId(chatId, pageable).stream()
+        List<MessageResponse> messages = messageRepository.findAllByChatIdOrderBySentAtDesc(chatId, pageable.getSkip(), pageable.getLimit()).stream()
                 .map(messageMapper::toMessageResponse)
                 .toList();
 
-        if (pageable.getPageNumber() == 0) messageRepository.markAsRead(chatId, userId);
+        if (pageable.getSkip() >= pageable.getLimit())
+            messageRepository.markAsRead(chatId, userId);
         return messages;
     }
 

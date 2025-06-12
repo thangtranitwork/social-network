@@ -1,6 +1,7 @@
 package com.stu.socialnetworkapi.service.impl;
 
 import com.stu.socialnetworkapi.config.WebSocketConfig;
+import com.stu.socialnetworkapi.dto.request.Neo4jPageable;
 import com.stu.socialnetworkapi.dto.response.NotificationResponse;
 import com.stu.socialnetworkapi.entity.Notification;
 import com.stu.socialnetworkapi.entity.User;
@@ -10,7 +11,6 @@ import com.stu.socialnetworkapi.repository.NotificationRepository;
 import com.stu.socialnetworkapi.service.itf.NotificationService;
 import com.stu.socialnetworkapi.service.itf.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -81,9 +81,9 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public List<NotificationResponse> getNotifications(Pageable pageable) {
+    public List<NotificationResponse> getNotifications(Neo4jPageable pageable) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
-        return notificationRepository.getNotifications(currentUserId, pageable).stream()
+        return notificationRepository.getNotifications(currentUserId, pageable.getSkip(), pageable.getLimit()).stream()
                 .map(notificationMapper::toNotificationResponse)
                 .toList();
 

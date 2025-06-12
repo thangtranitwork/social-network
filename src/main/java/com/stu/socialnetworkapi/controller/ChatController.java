@@ -2,6 +2,7 @@ package com.stu.socialnetworkapi.controller;
 
 import com.stu.socialnetworkapi.dto.request.EditMessageRequest;
 import com.stu.socialnetworkapi.dto.request.FileMessageRequest;
+import com.stu.socialnetworkapi.dto.request.Neo4jPageable;
 import com.stu.socialnetworkapi.dto.request.TextMessageRequest;
 import com.stu.socialnetworkapi.dto.response.ApiResponse;
 import com.stu.socialnetworkapi.dto.response.ChatResponse;
@@ -10,12 +11,13 @@ import com.stu.socialnetworkapi.service.itf.ChatService;
 import com.stu.socialnetworkapi.service.itf.MessageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequestMapping("/v1/chat")
 @RequiredArgsConstructor
@@ -29,7 +31,9 @@ public class ChatController {
     }
 
     @GetMapping("/messages/{chatId}")
-    public ApiResponse<List<MessageResponse>> getMessages(@PathVariable UUID chatId, Pageable pageable) {
+    public ApiResponse<List<MessageResponse>> getMessages(
+            @PathVariable UUID chatId,
+            Neo4jPageable pageable) {
         return ApiResponse.success(messageService.getHistory(chatId, pageable));
     }
 

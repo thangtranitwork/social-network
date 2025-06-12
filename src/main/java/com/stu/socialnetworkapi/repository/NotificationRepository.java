@@ -4,7 +4,6 @@ import com.stu.socialnetworkapi.dto.projection.NotificationProjection;
 import com.stu.socialnetworkapi.entity.Notification;
 import com.stu.socialnetworkapi.enums.NotificationAction;
 import com.stu.socialnetworkapi.enums.ObjectType;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.stereotype.Repository;
@@ -44,7 +43,7 @@ public interface NotificationRepository extends Neo4jRepository<Notification, UU
                        creator.familyName AS familyName,
                        CASE WHEN pf IS NOT NULL THEN pf.id ELSE NULL END AS profilePictureId
             """)
-    List<NotificationProjection> getNotifications(UUID userId, Pageable pageable);
+    List<NotificationProjection> getNotifications(UUID userId, long skip, long limit);
 
     @Query("""
             MATCH (n:Notification)

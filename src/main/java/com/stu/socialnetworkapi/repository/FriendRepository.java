@@ -32,6 +32,11 @@ public interface FriendRepository extends Neo4jRepository<Friend, Long> {
             """)
     Optional<UUID> getFriendId(UUID userId, UUID targetId);
 
+    @Query("""
+                MATCH (u:User)-[r:FRIEND {uuid: $uuid}]->(t:User)
+                OPTIONAL MATCH (u)<-[rv:FRIEND]-(t)
+                DELETE r, rv
+            """)
     void deleteByUuid(UUID uuid);
 
 

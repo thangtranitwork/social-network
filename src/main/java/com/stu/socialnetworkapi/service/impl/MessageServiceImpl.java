@@ -113,7 +113,7 @@ public class MessageServiceImpl implements MessageService {
                 .map(messageMapper::toMessageResponse)
                 .toList();
 
-        if (pageable.getSkip() >= pageable.getLimit())
+        if (pageable.getSkip() <= pageable.getLimit())
             messageRepository.markAsRead(chatId, userId);
         return messages;
     }

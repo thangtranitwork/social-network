@@ -7,9 +7,10 @@ import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.mapper.UserMapper;
 import com.stu.socialnetworkapi.repository.BlockRepository;
-import com.stu.socialnetworkapi.repository.UserRepository;
 import com.stu.socialnetworkapi.service.itf.BlockService;
 import com.stu.socialnetworkapi.service.itf.UserService;
+import com.stu.socialnetworkapi.util.UserCounterCalculator;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -19,12 +20,13 @@ import java.util.Objects;
 import java.util.UUID;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class BlockServiceImpl implements BlockService {
     private final UserMapper userMapper;
     private final UserService userService;
-    private final UserRepository userRepository;
     private final BlockRepository blockRepository;
+    private final UserCounterCalculator userCounterCalculator;
 
     @Override
     public void validateBlock(UUID userId, UUID targetId) {
@@ -58,7 +60,7 @@ public class BlockServiceImpl implements BlockService {
                 if (user.getBlockCount() + 1 > User.MAX_BLOCK_COUNT)
                     throw new ApiException(ErrorCode.BLOCK_LIMIT_REACHED);
                 blockRepository.blockUser(user.getId(), target.getId());
-                userRepository.recalculateUserCounters(user.getId());
+                userCounterCalculator.calculateUserCounter(user.getId());
             }
         }
     }
@@ -70,7 +72,7 @@ public class BlockServiceImpl implements BlockService {
         UUID uuid = blockRepository.getBlockId(currentUserId, target.getId())
                 .orElseThrow(() -> new ApiException(ErrorCode.BLOCK_NOT_FOUND));
         blockRepository.deleteByUuid(uuid);
-        userRepository.recalculateUserCounters(currentUserId);
+        userCounterCalculator.calculateUserCounter(currentUserId);
     }
 
     @Override

@@ -35,6 +35,7 @@ public interface BlockRepository extends Neo4jRepository<Block, Long> {
             OPTIONAL MATCH (a)-[r:REQUEST]-(b)
             DELETE f, r
             
+            WITH DISTINCT a, b
             CREATE (a)-[:BLOCK {uuid: randomUUID()}]->(b)
             """)
     void blockUser(UUID userId, UUID targetId);

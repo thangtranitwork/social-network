@@ -181,20 +181,20 @@ public interface UserRepository extends Neo4jRepository<User, UUID> {
             MATCH (user:User {id: $userId})
             
             // Đếm số lượng bạn bè
-            OPTIONAL MATCH (user)-[:FRIEND]->(:User)
-            WITH user, count(*) AS friendCount
+            OPTIONAL MATCH (user)-[friendRel:FRIEND]->(:User)
+            WITH user, count(friendRel) AS friendCount
             
             // Đếm số lượng request đã gửi
-            OPTIONAL MATCH (user)-[:REQUEST]->(:User)
-            WITH user, friendCount, count(*) AS requestSentCount
+            OPTIONAL MATCH (user)-[sentReq:REQUEST]->(:User)
+            WITH user, friendCount, count(sentReq) AS requestSentCount
             
             // Đếm số lượng request đã nhận
-            OPTIONAL MATCH (user)<-[:REQUEST]-(:User)
-            WITH user, friendCount, requestSentCount, count(*) AS requestReceivedCount
+            OPTIONAL MATCH (user)<-[receivedReq:REQUEST]-(:User)
+            WITH user, friendCount, requestSentCount, count(receivedReq) AS requestReceivedCount
             
             // Đếm số lượng user đã block
-            OPTIONAL MATCH (user)-[:BLOCK]->(:User)
-            WITH user, friendCount, requestSentCount, requestReceivedCount, count(*) AS blockCount
+            OPTIONAL MATCH (user)-[blockRel:BLOCK]->(:User)
+            WITH user, friendCount, requestSentCount, requestReceivedCount, count(blockRel) AS blockCount
             
             // Cập nhật tất cả các giá trị
             SET user.friendCount = friendCount,

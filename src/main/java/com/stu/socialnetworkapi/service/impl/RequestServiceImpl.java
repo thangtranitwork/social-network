@@ -9,11 +9,11 @@ import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.mapper.UserMapper;
 import com.stu.socialnetworkapi.repository.RequestRepository;
-import com.stu.socialnetworkapi.repository.UserRepository;
 import com.stu.socialnetworkapi.service.itf.ChatService;
 import com.stu.socialnetworkapi.service.itf.NotificationService;
 import com.stu.socialnetworkapi.service.itf.RequestService;
 import com.stu.socialnetworkapi.service.itf.UserService;
+import com.stu.socialnetworkapi.util.UserCounterCalculator;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -26,12 +26,12 @@ import java.util.UUID;
 @Transactional
 @RequiredArgsConstructor
 public class RequestServiceImpl implements RequestService {
+    private final UserMapper userMapper;
     private final UserService userService;
     private final ChatService chatService;
-    private final UserMapper userMapper;
-    private final UserRepository userRepository;
     private final RequestRepository requestRepository;
     private final NotificationService notificationService;
+    private final UserCounterCalculator userCounterCalculator;
 
     @Override
     public void sendAddFriendRequest(String username) {
@@ -48,7 +48,7 @@ public class RequestServiceImpl implements RequestService {
                 .targetId(target.getId())
                 .targetType(ObjectType.REQUEST)
                 .build();
-
+        userCounterCalculator.calculateUsersCounter(List.of(requester.getId(), target.getId()));
         notificationService.send(notification);
     }
 
@@ -76,8 +76,7 @@ public class RequestServiceImpl implements RequestService {
                 .orElseThrow(() -> new ApiException(ErrorCode.REQUEST_NOT_FOUND));
 
         requestRepository.deleteByUuid(uuid);
-        userRepository.recalculateUserCounters(currentUserId);
-        userRepository.recalculateUserCounters(target.getId());
+        userCounterCalculator.calculateUsersCounter(List.of(currentUserId, target.getId()));
     }
 
     @Override
@@ -88,8 +87,8 @@ public class RequestServiceImpl implements RequestService {
                 .orElseThrow(() -> new ApiException(ErrorCode.REQUEST_NOT_FOUND));
 
         requestRepository.acceptRequest(uuid);
-        userRepository.recalculateUserCounters(currentUser.getId());
-        userRepository.recalculateUserCounters(target.getId());
+        userCounterCalculator.calculateUsersCounter(List.of(currentUser.getId(), target.getId()));
+
         chatService.createChatIfNotExist(currentUser, target);
         Notification notification = Notification.builder()
                 .action(NotificationAction.BE_FRIEND)

@@ -12,7 +12,7 @@ import java.util.UUID;
 public interface MessageRepository extends Neo4jRepository<Message, UUID> {
     @Query("""
             MATCH (sender:User)-[sent:SENT]->(message:Message)<-[hm:HAS_MESSAGE]->(chat:Chat {id: $chatId})
-            OPTIONAL MATCH (m)-[attach:ATTACH_FILE]->(attachedFile:File)
+            OPTIONAL MATCH (message)-[attach:ATTACH_FILE]->(attachedFile:File)
             RETURN message, sent, sender, attach, attachedFile, hm, chat
             ORDER BY message.sentAt DESC
             SKIP $skip LIMIT $limit

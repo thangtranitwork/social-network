@@ -80,12 +80,12 @@ public interface FriendRepository extends Neo4jRepository<Friend, Long> {
                 WITH currentUser, target, pic, chat,
                      COALESCE(COUNT(DISTINCT mutual), 0) AS mutualFriendsCount,
                      COALESCE(viewOut.times, 0) AS viewOutTimes,
-                     COALESCE(viewIn.times, 0) AS viewInTimes,
+                     COALESCE(viewIn.times, 0) AS viewInTimes
             
                 WITH target, pic, mutualFriendsCount, viewOutTimes, viewInTimes, chat,
                      currentUser.birthdate.year - target.birthdate.year AS ageDiff
             
-                WITH target, pic, mutualFriendsCount, viewOutTimes, viewInTimes, sharedChatsCount, ageDiff,
+                WITH target, pic, mutualFriendsCount, viewOutTimes, viewInTimes, ageDiff,
                      mutualFriendsCount * 5
                      + viewOutTimes * 2
                      + viewInTimes
@@ -99,7 +99,7 @@ public interface FriendRepository extends Neo4jRepository<Friend, Long> {
                     target.familyName AS familyName,
                     CASE WHEN pic IS NOT NULL THEN pic.id ELSE NULL END AS profilePictureId,
                     mutualFriendsCount AS mutualFriendsCount,
-                    false AS isFriend
+                    false AS isFriend,
                     score
             
                 ORDER BY score DESC

@@ -1,6 +1,6 @@
 package com.stu.socialnetworkapi.repository;
 
-import com.stu.socialnetworkapi.dto.projection.BlockProjection;
+import com.stu.socialnetworkapi.dto.projection.UserProjection;
 import com.stu.socialnetworkapi.entity.relationship.Block;
 import com.stu.socialnetworkapi.enums.BlockStatus;
 import org.springframework.data.domain.Pageable;
@@ -50,13 +50,12 @@ public interface BlockRepository extends Neo4jRepository<Block, Long> {
     @Query("""
             MATCH (blocker:User {id: $userId})-[block:BLOCK]->(target:User)
             OPTIONAL MATCH (target)-[:HAS_PROFILE_PICTURE]->(profile: File)
-            RETURN block.uuid AS blockId,
-                   target.id AS userId,
+            RETURN target.id AS userId,
                    target.givenName AS givenName,
                    target.familyName AS familyName,
                    target.username AS username,
                    profile.id AS profilePictureId
             SKIP $skip LIMIT $limit
             """)
-    List<BlockProjection> getBlockedUsers(UUID userId, Pageable pageable);
+    List<UserProjection> getBlockedUsers(UUID userId, Pageable pageable);
 }

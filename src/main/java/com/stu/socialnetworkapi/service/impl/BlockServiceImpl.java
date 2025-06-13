@@ -1,11 +1,11 @@
 package com.stu.socialnetworkapi.service.impl;
 
-import com.stu.socialnetworkapi.dto.response.BlockResponse;
+import com.stu.socialnetworkapi.dto.response.UserCommonInformationResponse;
 import com.stu.socialnetworkapi.entity.User;
 import com.stu.socialnetworkapi.enums.BlockStatus;
 import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
-import com.stu.socialnetworkapi.mapper.BlockMapper;
+import com.stu.socialnetworkapi.mapper.UserMapper;
 import com.stu.socialnetworkapi.repository.BlockRepository;
 import com.stu.socialnetworkapi.repository.UserRepository;
 import com.stu.socialnetworkapi.service.itf.BlockService;
@@ -21,7 +21,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class BlockServiceImpl implements BlockService {
-    private final BlockMapper blockMapper;
+    private final UserMapper userMapper;
     private final UserService userService;
     private final UserRepository userRepository;
     private final BlockRepository blockRepository;
@@ -74,10 +74,10 @@ public class BlockServiceImpl implements BlockService {
     }
 
     @Override
-    public List<BlockResponse> getBlockedUsers(Pageable pageable) {
+    public List<UserCommonInformationResponse> getBlockedUsers(Pageable pageable) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
         return blockRepository.getBlockedUsers(currentUserId, pageable).stream()
-                .map(blockMapper::toBlockResponse)
+                .map(userMapper::toUserCommonInformationResponse)
                 .toList();
     }
 }

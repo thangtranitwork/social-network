@@ -1,6 +1,9 @@
 package com.stu.socialnetworkapi.mapper;
 
-import com.stu.socialnetworkapi.dto.projection.*;
+import com.stu.socialnetworkapi.dto.projection.ChatProjection;
+import com.stu.socialnetworkapi.dto.projection.NotificationProjection;
+import com.stu.socialnetworkapi.dto.projection.UserProfileProjection;
+import com.stu.socialnetworkapi.dto.projection.UserProjection;
 import com.stu.socialnetworkapi.dto.response.OnlineResponse;
 import com.stu.socialnetworkapi.dto.response.UserCommonInformationResponse;
 import com.stu.socialnetworkapi.dto.response.UserProfileResponse;
@@ -53,51 +56,6 @@ public class UserMapper {
                 .isOnline(online.isOnline())
                 .lastOnline(online.getLastOnlineAt())
                 .profilePictureUrl(profilePictureUrl)
-                .build();
-    }
-
-    public UserCommonInformationResponse toUserCommonInformationResponse(final RequestProjection projection) {
-        OnlineResponse online = isOnlineRedisRepository.getLastSeen(projection.userId());
-        return UserCommonInformationResponse.builder()
-                .id(projection.userId())
-                .givenName(projection.givenName())
-                .familyName(projection.familyName())
-                .username(projection.username())
-                .profilePictureUrl(File.getPath(projection.profilePictureId()))
-                .isOnline(online.isOnline())
-                .lastOnline(online.getLastOnlineAt())
-                .isFriend(false)
-                .requestId(projection.requestId())
-                .build();
-    }
-
-    public UserCommonInformationResponse toUserCommonInformationResponse(final BlockProjection projection) {
-        OnlineResponse online = isOnlineRedisRepository.getLastSeen(projection.userId());
-        return UserCommonInformationResponse.builder()
-                .blockId(projection.blockId())
-                .id(projection.userId())
-                .givenName(projection.givenName())
-                .familyName(projection.familyName())
-                .username(projection.username())
-                .profilePictureUrl(File.getPath(projection.profilePictureId()))
-                .isOnline(online.isOnline())
-                .lastOnline(online.getLastOnlineAt())
-                .isFriend(false)
-                .build();
-    }
-
-    public UserCommonInformationResponse toUserCommonInformationResponse(final FriendProjection projection) {
-        OnlineResponse online = isOnlineRedisRepository.getLastSeen(projection.userId());
-        return UserCommonInformationResponse.builder()
-                .id(projection.userId())
-                .givenName(projection.givenName())
-                .familyName(projection.familyName())
-                .username(projection.username())
-                .profilePictureUrl(File.getPath(projection.profilePictureId()))
-                .isOnline(online.isOnline())
-                .lastOnline(online.getLastOnlineAt())
-                .isFriend(false)
-                .friendId(projection.friendId())
                 .build();
     }
 

@@ -1,7 +1,7 @@
 package com.stu.socialnetworkapi.controller;
 
 import com.stu.socialnetworkapi.dto.response.ApiResponse;
-import com.stu.socialnetworkapi.dto.response.RequestResponse;
+import com.stu.socialnetworkapi.dto.response.UserCommonInformationResponse;
 import com.stu.socialnetworkapi.service.itf.RequestService;
 import com.stu.socialnetworkapi.validation.annotation.Username;
 import lombok.RequiredArgsConstructor;
@@ -17,12 +17,12 @@ public class RequestController {
     private final RequestService requestService;
 
     @GetMapping("/sent-requests")
-    public ApiResponse<List<RequestResponse>> getSentRequest(Pageable pageable) {
+    public ApiResponse<List<UserCommonInformationResponse>> getSentRequest(Pageable pageable) {
         return ApiResponse.success(requestService.getSentRequests(pageable));
     }
 
     @GetMapping("/received-requests")
-    public ApiResponse<List<RequestResponse>> getReceivedRequest(Pageable pageable) {
+    public ApiResponse<List<UserCommonInformationResponse>> getReceivedRequest(Pageable pageable) {
         return ApiResponse.success(requestService.getReceivedRequests(pageable));
     }
 

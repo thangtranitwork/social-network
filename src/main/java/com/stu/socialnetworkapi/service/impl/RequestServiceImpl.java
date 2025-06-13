@@ -1,13 +1,13 @@
 package com.stu.socialnetworkapi.service.impl;
 
-import com.stu.socialnetworkapi.dto.response.RequestResponse;
+import com.stu.socialnetworkapi.dto.response.UserCommonInformationResponse;
 import com.stu.socialnetworkapi.entity.Notification;
 import com.stu.socialnetworkapi.entity.User;
 import com.stu.socialnetworkapi.enums.NotificationAction;
 import com.stu.socialnetworkapi.enums.ObjectType;
 import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
-import com.stu.socialnetworkapi.mapper.RequestMapper;
+import com.stu.socialnetworkapi.mapper.UserMapper;
 import com.stu.socialnetworkapi.repository.RequestRepository;
 import com.stu.socialnetworkapi.repository.UserRepository;
 import com.stu.socialnetworkapi.service.itf.ChatService;
@@ -28,7 +28,7 @@ import java.util.UUID;
 public class RequestServiceImpl implements RequestService {
     private final UserService userService;
     private final ChatService chatService;
-    private final RequestMapper requestMapper;
+    private final UserMapper userMapper;
     private final UserRepository userRepository;
     private final RequestRepository requestRepository;
     private final NotificationService notificationService;
@@ -53,18 +53,18 @@ public class RequestServiceImpl implements RequestService {
     }
 
     @Override
-    public List<RequestResponse> getSentRequests(Pageable pageable) {
+    public List<UserCommonInformationResponse> getSentRequests(Pageable pageable) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
         return requestRepository.getSentRequest(currentUserId, pageable).stream()
-                .map(requestMapper::toRequestResponse)
+                .map(userMapper::toUserCommonInformationResponse)
                 .toList();
     }
 
     @Override
-    public List<RequestResponse> getReceivedRequests(Pageable pageable) {
+    public List<UserCommonInformationResponse> getReceivedRequests(Pageable pageable) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
         return requestRepository.getReceivedRequest(currentUserId, pageable).stream()
-                .map(requestMapper::toRequestResponse)
+                .map(userMapper::toUserCommonInformationResponse)
                 .toList();
     }
 

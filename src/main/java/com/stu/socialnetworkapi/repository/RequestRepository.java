@@ -1,6 +1,6 @@
 package com.stu.socialnetworkapi.repository;
 
-import com.stu.socialnetworkapi.dto.projection.RequestProjection;
+import com.stu.socialnetworkapi.dto.projection.UserProjection;
 import com.stu.socialnetworkapi.entity.relationship.Request;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
@@ -16,8 +16,7 @@ public interface RequestRepository extends Neo4jRepository<Request, Long> {
     @Query("""
              MATCH (sender:User {id: $userId})-[r:REQUEST]->(target:User)
              OPTIONAL MATCH (target)-[:HAS_PROFILE_PICTURE]->(profile: File)
-             RETURN r.uuid AS requestId,
-                    r.sentAt AS sentAt,
+             RETURN r.sentAt AS sentAt,
                     target.id AS userId,
                     target.givenName AS givenName,
                     target.familyName AS familyName,
@@ -25,13 +24,12 @@ public interface RequestRepository extends Neo4jRepository<Request, Long> {
                     profile.id AS profilePictureId
             SKIP $skip LIMIT $limit
             """)
-    List<RequestProjection> getSentRequest(UUID userId, Pageable pageable);
+    List<UserProjection> getSentRequest(UUID userId, Pageable pageable);
 
     @Query("""
              MATCH (sender:User)-[r:REQUEST]->(target:User {id: $userId})
              OPTIONAL MATCH (sender)-[:HAS_PROFILE_PICTURE]->(profile: File)
-             RETURN r.uuid AS requestId,
-                    r.sentAt AS sentAt,
+             RETURN r.sentAt AS sentAt,
                     sender.id AS userId,
                     sender.givenName AS givenName,
                     sender.familyName AS familyName,
@@ -39,7 +37,7 @@ public interface RequestRepository extends Neo4jRepository<Request, Long> {
                     profile.id AS profilePictureId
             SKIP $skip LIMIT $limit
             """)
-    List<RequestProjection> getReceivedRequest(UUID userId, Pageable pageable);
+    List<UserProjection> getReceivedRequest(UUID userId, Pageable pageable);
 
     @Query("""
                 MATCH (a:User {id: $senderId})

@@ -1,6 +1,5 @@
 package com.stu.socialnetworkapi.repository;
 
-import com.stu.socialnetworkapi.dto.projection.FriendProjection;
 import com.stu.socialnetworkapi.dto.projection.UserProjection;
 import com.stu.socialnetworkapi.entity.relationship.Friend;
 import org.springframework.data.domain.Pageable;
@@ -17,8 +16,7 @@ public interface FriendRepository extends Neo4jRepository<Friend, Long> {
     @Query("""
              MATCH (user:User {id: $userId})-[friend:FRIEND]->(target:User)
              OPTIONAL MATCH (target)-[:HAS_PROFILE_PICTURE]->(profile: File)
-             RETURN friend.uuid AS friendId,
-                    friend.createdAt AS createdAt,
+             RETURN friend.createdAt AS createdAt,
                     target.id AS userId,
                     target.givenName AS givenName,
                     target.familyName AS familyName,
@@ -26,7 +24,7 @@ public interface FriendRepository extends Neo4jRepository<Friend, Long> {
                     profile.id AS profilePictureId
             SKIP $skip LIMIT $limit
             """)
-    List<FriendProjection> getFriends(UUID userId, Pageable pageable);
+    List<UserProjection> getFriends(UUID userId, Pageable pageable);
 
     @Query("""
             MATCH (:User {id: $userId})-[friend:FRIEND]->(:User {id: $targetId})

@@ -1,7 +1,6 @@
 package com.stu.socialnetworkapi.controller;
 
 import com.stu.socialnetworkapi.dto.response.ApiResponse;
-import com.stu.socialnetworkapi.dto.response.FriendResponse;
 import com.stu.socialnetworkapi.dto.response.UserCommonInformationResponse;
 import com.stu.socialnetworkapi.service.itf.FriendService;
 import com.stu.socialnetworkapi.validation.annotation.Username;
@@ -18,7 +17,7 @@ public class FriendController {
     private final FriendService friendService;
 
     @GetMapping("/{username}")
-    public ApiResponse<List<FriendResponse>> getFriends(@PathVariable @Username String username, Pageable pageable) {
+    public ApiResponse<List<UserCommonInformationResponse>> getFriends(@PathVariable @Username String username, Pageable pageable) {
         return ApiResponse.success(friendService.getFriends(username, pageable));
     }
 

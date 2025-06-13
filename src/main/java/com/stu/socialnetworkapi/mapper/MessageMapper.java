@@ -18,7 +18,7 @@ public class MessageMapper {
                 .chatId(message.getChat().getId())
                 .content(message.getContent())
                 .attachment(File.getPath(message.getAttachedFile()))
-                .attachmentName(message.getAttachedFile().getName())
+                .attachmentName(message.getAttachedFile() != null ? message.getAttachedFile().getName() : null)
                 .sentAt(message.getSentAt())
                 .sender(userMapper.toUserCommonInformationResponse(message.getSender()))
                 .build();

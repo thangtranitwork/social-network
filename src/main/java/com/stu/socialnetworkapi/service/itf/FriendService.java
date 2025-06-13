@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface FriendService {
-    List<FriendResponse> getFriends(Pageable pageable);
+    List<FriendResponse> getFriends(String username ,Pageable pageable);
 
     void unfriend(UUID friendId);
 

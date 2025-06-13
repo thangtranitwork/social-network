@@ -2,11 +2,13 @@ package com.stu.socialnetworkapi.service.impl;
 
 import com.stu.socialnetworkapi.dto.response.FriendResponse;
 import com.stu.socialnetworkapi.dto.response.UserCommonInformationResponse;
+import com.stu.socialnetworkapi.entity.User;
 import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.mapper.FriendMapper;
 import com.stu.socialnetworkapi.mapper.UserMapper;
 import com.stu.socialnetworkapi.repository.FriendRepository;
+import com.stu.socialnetworkapi.service.itf.BlockService;
 import com.stu.socialnetworkapi.service.itf.FriendService;
 import com.stu.socialnetworkapi.service.itf.UserService;
 import lombok.RequiredArgsConstructor;
@@ -19,15 +21,18 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class FriendServiceImpl implements FriendService {
-    private final UserService userService;
-    private final FriendMapper friendMapper;
     private final UserMapper userMapper;
+    private final UserService userService;
+    private final BlockService blockService;
+    private final FriendMapper friendMapper;
     private final FriendRepository friendRepository;
 
     @Override
-    public List<FriendResponse> getFriends(Pageable pageable) {
+    public List<FriendResponse> getFriends(String username ,Pageable pageable) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
-        return friendRepository.getFriends(currentUserId, pageable).stream()
+        User target = userService.getUser(username);
+        blockService.validateBlock(currentUserId, target.getId());
+        return friendRepository.getFriends(target.getId(), pageable).stream()
                 .map(friendMapper::toFriendResponse)
                 .toList();
     }

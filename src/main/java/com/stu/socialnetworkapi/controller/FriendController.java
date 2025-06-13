@@ -18,9 +18,9 @@ import java.util.UUID;
 public class FriendController {
     private final FriendService friendService;
 
-    @GetMapping
-    public ApiResponse<List<FriendResponse>> getFriends(Pageable pageable) {
-        return ApiResponse.success(friendService.getFriends(pageable));
+    @GetMapping("/{username}")
+    public ApiResponse<List<FriendResponse>> getFriends(@PathVariable @Username String username ,Pageable pageable) {
+        return ApiResponse.success(friendService.getFriends(username, pageable));
     }
 
     @GetMapping("/suggested")

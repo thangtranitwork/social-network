@@ -1,6 +1,6 @@
 package com.stu.socialnetworkapi.controller;
 
-import com.stu.socialnetworkapi.dto.request.FileResponse;
+import com.stu.socialnetworkapi.dto.response.FileResponse;
 import com.stu.socialnetworkapi.service.itf.FileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;

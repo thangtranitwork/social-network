@@ -1,6 +1,6 @@
 package com.stu.socialnetworkapi.service.impl;
 
-import com.stu.socialnetworkapi.dto.request.FileResponse;
+import com.stu.socialnetworkapi.dto.response.FileResponse;
 import com.stu.socialnetworkapi.entity.File;
 import com.stu.socialnetworkapi.entity.User;
 import com.stu.socialnetworkapi.exception.ApiException;

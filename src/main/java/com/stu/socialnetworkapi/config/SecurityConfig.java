@@ -11,8 +11,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
@@ -21,9 +19,6 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Configuration
@@ -33,9 +28,7 @@ import java.util.List;
 public class SecurityConfig {
     @Value("${front-end.origin}")
     private String frontEndOrigin;
-    @Value("${jwt.access-token.key}")
-    private String secretKey;
-
+    private final CustomJwtDecoder jwtDecoder;
     private static final String[] PUBLIC_ENDPOINTS = new String[]{
             "/v1/auth/**",
             "/v1/register/**",
@@ -68,7 +61,7 @@ public class SecurityConfig {
                 .oauth2ResourceServer(oauth2 ->
                         oauth2.jwt(jwtConfigurer ->
                                         jwtConfigurer.jwtAuthenticationConverter(jwtAuthenticationConverter())
-                                                .decoder(jwtDecoder()))
+                                                .decoder(jwtDecoder))
                                 .authenticationEntryPoint(new JwtAuthenticationEntryPoint()))
                 .build();
     }
@@ -99,11 +92,5 @@ public class SecurityConfig {
         JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
         jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
         return jwtAuthenticationConverter;
-    }
-
-    @Bean
-    public JwtDecoder jwtDecoder() {
-        SecretKey secret = new SecretKeySpec(secretKey.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
-        return NimbusJwtDecoder.withSecretKey(secret).build();
     }
 }

@@ -1,4 +1,4 @@
-package com.stu.socialnetworkapi.dto.request;
+package com.stu.socialnetworkapi.dto.response;
 
 import lombok.Builder;
 import lombok.Data;

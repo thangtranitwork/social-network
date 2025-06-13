@@ -12,7 +12,7 @@ public class BlockMapper {
 
     public BlockResponse toBlockResponse(final BlockProjection projection) {
         return BlockResponse.builder()
-                .blockId(projection.blockId())
+                .uuid(projection.blockId())
                 .user(userMapper.toUserCommonInformationResponse(projection))
                 .build();
     }

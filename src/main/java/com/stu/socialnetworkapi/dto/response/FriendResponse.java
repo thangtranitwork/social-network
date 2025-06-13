@@ -9,7 +9,7 @@ import java.util.UUID;
 @Data
 @Builder
 public class FriendResponse {
-    UUID friendId;
+    UUID uuid;
     ZonedDateTime createdAt;
     UserCommonInformationResponse user;
 }

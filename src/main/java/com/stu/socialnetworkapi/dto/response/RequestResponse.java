@@ -9,7 +9,7 @@ import java.util.UUID;
 @Data
 @Builder
 public class RequestResponse {
-    UUID requestId;
+    UUID uuid;
     ZonedDateTime sentAt;
     UserCommonInformationResponse user;
 }

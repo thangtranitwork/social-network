@@ -8,6 +8,6 @@ import java.util.UUID;
 @Data
 @Builder
 public class BlockResponse {
-    UUID blockId;
+    UUID uuid;
     UserCommonInformationResponse user;
 }

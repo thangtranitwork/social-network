@@ -12,7 +12,7 @@ public class FriendMapper {
 
     public FriendResponse toFriendResponse(final FriendProjection projection) {
         return FriendResponse.builder()
-                .friendId(projection.friendId())
+                .uuid(projection.friendId())
                 .createdAt(projection.createdAt())
                 .user(userMapper.toUserCommonInformationResponse(projection))
                 .build();

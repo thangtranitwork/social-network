@@ -12,7 +12,7 @@ public class RequestMapper {
 
     public RequestResponse toRequestResponse(final RequestProjection projection) {
         return RequestResponse.builder()
-                .requestId(projection.requestId())
+                .uuid(projection.requestId())
                 .sentAt(projection.sentAt())
                 .user(userMapper.toUserCommonInformationResponse(projection))
                 .build();

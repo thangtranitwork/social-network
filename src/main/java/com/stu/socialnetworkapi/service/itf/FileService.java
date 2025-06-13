@@ -1,6 +1,6 @@
 package com.stu.socialnetworkapi.service.itf;
 
-import com.stu.socialnetworkapi.dto.request.FileResponse;
+import com.stu.socialnetworkapi.dto.response.FileResponse;
 import com.stu.socialnetworkapi.entity.File;
 import org.springframework.web.multipart.MultipartFile;
 

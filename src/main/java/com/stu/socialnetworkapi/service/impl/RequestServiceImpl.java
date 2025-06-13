@@ -83,7 +83,7 @@ public class RequestServiceImpl implements RequestService {
     public void acceptRequest(String username) {
         User currentUser = userService.getCurrentUserRequiredAuthentication();
         User target = userService.getUser(username);
-        UUID uuid = requestRepository.getRequestUUIDWhichDirection(currentUser.getId(), target.getId())
+        UUID uuid = requestRepository.getRequestUUIDWhichDirection(target.getId(), currentUser.getId())
                 .orElseThrow(() -> new ApiException(ErrorCode.REQUEST_NOT_FOUND));
 
         requestRepository.acceptRequest(uuid);

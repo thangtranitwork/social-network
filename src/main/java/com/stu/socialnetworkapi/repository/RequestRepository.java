@@ -59,11 +59,21 @@ public interface RequestRepository extends Neo4jRepository<Request, Long> {
     void create(UUID senderId, UUID targetId);
 
     @Query("""
-                MATCH (u:User {id: $userId})-[r:REQUEST]->(t:User {id: $targetId})
+                MATCH (u:User {id: $userId})-[r:REQUEST]-(t:User {id: $targetId})
                 RETURN r.uuid
             """)
     Optional<UUID> getRequestUUID(UUID userId, UUID targetId);
 
+    @Query("""
+                MATCH (u:User {id: senderId})-[r:REQUEST]->(t:User {id: $targetId})
+                RETURN r.uuid
+            """)
+    Optional<UUID> getRequestUUIDWhichDirection(UUID senderId, UUID targetId);
+
+    @Query("""
+                MATCH (:User)-[r:REQUEST {uuid: $uuid}]-(:User)
+                DELETE r
+            """)
     void deleteByUuid(UUID uuid);
 
     @Query("""

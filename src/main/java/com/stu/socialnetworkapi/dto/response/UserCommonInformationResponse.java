@@ -1,6 +1,8 @@
 package com.stu.socialnetworkapi.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.stu.socialnetworkapi.enums.BlockStatus;
+import com.stu.socialnetworkapi.enums.RequestDirection;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -24,7 +26,6 @@ public class UserCommonInformationResponse {
     boolean isOnline;
     ZonedDateTime lastOnline;
     int mutualFriendsCount;
-    UUID requestId;
-    UUID friendId;
-    UUID blockId;
+    RequestDirection request;
+    BlockStatus blockStatus;
 }

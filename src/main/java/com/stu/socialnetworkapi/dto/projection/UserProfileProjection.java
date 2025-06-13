@@ -1,5 +1,8 @@
 package com.stu.socialnetworkapi.dto.projection;
 
+import com.stu.socialnetworkapi.enums.BlockStatus;
+import com.stu.socialnetworkapi.enums.RequestDirection;
+
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.UUID;
@@ -16,9 +19,8 @@ public record UserProfileProjection(
         int mutualFriendsCount,
         ZonedDateTime lastSeen,
         boolean isFriend,
-        UUID requestId,
-        UUID friendId,
-        UUID blockId,
+        RequestDirection request,
+        BlockStatus blockStatus,
         int postCount
 ) {
 }

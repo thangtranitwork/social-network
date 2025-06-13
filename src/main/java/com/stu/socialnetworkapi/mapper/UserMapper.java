@@ -33,9 +33,8 @@ public class UserMapper {
                 .lastOnline(online.getLastOnlineAt())
                 .isFriend(projection.isFriend())
                 .mutualFriendsCount(projection.mutualFriendsCount())
-                .requestId(projection.requestId())
-                .friendId(projection.friendId())
-                .blockId(projection.blockId())
+                .request(projection.request())
+                .blockStatus(projection.blockStatus())
                 .postCount(projection.postCount())
                 .build();
     }

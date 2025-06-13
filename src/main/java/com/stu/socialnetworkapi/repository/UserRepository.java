@@ -21,48 +21,63 @@ public interface UserRepository extends Neo4jRepository<User, UUID> {
     Optional<UUID> getUserIdByUsername(String username);
 
     @Query("""
-                MATCH (user:User {username: $username})
-                OPTIONAL MATCH (user)-[:HAS_PROFILE_PICTURE]->(profilePic:File)
+            MATCH (user:User {username: $username})
+            OPTIONAL MATCH (user)-[:HAS_PROFILE_PICTURE]->(profilePic:File)
             
-                OPTIONAL MATCH (currentUser:User {id: $currentUserId})
+            OPTIONAL MATCH (currentUser:User {id: $currentUserId})
             
-                // Check friendship
-                OPTIONAL MATCH (currentUser)-[friendship:FRIEND]->(user)
+            // Check friendship
+            OPTIONAL MATCH (currentUser)-[friendship:FRIEND]->(user)
             
-                // Check friend request (outgoing or incoming)
-                OPTIONAL MATCH (currentUser)-[request:REQUEST]-(user)
+            // Check friend request - outgoing (currentUser -> user)
+            OPTIONAL MATCH (currentUser)-[requestOut:REQUEST]->(user)
             
-                // Check block
-                OPTIONAL MATCH (currentUser)-[block:BLOCKED]->(user)
+            // Check friend request - incoming (user -> currentUser)
+            OPTIONAL MATCH (user)-[requestIn:REQUEST]->(currentUser)
             
-                // Count mutual friends
-                WITH user, profilePic, currentUser, friendship, request, block,
-                     size([(currentUser)-[:FRIEND]->(mutual:User)<-[:FRIEND]-(user) | mutual]) AS mutualFriendsCount
+            // Check block status - currentUser blocks user
+            OPTIONAL MATCH (currentUser)-[blockOut:BLOCK]->(user)
             
-                // Count posts
-                OPTIONAL MATCH (user)-[:POSTED]->(post:Post)
-                WITH user, profilePic, currentUser, friendship, request, block, mutualFriendsCount,
-                     count(post) AS postCount
+            // Check block status - user blocks currentUser
+            OPTIONAL MATCH (user)-[blockIn:BLOCK]->(currentUser)
             
-                RETURN
-                    user.id AS userId,
-                    user.username AS username,
-                    user.givenName AS givenName,
-                    user.familyName AS familyName,
-                    user.bio AS bio,
-                    user.birthdate AS birthdate,
-                    CASE WHEN profilePic IS NOT NULL THEN profilePic.id ELSE NULL END AS profilePictureId,
-                    COALESCE(user.friendCount, 0) AS friendCount,
-                    mutualFriendsCount AS mutualFriendsCount,
-                    postCount AS postCount,
-                    user.lastSeen AS lastSeen,
-                    CASE WHEN friendship IS NOT NULL THEN true ELSE false END AS isFriend,
-                    friendship.uuid AS friendId,
-                    request.uuid AS requestId,
-                    block.uuid AS blockId,
-                    COALESCE(user.showFriends, true) AS showFriends,
-                    COALESCE(user.allowFriendRequest, true) AS allowFriendRequest
-                LIMIT 1
+            // Count mutual friends
+            WITH user, profilePic, currentUser, friendship, requestOut, requestIn, blockOut, blockIn,
+                 size([(currentUser)-[:FRIEND]->(mutual:User)<-[:FRIEND]-(user) | mutual]) AS mutualFriendsCount
+            
+            // Count posts
+            OPTIONAL MATCH (user)-[:POSTED]->(post:Post)
+            WITH user, profilePic, currentUser, friendship, requestOut, requestIn, blockOut, blockIn, mutualFriendsCount,
+                 count(post) AS postCount
+            
+            RETURN
+                user.id AS userId,
+                user.username AS username,
+                user.givenName AS givenName,
+                user.familyName AS familyName,
+                user.bio AS bio,
+                user.birthdate AS birthdate,
+                CASE WHEN profilePic IS NOT NULL THEN profilePic.id ELSE NULL END AS profilePictureId,
+                COALESCE(user.friendCount, 0) AS friendCount,
+                mutualFriendsCount AS mutualFriendsCount,
+                postCount AS postCount,
+                user.lastSeen AS lastSeen,
+                CASE WHEN friendship IS NOT NULL THEN true ELSE false END AS isFriend,
+            
+                // Request Direction
+                CASE
+                    WHEN requestOut IS NOT NULL THEN 'OUT'
+                    WHEN requestIn IS NOT NULL THEN 'IN'
+                    ELSE 'NONE'
+                END AS request,
+            
+                // Block Status
+                CASE
+                    WHEN blockOut IS NOT NULL THEN 'BLOCKED'
+                    WHEN blockIn IS NOT NULL THEN 'HAS_BEEN_BLOCKED'
+                    ELSE 'NORMAL'
+                END AS blockStatus
+            LIMIT 1
             """)
     Optional<UserProfileProjection> findProfileByUsername(String username, UUID currentUserId);
 

@@ -45,7 +45,7 @@ public interface ChatRepository extends Neo4jRepository<Chat, UUID> {
             
             // Count unread messages
             OPTIONAL MATCH (chat)-[:HAS_MESSAGE]->(unreadMsg:Message)
-            WHERE NOT EXISTS((currentUser)-[:READ]->(unreadMsg))
+            WHERE NOT EXISTS((currentUser)-[:SENT]->(unreadMsg)) AND unreadMsg.isRead = false
             
             // Check friendship status
             OPTIONAL MATCH (currentUser)-[friendRel:FRIEND]-(target)

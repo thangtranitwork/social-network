@@ -53,15 +53,15 @@ public class PostController {
         return ApiResponse.success();
     }
 
-    @PatchMapping("/update-privacy")
-    public ApiResponse<Void> updatePostPrivacy(@RequestParam UUID id, @RequestParam PostPrivacy privacy) {
-        postService.updatePrivacy(id, privacy);
+    @PatchMapping("/update-privacy/{postId}")
+    public ApiResponse<Void> updatePostPrivacy(@PathVariable UUID postId, @RequestParam PostPrivacy privacy) {
+        postService.updatePrivacy(postId, privacy);
         return ApiResponse.success();
     }
 
-    @PatchMapping("/update-content")
-    public ApiResponse<PostResponse> updatePostContent(@RequestParam UUID id, @Valid PostUpdateContentRequest request) {
-        return ApiResponse.success(postService.updateContent(id, request));
+    @PatchMapping("/update-content/{postId}")
+    public ApiResponse<PostResponse> updatePostContent(@PathVariable UUID postId, @Valid PostUpdateContentRequest request) {
+        return ApiResponse.success(postService.updateContent(postId, request));
     }
 
     @DeleteMapping("/unlike/{postId}")

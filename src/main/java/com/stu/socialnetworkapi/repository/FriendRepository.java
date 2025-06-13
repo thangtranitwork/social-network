@@ -65,59 +65,61 @@ public interface FriendRepository extends Neo4jRepository<Friend, Long> {
      * Hệ thống gợi ý bạn bè
      * - Số lượng bạn chung: 5 điểm 1 bạn chung
      * - Thông qua quan hệ (User)-[view:VIEW_PROFILE]->(User)
-     *   dùng thuộc tính view.times * 2 điểm, ở chiều ngược lại view.times * 1 điểm
-     * - Độ dài đường đi ngắn nhất từ user đến target >= 2: 120 / độ dài
+     * dùng thuộc tính view.times * 2 điểm, ở chiều ngược lại view.times * 1 điểm
+     * - Với mỗi đường từ user -> target (2 cạnh): 2 điểm
      * - Độ tuổi chênh lệch mỗi 1 tuổi chênh lệch -2 điểm * số tuổi chênh lệch
      * - Đã từng chat với nhau nhưng chưa kết bạn: 30 điểm
      */
     @Query("""
-                MATCH (currentUser:User {id: $userId})
-                MATCH (target:User)
-                WHERE target.id <> $userId
-                  AND NOT EXISTS((currentUser)-[:FRIEND|BLOCK|REQUEST]-(target))
+            MATCH (currentUser:User {id: $userId})
+            MATCH (target:User)
+            WHERE target.id <> $userId
+              AND NOT EXISTS((currentUser)-[:FRIEND|BLOCK|REQUEST]-(target))
             
-                OPTIONAL MATCH (currentUser)-[:FRIEND]->(mutual:User)-[:FRIEND]->(target)
-                WHERE mutual.id <> target.id
+            // Bạn chung
+            OPTIONAL MATCH (currentUser)-[:FRIEND]->(mutual:User)-[:FRIEND]->(target)
+            WHERE mutual.id <> target.id
             
-                OPTIONAL MATCH (currentUser)-[viewOut:VIEW_PROFILE]->(target)
-                OPTIONAL MATCH (target)-[viewIn:VIEW_PROFILE]->(currentUser)
-                OPTIONAL MATCH (target)-[:HAS_PROFILE_PICTURE]->(pic:File)
-                OPTIONAL MATCH (currentUser)-[:IS_MEMBER_OF]->(chat)<-[:IS_MEMBER_OF]-(target)
+            // Lượt xem profile
+            OPTIONAL MATCH (currentUser)-[viewOut:VIEW_PROFILE]->(target)
+            OPTIONAL MATCH (target)-[viewIn:VIEW_PROFILE]->(currentUser)
             
-                OPTIONAL MATCH p = shortestPath((currentUser)-[*1..4]-(target))
+            // Ảnh đại diện
+            OPTIONAL MATCH (target)-[:HAS_PROFILE_PICTURE]->(pic:File)
             
-                WITH currentUser, target, pic, chat,
-                     COALESCE(COUNT(DISTINCT mutual), 0) AS mutualFriendsCount,
-                     COALESCE(viewOut.times, 0) AS viewOutTimes,
-                     COALESCE(viewIn.times, 0) AS viewInTimes,
-                     CASE WHEN p IS NULL THEN NULL ELSE length(p) END AS shortestPathLength
+            // Cùng chat (chưa kết bạn)
+            OPTIONAL MATCH (currentUser)-[:IS_MEMBER_OF]->(chat)<-[:IS_MEMBER_OF]-(target)
             
-                WITH target, pic, mutualFriendsCount, viewOutTimes, viewInTimes, chat, shortestPathLength,
-                     currentUser.birthdate.year - target.birthdate.year AS ageDiff
+            OPTIONAL MATCH path = (currentUser)-[*2..2]-(target)
             
-                WITH target, pic, mutualFriendsCount, viewOutTimes, viewInTimes, ageDiff, shortestPathLength,
-                     mutualFriendsCount * 5
-                     + viewOutTimes * 2
-                     + viewInTimes
-                     - abs(ageDiff) * 2
-                     + CASE WHEN chat IS NOT NULL THEN 30 ELSE 0 END
-                     + CASE
-                         WHEN shortestPathLength IS NULL OR shortestPathLength <= 1 THEN 0
-                         ELSE 120.0 / shortestPathLength
-                       END AS score
+            WITH currentUser, target, pic, chat,
+                 COUNT(DISTINCT mutual) AS mutualFriendsCount,
+                 COALESCE(viewOut.times, 0) AS viewOutTimes,
+                 COALESCE(viewIn.times, 0) AS viewInTimes,
+                 COUNT(path) AS numPaths,
             
-                RETURN
-                    target.id AS userId,
-                    target.username AS username,
-                    target.givenName AS givenName,
-                    target.familyName AS familyName,
-                    CASE WHEN pic IS NOT NULL THEN pic.id ELSE NULL END AS profilePictureId,
-                    mutualFriendsCount AS mutualFriendsCount,
-                    false AS isFriend,
-                    score
+                 currentUser.birthdate.year - target.birthdate.year AS ageDiff
             
-                ORDER BY score DESC
-                SKIP $skip LIMIT $limit
+            WITH target, pic, mutualFriendsCount, viewOutTimes, viewInTimes, ageDiff, numPaths, chat,
+                 mutualFriendsCount * 5
+                 + viewOutTimes * 2
+                 + viewInTimes
+                 - abs(ageDiff) * 2
+                 + CASE WHEN chat IS NOT NULL THEN 30 ELSE 0 END
+                 + numPaths * 2 AS score
+            
+            RETURN
+                target.id AS userId,
+                target.username AS username,
+                target.givenName AS givenName,
+                target.familyName AS familyName,
+                CASE WHEN pic IS NOT NULL THEN pic.id ELSE NULL END AS profilePictureId,
+                mutualFriendsCount AS mutualFriendsCount,
+                false AS isFriend,
+                score
+            
+            ORDER BY score DESC
+            SKIP $skip LIMIT $limit
             """)
     List<UserProjection> getSuggestedFriends(UUID userId, Pageable pageable);
 

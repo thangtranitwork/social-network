@@ -15,4 +15,5 @@ public class MessageResponse {
     ZonedDateTime sentAt;
     UserCommonInformationResponse sender;
     String attachment;
+    String attachmentName;
 }

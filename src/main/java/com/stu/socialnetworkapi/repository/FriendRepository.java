@@ -34,17 +34,24 @@ public interface FriendRepository extends Neo4jRepository<Friend, Long> {
     boolean canUnfriend(UUID friendId, UUID userId);
 
     @Query("""
-            MATCH (user:User)-[friend:FRIEND {uuid: $friendId}]->(target:User)
-            OPTIONAL MATCH (target)-[reverseFriend:FRIEND]->(user)
-            SET user.friendCount = CASE
-                                      WHEN user.friendCount > 0 THEN user.friendCount - 1
-                                      ELSE 0
-                                    END,
-                target.friendCount = CASE
-                                      WHEN target.friendCount > 0 THEN target.friendCount - 1
-                                      ELSE 0
-                                    END
-            DELETE friend, reverseFriend
+            MATCH (user:User)-[friend:FRIEND {uuid: $friendId}]-(target:User)
+            
+            DELETE friend
+            
+            WITH user, target
+            CALL {
+                WITH user
+                OPTIONAL MATCH (user)-[:FRIEND]->(:User)
+                RETURN COUNT(*) AS userFriendCount
+            }
+            CALL {
+                WITH target
+                OPTIONAL MATCH (target)-[:FRIEND]->(:User)
+                RETURN COUNT(*) AS targetFriendCount
+            }
+            
+            SET user.friendCount = userFriendCount,
+                target.friendCount = targetFriendCount
             """)
     void unfriend(UUID friendId);
 

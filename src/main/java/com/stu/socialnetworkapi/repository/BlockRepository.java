@@ -27,32 +27,53 @@ public interface BlockRepository extends Neo4jRepository<Block, Long> {
     BlockStatus getBlockStatus(UUID userId, UUID targetId);
 
     @Query("""
-                MATCH (a:User {id: $userId})
-                MATCH (b:User {id: $targetId})
+            MATCH (a:User {id: $userId})
+            MATCH (b:User {id: $targetId})
             
-                // Xoá quan hệ FRIEND nếu có
-                OPTIONAL MATCH (a)-[f1:FRIEND]-(b)
-                DELETE f1
+            // Xóa relationships
+            OPTIONAL MATCH (a)-[f1:FRIEND]-(b)
+            OPTIONAL MATCH (a)-[r1:REQUEST]->(b)
+            OPTIONAL MATCH (a)<-[r2:REQUEST]-(b)
+            DELETE f1, r1, r2
             
-                WITH a, b, COUNT(f1) AS removedFriends
-                SET a.friendCount = a.friendCount - removedFriends,
-                    b.friendCount = b.friendCount - removedFriends
+            // Tạo BLOCK relationship
+            MERGE (a)-[:BLOCK {uuid: randomUUID()}]->(b)
             
-                WITH a, b, removedFriends
-                OPTIONAL MATCH (a)-[r1:REQUEST]->(b)
-                OPTIONAL MATCH (a)<-[r2:REQUEST]-(b)
-                DELETE r1, r2
+            // Đếm lại tất cả counts cho user A
+            WITH a, b
+            CALL {
+                WITH a
+                OPTIONAL MATCH (a)-[:FRIEND]-(:User)
+                WITH COUNT(*) AS friendCount
+                OPTIONAL MATCH (a)-[:REQUEST]->(:User)
+                WITH friendCount, COUNT(*) AS requestSentCount
+                OPTIONAL MATCH (a)<-[:REQUEST]-(:User)
+                WITH friendCount, requestSentCount, COUNT(*) AS requestReceivedCount
+                OPTIONAL MATCH (a)-[:BLOCK]->(:User)
+                WITH friendCount, requestSentCount, requestReceivedCount, COUNT(*) AS blockCount
+                RETURN friendCount, requestSentCount, requestReceivedCount, blockCount
+            }
             
-                WITH a, b, removedFriends, COUNT(r1) AS sentRequestRemoved, COUNT(r2) AS receivedRequestRemoved
-                SET a.requestSentCount = a.requestSentCount - sentRequestRemoved,
-                    b.requestReceivedCount = b.requestReceivedCount - sentRequestRemoved,
-                    a.requestReceivedCount = a.requestReceivedCount - receivedRequestRemoved,
-                    b.requestSentCount = b.requestSentCount - receivedRequestRemoved
+            // Đếm lại counts cho user B
+            CALL {
+                WITH b
+                OPTIONAL MATCH (b)-[:FRIEND]-(:User)
+                WITH COUNT(*) AS friendCount
+                OPTIONAL MATCH (b)-[:REQUEST]->(:User)
+                WITH friendCount, COUNT(*) AS requestSentCount
+                OPTIONAL MATCH (b)<-[:REQUEST]-(:User)
+                WITH friendCount, requestSentCount, COUNT(*) AS requestReceivedCount
+                RETURN friendCount, requestSentCount, requestReceivedCount
+            }
             
-                WITH a, b
-                MERGE (a)-[:BLOCK {uuid: randomUUID()}]->(b)
-            
-                SET a.blockCount = a.blockCount + 1
+            // Update counts
+            SET a.friendCount = friendCount,
+                a.requestSentCount = requestSentCount,
+                a.requestReceivedCount = requestReceivedCount,
+                a.blockCount = blockCount,
+                b.friendCount = friendCount,
+                b.requestSentCount = requestSentCount,
+                b.requestReceivedCount = requestReceivedCount
             """)
     void blockUser(UUID userId, UUID targetId);
 
@@ -64,11 +85,14 @@ public interface BlockRepository extends Neo4jRepository<Block, Long> {
 
     @Query("""
             MATCH (blocker:User)-[block:BLOCK {uuid: $blockId}]->()
-                    SET blocker.blockCount = CASE
-                                              WHEN blocker.blockCount > 0 THEN blocker.blockCount - 1
-                                              ELSE 0
-                                            END
-                    DELETE block
+            DELETE block
+            WITH blocker
+            CALL {
+                WITH blocker
+                OPTIONAL MATCH (blocker)-[:BLOCK]->(:User)
+                RETURN COUNT(*) AS blockerBlockCount
+            }
+            SET blocker.blockCount = blockerBlockCount
             """)
     void unblockUser(UUID blockId);
 

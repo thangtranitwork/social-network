@@ -22,10 +22,10 @@ public class UserCommonInformationResponse {
     String givenName;
     String familyName;
     String profilePictureUrl;
-    boolean isFriend;
-    boolean isOnline;
+    Boolean isFriend;
+    Boolean isOnline;
     ZonedDateTime lastOnline;
-    int mutualFriendsCount;
+    Integer mutualFriendsCount;
     RequestDirection request;
     BlockStatus blockStatus;
 }

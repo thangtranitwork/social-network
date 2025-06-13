@@ -8,7 +8,7 @@ public record UserProjection(
         String givenName,
         String familyName,
         String profilePictureId,
-        int mutualFriendsCount,
-        boolean isFriend
+        Integer mutualFriendsCount,
+        Boolean isFriend
 ) {
 }

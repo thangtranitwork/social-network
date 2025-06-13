@@ -27,53 +27,50 @@ public interface BlockRepository extends Neo4jRepository<Block, Long> {
     BlockStatus getBlockStatus(UUID userId, UUID targetId);
 
     @Query("""
-            MATCH (a:User {id: $userId})
-            MATCH (b:User {id: $targetId})
+                MATCH (a:User {id: $userId})
+                MATCH (b:User {id: $targetId})
             
-            // Xóa relationships
-            OPTIONAL MATCH (a)-[f1:FRIEND]-(b)
-            OPTIONAL MATCH (a)-[r1:REQUEST]->(b)
-            OPTIONAL MATCH (a)<-[r2:REQUEST]-(b)
-            DELETE f1, r1, r2
+                OPTIONAL MATCH (a)-[f1:FRIEND]-(b)
+                OPTIONAL MATCH (a)-[r1:REQUEST]->(b)
+                OPTIONAL MATCH (a)<-[r2:REQUEST]-(b)
+                DELETE f1, r1, r2
             
-            // Tạo BLOCK relationship
-            MERGE (a)-[:BLOCK {uuid: randomUUID()}]->(b)
+                MERGE (a)-[:BLOCK {uuid: randomUUID()}]->(b)
             
-            // Đếm lại tất cả counts cho user A
-            WITH a, b
-            CALL {
-                WITH a
-                OPTIONAL MATCH (a)-[:FRIEND]-(:User)
-                WITH COUNT(*) AS friendCount
-                OPTIONAL MATCH (a)-[:REQUEST]->(:User)
-                WITH friendCount, COUNT(*) AS requestSentCount
-                OPTIONAL MATCH (a)<-[:REQUEST]-(:User)
-                WITH friendCount, requestSentCount, COUNT(*) AS requestReceivedCount
-                OPTIONAL MATCH (a)-[:BLOCK]->(:User)
-                WITH friendCount, requestSentCount, requestReceivedCount, COUNT(*) AS blockCount
-                RETURN friendCount, requestSentCount, requestReceivedCount, blockCount
-            }
+                WITH a, b
+                CALL {
+                    WITH a
+                    OPTIONAL MATCH (a)-[:FRIEND]-(:User)
+                    WITH COUNT(*) AS aFriendCount
+                    OPTIONAL MATCH (a)-[:REQUEST]->(:User)
+                    WITH aFriendCount, COUNT(*) AS aRequestSentCount
+                    OPTIONAL MATCH (a)<-[:REQUEST]-(:User)
+                    WITH aFriendCount, aRequestSentCount, COUNT(*) AS aRequestReceivedCount
+                    OPTIONAL MATCH (a)-[:BLOCK]->(:User)
+                    WITH aFriendCount, aRequestSentCount, aRequestReceivedCount, COUNT(*) AS aBlockCount
+                    RETURN aFriendCount, aRequestSentCount, aRequestReceivedCount, aBlockCount
+                }
             
-            // Đếm lại counts cho user B
-            CALL {
-                WITH b
-                OPTIONAL MATCH (b)-[:FRIEND]-(:User)
-                WITH COUNT(*) AS friendCount
-                OPTIONAL MATCH (b)-[:REQUEST]->(:User)
-                WITH friendCount, COUNT(*) AS requestSentCount
-                OPTIONAL MATCH (b)<-[:REQUEST]-(:User)
-                WITH friendCount, requestSentCount, COUNT(*) AS requestReceivedCount
-                RETURN friendCount, requestSentCount, requestReceivedCount
-            }
+                WITH a, b, aFriendCount, aRequestSentCount, aRequestReceivedCount, aBlockCount
+                CALL {
+                    WITH b
+                    OPTIONAL MATCH (b)-[:FRIEND]-(:User)
+                    WITH COUNT(*) AS bFriendCount
+                    OPTIONAL MATCH (b)-[:REQUEST]->(:User)
+                    WITH bFriendCount, COUNT(*) AS bRequestSentCount
+                    OPTIONAL MATCH (b)<-[:REQUEST]-(:User)
+                    WITH bFriendCount, bRequestSentCount, COUNT(*) AS bRequestReceivedCount
+                    RETURN bFriendCount, bRequestSentCount, bRequestReceivedCount
+                }
             
-            // Update counts
-            SET a.friendCount = friendCount,
-                a.requestSentCount = requestSentCount,
-                a.requestReceivedCount = requestReceivedCount,
-                a.blockCount = blockCount,
-                b.friendCount = friendCount,
-                b.requestSentCount = requestSentCount,
-                b.requestReceivedCount = requestReceivedCount
+                // Update counts
+                SET a.friendCount = aFriendCount,
+                    a.requestSentCount = aRequestSentCount,
+                    a.requestReceivedCount = aRequestReceivedCount,
+                    a.blockCount = aBlockCount,
+                    b.friendCount = bFriendCount,
+                    b.requestSentCount = bRequestSentCount,
+                    b.requestReceivedCount = bRequestReceivedCount
             """)
     void blockUser(UUID userId, UUID targetId);
 

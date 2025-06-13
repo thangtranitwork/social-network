@@ -83,32 +83,39 @@ public interface RequestRepository extends Neo4jRepository<Request, Long> {
     boolean canDeleteRequest(UUID requestId, UUID userId);
 
     @Query("""
-            MATCH (sender:User)-[r:REQUEST {uuid: $requestId}]->(target:User)
-            WITH sender, target, r
-            DELETE r
-            
-            MERGE (sender)-[friend:FRIEND {uuid: randomUUID(), createdAt: datetime()}]->(target)
-            MERGE (sender)<-[friendReverse:FRIEND {uuid: randomUUID(), createdAt: datetime()}]-(target)
-            
-            WITH sender, target
-            CALL {
+                MATCH (sender:User)-[r:REQUEST {uuid: $requestId}]->(target:User)
+                WITH sender, target, r
+                DELETE r
+                MERGE (sender)-[friend:FRIEND {uuid: randomUUID(), createdAt: datetime()}]->(target)
+                MERGE (sender)<-[friendReverse:FRIEND {uuid: randomUUID(), createdAt: datetime()}]-(target)
                 WITH sender, target
-                RETURN
-                    size([(sender)-[:FRIEND]->(:User)]) AS senderFriendCount,
-                    size([(target)-[:FRIEND]->(:User)]) AS targetFriendCount
-            }
-            SET sender.friendCount = senderFriendCount,
-                target.friendCount = targetFriendCount
-            
-            WITH sender, target
-            CALL {
+                CALL {
+                    WITH sender
+                    MATCH (sender)-[:FRIEND]->(:User)
+                    RETURN count(*) AS senderFriendCount
+                }
+                SET sender.friendCount = senderFriendCount
                 WITH sender, target
-                RETURN
-                    size([(sender)-[:REQUEST]->(:User)]) AS sentCount,
-                    size([(:User)-[:REQUEST]->(target)]) AS receivedCount
-            }
-            SET sender.requestSentCount = sentCount,
-                target.requestReceivedCount = receivedCount
+                CALL {
+                    WITH target
+                    MATCH (target)-[:FRIEND]->(:User)
+                    RETURN count(*) AS targetFriendCount
+                }
+                SET target.friendCount = targetFriendCount
+                WITH sender, target
+                CALL {
+                    WITH sender
+                    MATCH (sender)-[:REQUEST]->(:User)
+                    RETURN count(*) AS sentCount
+                }
+                SET sender.requestSentCount = sentCount
+                WITH sender, target
+                CALL {
+                    WITH target
+                    MATCH (:User)-[:REQUEST]->(target)
+                    RETURN count(*) AS receivedCount
+                }
+                SET target.requestReceivedCount = receivedCount
             """)
     void acceptRequest(UUID requestId);
 

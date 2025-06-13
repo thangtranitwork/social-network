@@ -44,6 +44,7 @@ public interface FriendRepository extends Neo4jRepository<Friend, Long> {
                 OPTIONAL MATCH (user)-[:FRIEND]->(:User)
                 RETURN COUNT(*) AS userFriendCount
             }
+            WITH user, target
             CALL {
                 WITH target
                 OPTIONAL MATCH (target)-[:FRIEND]->(:User)

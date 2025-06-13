@@ -11,7 +11,7 @@ import java.util.UUID;
 public interface FriendService {
     List<FriendResponse> getFriends(String username ,Pageable pageable);
 
-    void unfriend(UUID friendId);
+    void unfriend(String username);
 
     boolean isFriend(UUID user1, UUID user2);
 

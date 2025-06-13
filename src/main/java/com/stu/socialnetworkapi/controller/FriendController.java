@@ -7,10 +7,9 @@ import com.stu.socialnetworkapi.service.itf.FriendService;
 import com.stu.socialnetworkapi.validation.annotation.Username;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
-import java.util.List;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.UUID;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -19,7 +18,7 @@ public class FriendController {
     private final FriendService friendService;
 
     @GetMapping("/{username}")
-    public ApiResponse<List<FriendResponse>> getFriends(@PathVariable @Username String username ,Pageable pageable) {
+    public ApiResponse<List<FriendResponse>> getFriends(@PathVariable @Username String username, Pageable pageable) {
         return ApiResponse.success(friendService.getFriends(username, pageable));
     }
 
@@ -33,9 +32,9 @@ public class FriendController {
         return ApiResponse.success(friendService.getMutualFriends(username, pageable));
     }
 
-    @DeleteMapping("/{uuid}")
-    public ApiResponse<Void> deleteFriend(@PathVariable UUID uuid) {
-        friendService.unfriend(uuid);
+    @DeleteMapping("/{username}")
+    public ApiResponse<Void> deleteFriend(@PathVariable @Username String username) {
+        friendService.unfriend(username);
         return ApiResponse.success();
     }
 }

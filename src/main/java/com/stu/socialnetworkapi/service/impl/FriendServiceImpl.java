@@ -8,14 +8,15 @@ import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.mapper.FriendMapper;
 import com.stu.socialnetworkapi.mapper.UserMapper;
 import com.stu.socialnetworkapi.repository.FriendRepository;
+import com.stu.socialnetworkapi.repository.UserRepository;
 import com.stu.socialnetworkapi.service.itf.BlockService;
 import com.stu.socialnetworkapi.service.itf.FriendService;
 import com.stu.socialnetworkapi.service.itf.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
-import java.util.List;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -25,10 +26,11 @@ public class FriendServiceImpl implements FriendService {
     private final UserService userService;
     private final BlockService blockService;
     private final FriendMapper friendMapper;
+    private final UserRepository userRepository;
     private final FriendRepository friendRepository;
 
     @Override
-    public List<FriendResponse> getFriends(String username ,Pageable pageable) {
+    public List<FriendResponse> getFriends(String username, Pageable pageable) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
         User target = userService.getUser(username);
         blockService.validateBlock(currentUserId, target.getId());
@@ -38,12 +40,14 @@ public class FriendServiceImpl implements FriendService {
     }
 
     @Override
-    public void unfriend(UUID friendId) {
+    public void unfriend(String username) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
-        if (!friendRepository.canUnfriend(friendId, currentUserId)) {
-            throw new ApiException(ErrorCode.FRIEND_NOT_FOUND);
-        }
-        friendRepository.unfriend(friendId);
+        User target = userService.getUser(username);
+        UUID uuid = friendRepository.getFriendId(currentUserId, target.getId())
+                .orElseThrow(() -> new ApiException(ErrorCode.FRIEND_NOT_FOUND));
+        friendRepository.deleteByUuid(uuid);
+        userRepository.recalculateUserCounters(currentUserId);
+        userRepository.recalculateUserCounters(target.getId());
     }
 
     @Override

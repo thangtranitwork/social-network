@@ -9,6 +9,7 @@ import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -28,33 +29,13 @@ public interface FriendRepository extends Neo4jRepository<Friend, Long> {
     List<FriendProjection> getFriends(UUID userId, Pageable pageable);
 
     @Query("""
-            MATCH (user:User {id: $userId})-[friend:FRIEND {uuid: $friendId}]->()
-            RETURN COUNT(friend) > 0
+            MATCH (:User {id: $userId})-[friend:FRIEND]->(:User {id: $targetId})
+            RETURN friend.uuid
             """)
-    boolean canUnfriend(UUID friendId, UUID userId);
+    Optional<UUID> getFriendId(UUID userId, UUID targetId);
 
-    @Query("""
-            MATCH (user:User)-[friend:FRIEND {uuid: $friendId}]-(target:User)
-            
-            DELETE friend
-            
-            WITH user, target
-            CALL {
-                WITH user
-                OPTIONAL MATCH (user)-[:FRIEND]->(:User)
-                RETURN COUNT(*) AS userFriendCount
-            }
-            WITH user, target
-            CALL {
-                WITH target
-                OPTIONAL MATCH (target)-[:FRIEND]->(:User)
-                RETURN COUNT(*) AS targetFriendCount
-            }
-            
-            SET user.friendCount = userFriendCount,
-                target.friendCount = targetFriendCount
-            """)
-    void unfriend(UUID friendId);
+    void deleteByUuid(UUID uuid);
+
 
     @Query("""
             MATCH (user1:User {id: $userId1})-[friend:FRIEND]->(user2:User {id: $userId2})

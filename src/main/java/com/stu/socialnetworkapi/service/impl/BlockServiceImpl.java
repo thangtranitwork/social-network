@@ -7,6 +7,7 @@ import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.mapper.BlockMapper;
 import com.stu.socialnetworkapi.repository.BlockRepository;
+import com.stu.socialnetworkapi.repository.UserRepository;
 import com.stu.socialnetworkapi.service.itf.BlockService;
 import com.stu.socialnetworkapi.service.itf.UserService;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ import java.util.UUID;
 public class BlockServiceImpl implements BlockService {
     private final BlockMapper blockMapper;
     private final UserService userService;
+    private final UserRepository userRepository;
     private final BlockRepository blockRepository;
 
     @Override
@@ -56,18 +58,19 @@ public class BlockServiceImpl implements BlockService {
                 if (user.getBlockCount() + 1 > User.MAX_BLOCK_COUNT)
                     throw new ApiException(ErrorCode.BLOCK_LIMIT_REACHED);
                 blockRepository.blockUser(user.getId(), target.getId());
+                userRepository.recalculateUserCounters(user.getId());
             }
         }
     }
 
     @Override
-    public void unblock(UUID blockId) {
+    public void unblock(String username) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
-        if (!blockRepository.canUnblockUser(blockId, currentUserId)) {
-            throw new ApiException(ErrorCode.BLOCK_NOT_FOUND);
-        }
-        blockRepository.unblockUser(blockId);
-
+        User target = userService.getUser(username);
+        UUID uuid = blockRepository.getBlockId(currentUserId, target.getId())
+                .orElseThrow(() -> new ApiException(ErrorCode.BLOCK_NOT_FOUND));
+        blockRepository.deleteByUuid(uuid);
+        userRepository.recalculateUserCounters(currentUserId);
     }
 
     @Override

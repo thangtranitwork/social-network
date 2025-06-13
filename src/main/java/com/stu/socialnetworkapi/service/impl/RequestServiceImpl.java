@@ -9,6 +9,7 @@ import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.mapper.RequestMapper;
 import com.stu.socialnetworkapi.repository.RequestRepository;
+import com.stu.socialnetworkapi.repository.UserRepository;
 import com.stu.socialnetworkapi.service.itf.ChatService;
 import com.stu.socialnetworkapi.service.itf.NotificationService;
 import com.stu.socialnetworkapi.service.itf.RequestService;
@@ -28,6 +29,7 @@ public class RequestServiceImpl implements RequestService {
     private final UserService userService;
     private final ChatService chatService;
     private final RequestMapper requestMapper;
+    private final UserRepository userRepository;
     private final RequestRepository requestRepository;
     private final NotificationService notificationService;
 
@@ -67,37 +69,34 @@ public class RequestServiceImpl implements RequestService {
     }
 
     @Override
-    public void deleteRequest(UUID requestId) {
+    public void deleteRequest(String username) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
-        if (!requestRepository.canDeleteRequest(requestId, currentUserId)) {
-            throw new ApiException(ErrorCode.REQUEST_NOT_FOUND);
-        }
-        requestRepository.delete(requestId);
+        User target = userService.getUser(username);
+        UUID uuid = requestRepository.getRequestUUID(target.getId(), currentUserId)
+                .orElseThrow(() -> new ApiException(ErrorCode.REQUEST_NOT_FOUND));
+
+        requestRepository.deleteByUuid(uuid);
+        userRepository.recalculateUserCounters(currentUserId);
+        userRepository.recalculateUserCounters(target.getId());
     }
 
     @Override
-    public void acceptRequest(UUID requestId) {
-        if (!requestRepository.existsByUuid(requestId)) {
-            throw new ApiException(ErrorCode.REQUEST_NOT_FOUND);
-        }
+    public void acceptRequest(String username) {
+        User currentUser = userService.getCurrentUserRequiredAuthentication();
+        User target = userService.getUser(username);
+        UUID uuid = requestRepository.getRequestUUID(target.getId(), currentUser.getId())
+                .orElseThrow(() -> new ApiException(ErrorCode.REQUEST_NOT_FOUND));
 
-        UUID targetId = requestRepository.getTargetId(requestId);
-        User target = userService.getUser(targetId);
-        User user = userService.getCurrentUserRequiredAuthentication();
-
-        if (!target.getId().equals(user.getId())) {
-            throw new ApiException(ErrorCode.ACCEPT_REQUEST_FAILED);
-        }
-        UUID senderId = requestRepository.getSenderId(requestId);
-        User sender = userService.getUser(senderId);
-        requestRepository.acceptRequest(requestId);
-        chatService.createChatIfNotExist(sender, target);
+        requestRepository.acceptRequest(uuid);
+        userRepository.recalculateUserCounters(currentUser.getId());
+        userRepository.recalculateUserCounters(target.getId());
+        chatService.createChatIfNotExist(currentUser, target);
         Notification notification = Notification.builder()
                 .action(NotificationAction.BE_FRIEND)
                 .targetId(target.getId())
                 .targetType(ObjectType.USER)
-                .creator(user)
-                .receiver(sender)
+                .creator(currentUser)
+                .receiver(target)
                 .build();
         notificationService.send(notification);
     }

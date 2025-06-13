@@ -8,11 +8,11 @@ import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface RequestRepository extends Neo4jRepository<Request, Long> {
-
     @Query("""
              MATCH (sender:User {id: $userId})-[r:REQUEST]->(target:User)
              OPTIONAL MATCH (target)-[:HAS_PROFILE_PICTURE]->(profile: File)
@@ -57,30 +57,16 @@ public interface RequestRepository extends Neo4jRepository<Request, Long> {
                     sentAt: datetime(),
                     uuid: randomUUID()
                 }]->(target)
-                WITH sender, target
-                CALL {
-                    WITH sender
-                    MATCH (sender)-[:REQUEST]->(:User)
-                    RETURN count(*) AS sentCount
-                }
-                SET sender.requestSentCount = sentCount
-                WITH sender, target
-                CALL {
-                    WITH target
-                    MATCH (:User)-[:REQUEST]->(target)
-                    RETURN count(*) AS receivedCount
-                }
-                SET target.requestReceivedCount = receivedCount
             """)
     void create(UUID senderId, UUID targetId);
 
-
     @Query("""
-                MATCH (sender:User)-[r:REQUEST]->(target:User)
-                WHERE r.uuid = $requestId AND (sender.id = $userId OR target.id = $userId)
-                RETURN COUNT(r) > 0
+                MATCH (u:User {id: $userId})-[r:REQUEST]->(t:User {id: $targetId})
+                RETURN r.uuid
             """)
-    boolean canDeleteRequest(UUID requestId, UUID userId);
+    Optional<UUID> getRequestUUID(UUID userId, UUID targetId);
+
+    void deleteByUuid(UUID uuid);
 
     @Query("""
                 MATCH (sender:User)-[r:REQUEST {uuid: $requestId}]->(target:User)
@@ -88,77 +74,13 @@ public interface RequestRepository extends Neo4jRepository<Request, Long> {
                 DELETE r
                 MERGE (sender)-[friend:FRIEND {uuid: randomUUID(), createdAt: datetime()}]->(target)
                 MERGE (sender)<-[friendReverse:FRIEND {uuid: randomUUID(), createdAt: datetime()}]-(target)
-                WITH sender, target
-                CALL {
-                    WITH sender
-                    MATCH (sender)-[:FRIEND]->(:User)
-                    RETURN count(*) AS senderFriendCount
-                }
-                SET sender.friendCount = senderFriendCount
-                WITH sender, target
-                CALL {
-                    WITH target
-                    MATCH (target)-[:FRIEND]->(:User)
-                    RETURN count(*) AS targetFriendCount
-                }
-                SET target.friendCount = targetFriendCount
-                WITH sender, target
-                CALL {
-                    WITH sender
-                    MATCH (sender)-[:REQUEST]->(:User)
-                    RETURN count(*) AS sentCount
-                }
-                SET sender.requestSentCount = sentCount
-                WITH sender, target
-                CALL {
-                    WITH target
-                    MATCH (:User)-[:REQUEST]->(target)
-                    RETURN count(*) AS receivedCount
-                }
-                SET target.requestReceivedCount = receivedCount
             """)
     void acceptRequest(UUID requestId);
 
     @Query("""
                 MATCH (sender:User)-[r:REQUEST {uuid: $uuid}]->(target:User)
                 DELETE r
-            
-                WITH sender, target
-                CALL {
-                    WITH sender
-                    MATCH (sender)-[:REQUEST]->(:User)
-                    RETURN count(*) AS sentCount
-                }
-                SET sender.requestSentCount = sentCount
-            
-                WITH sender, target
-                CALL {
-                    WITH target
-                    MATCH (:User)-[:REQUEST]->(target)
-                    RETURN count(*) AS receivedCount
-                }
-                SET target.requestReceivedCount = receivedCount
             """)
     void delete(UUID uuid);
-
-
-    @Query("""
-            OPTIONAL MATCH (sender:User)-[r:REQUEST {uuid: $uuid}]->(target:User)
-            RETURN target.id
-            """)
-    UUID getTargetId(UUID uuid);
-
-    @Query("""
-            OPTIONAL MATCH (sender:User)-[r:REQUEST {uuid: $uuid}]->(target:User)
-            RETURN sender.id
-            """)
-    UUID getSenderId(UUID uuid);
-
-    @Query("""
-            MATCH ()-[r:REQUEST {uuid: $uuid}]->()
-            RETURN count(r) > 0
-            """)
-    boolean existsByUuid(UUID uuid);
-
 }
 

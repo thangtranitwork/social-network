@@ -161,4 +161,31 @@ public interface UserRepository extends Neo4jRepository<User, UUID> {
             ORDER BY key ASC
             """)
     List<CountDataProjection> getAllTimeYearlyStatistics();
+
+    @Query("""
+            MATCH (user:User {id: $userId})
+            
+            // Đếm số lượng bạn bè
+            OPTIONAL MATCH (user)-[:FRIEND]->(:User)
+            WITH user, count(*) AS friendCount
+            
+            // Đếm số lượng request đã gửi
+            OPTIONAL MATCH (user)-[:REQUEST]->(:User)
+            WITH user, friendCount, count(*) AS requestSentCount
+            
+            // Đếm số lượng request đã nhận
+            OPTIONAL MATCH (user)<-[:REQUEST]-(:User)
+            WITH user, friendCount, requestSentCount, count(*) AS requestReceivedCount
+            
+            // Đếm số lượng user đã block
+            OPTIONAL MATCH (user)-[:BLOCK]->(:User)
+            WITH user, friendCount, requestSentCount, requestReceivedCount, count(*) AS blockCount
+            
+            // Cập nhật tất cả các giá trị
+            SET user.friendCount = friendCount,
+                user.requestSentCount = requestSentCount,
+                user.requestReceivedCount = requestReceivedCount,
+                user.blockCount = blockCount
+            """)
+    void recalculateUserCounters(UUID userId);
 }

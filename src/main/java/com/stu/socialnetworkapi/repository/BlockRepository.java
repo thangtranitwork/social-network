@@ -9,6 +9,7 @@ import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -27,71 +28,24 @@ public interface BlockRepository extends Neo4jRepository<Block, Long> {
     BlockStatus getBlockStatus(UUID userId, UUID targetId);
 
     @Query("""
-                MATCH (a:User {id: $userId})
-                MATCH (b:User {id: $targetId})
+            MATCH (a:User {id: $userId})
+            MATCH (b:User {id: $targetId})
             
-                OPTIONAL MATCH (a)-[f1:FRIEND]-(b)
-                OPTIONAL MATCH (a)-[r1:REQUEST]->(b)
-                OPTIONAL MATCH (a)<-[r2:REQUEST]-(b)
-                DELETE f1, r1, r2
+            OPTIONAL MATCH (a)-[f:FRIEND]-(b)
+            OPTIONAL MATCH (a)-[r:REQUEST]-(b)
+            DELETE f, r
             
-                MERGE (a)-[:BLOCK {uuid: randomUUID()}]->(b)
-            
-                WITH a, b
-                CALL {
-                    WITH a
-                    OPTIONAL MATCH (a)-[:FRIEND]-(:User)
-                    WITH COUNT(*) AS aFriendCount
-                    OPTIONAL MATCH (a)-[:REQUEST]->(:User)
-                    WITH aFriendCount, COUNT(*) AS aRequestSentCount
-                    OPTIONAL MATCH (a)<-[:REQUEST]-(:User)
-                    WITH aFriendCount, aRequestSentCount, COUNT(*) AS aRequestReceivedCount
-                    OPTIONAL MATCH (a)-[:BLOCK]->(:User)
-                    WITH aFriendCount, aRequestSentCount, aRequestReceivedCount, COUNT(*) AS aBlockCount
-                    RETURN aFriendCount, aRequestSentCount, aRequestReceivedCount, aBlockCount
-                }
-            
-                WITH a, b, aFriendCount, aRequestSentCount, aRequestReceivedCount, aBlockCount
-                CALL {
-                    WITH b
-                    OPTIONAL MATCH (b)-[:FRIEND]-(:User)
-                    WITH COUNT(*) AS bFriendCount
-                    OPTIONAL MATCH (b)-[:REQUEST]->(:User)
-                    WITH bFriendCount, COUNT(*) AS bRequestSentCount
-                    OPTIONAL MATCH (b)<-[:REQUEST]-(:User)
-                    WITH bFriendCount, bRequestSentCount, COUNT(*) AS bRequestReceivedCount
-                    RETURN bFriendCount, bRequestSentCount, bRequestReceivedCount
-                }
-            
-                // Update counts
-                SET a.friendCount = aFriendCount,
-                    a.requestSentCount = aRequestSentCount,
-                    a.requestReceivedCount = aRequestReceivedCount,
-                    a.blockCount = aBlockCount,
-                    b.friendCount = bFriendCount,
-                    b.requestSentCount = bRequestSentCount,
-                    b.requestReceivedCount = bRequestReceivedCount
+            CREATE (a)-[:BLOCK {uuid: randomUUID()}]->(b)
             """)
     void blockUser(UUID userId, UUID targetId);
 
     @Query("""
-            MATCH (user:User {id: $userId})-[block:BLOCK {uuid: $blockId}]->()
-            RETURN COUNT(block) > 0
+            MATCH (:User {id: $userId})-[block:BLOCK]->(:User {id: $targetId})
+            RETURN block.uuid
             """)
-    boolean canUnblockUser(UUID blockId, UUID userId);
+    Optional<UUID> getBlockId(UUID userId, UUID targetId);
 
-    @Query("""
-            MATCH (blocker:User)-[block:BLOCK {uuid: $blockId}]->()
-            DELETE block
-            WITH blocker
-            CALL {
-                WITH blocker
-                OPTIONAL MATCH (blocker)-[:BLOCK]->(:User)
-                RETURN COUNT(*) AS blockerBlockCount
-            }
-            SET blocker.blockCount = blockerBlockCount
-            """)
-    void unblockUser(UUID blockId);
+    void deleteByUuid(UUID uuid);
 
     @Query("""
             MATCH (blocker:User {id: $userId})-[block:BLOCK]->(target:User)

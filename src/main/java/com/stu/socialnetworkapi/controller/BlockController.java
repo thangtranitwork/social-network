@@ -9,7 +9,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -28,9 +27,9 @@ public class BlockController {
         return ApiResponse.success();
     }
 
-    @DeleteMapping("/{uuid}")
-    public ApiResponse<Void> unblock(@PathVariable UUID uuid) {
-        blockService.unblock(uuid);
+    @DeleteMapping("/{username}")
+    public ApiResponse<Void> unblock(@PathVariable @Username String username) {
+        blockService.unblock(username);
         return ApiResponse.success();
     }
 }

@@ -14,7 +14,7 @@ public interface BlockService {
 
     void block(String username);
 
-    void unblock(UUID blockId);
+    void unblock(String username);
 
     List<BlockResponse> getBlockedUsers(Pageable pageable);
 }

@@ -3,12 +3,12 @@ package com.stu.socialnetworkapi.controller;
 import com.stu.socialnetworkapi.dto.response.ApiResponse;
 import com.stu.socialnetworkapi.dto.response.RequestResponse;
 import com.stu.socialnetworkapi.service.itf.RequestService;
+import com.stu.socialnetworkapi.validation.annotation.Username;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
-import java.util.List;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.UUID;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -26,21 +26,21 @@ public class RequestController {
         return ApiResponse.success(requestService.getReceivedRequests(pageable));
     }
 
-    @PostMapping("/{username}")
-    public ApiResponse<Void> sentAddFriendRequest(@PathVariable String username) {
+    @PostMapping("/send/{username}")
+    public ApiResponse<Void> sentAddFriendRequest(@PathVariable @Username String username) {
         requestService.sendAddFriendRequest(username);
         return ApiResponse.success();
     }
 
-    @PostMapping("/accept/{uuid}")
-    public ApiResponse<Void> acceptRequest(@PathVariable UUID uuid) {
-        requestService.acceptRequest(uuid);
+    @PostMapping("/accept/{username}")
+    public ApiResponse<Void> acceptRequest(@PathVariable @Username String username) {
+        requestService.acceptRequest(username);
         return ApiResponse.success();
     }
 
-    @DeleteMapping("/delete/{uuid}")
-    public ApiResponse<Void> deleteRequest(@PathVariable UUID uuid) {
-        requestService.deleteRequest(uuid);
+    @DeleteMapping("/delete/{username}")
+    public ApiResponse<Void> deleteRequest(@PathVariable @Username String username) {
+        requestService.deleteRequest(username);
         return ApiResponse.success();
     }
 }

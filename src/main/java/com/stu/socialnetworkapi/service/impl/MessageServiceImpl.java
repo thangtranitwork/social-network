@@ -93,6 +93,7 @@ public class MessageServiceImpl implements MessageService {
         Chat chat = getOrCreateDirectChat(sender, receiver);
         File file = fileService.upload(request.attachment());
         Message message = Message.builder()
+                .chat(chat)
                 .sender(sender)
                 .attachedFile(file)
                 .build();

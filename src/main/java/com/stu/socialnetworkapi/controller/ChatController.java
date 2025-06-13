@@ -48,7 +48,7 @@ public class ChatController {
     }
 
     @PostMapping("/send-file")
-    public ApiResponse<MessageResponse> sendFile(@Valid @RequestBody FileMessageRequest request) {
+    public ApiResponse<MessageResponse> sendFile(@Valid FileMessageRequest request) {
         return ApiResponse.success(messageService.sendFile(request));
     }
 

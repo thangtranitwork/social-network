@@ -91,11 +91,6 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             return chatRepository.existInChat(UUID.fromString(chatId), UUID.fromString(userId));
         }
 
-        if (destination.startsWith(WebSocketConfig.CHAT_COMMAND_CHANNEL_PREFIX)) {
-            String chatId = destination.substring(WebSocketConfig.CHAT_COMMAND_CHANNEL_PREFIX.length() + 1);
-            return chatRepository.existInChat(UUID.fromString(chatId), UUID.fromString(userId));
-        }
-
         if (destination.startsWith(WebSocketConfig.MESSAGE_CHANNEL_PREFIX)) {
             String userIdDestination = destination.substring(WebSocketConfig.MESSAGE_CHANNEL_PREFIX.length() + 1);
             return userIdDestination.equals(userId);

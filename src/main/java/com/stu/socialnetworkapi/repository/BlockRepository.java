@@ -46,6 +46,10 @@ public interface BlockRepository extends Neo4jRepository<Block, Long> {
             """)
     Optional<UUID> getBlockId(UUID userId, UUID targetId);
 
+    @Query("""
+                MATCH (:User)-[r:BLOCK {uuid: $uuid}]->(:User)
+                DELETE r
+            """)
     void deleteByUuid(UUID uuid);
 
     @Query("""

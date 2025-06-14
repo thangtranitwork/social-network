@@ -86,9 +86,7 @@ public interface ChatRepository extends Neo4jRepository<Chat, UUID> {
     @Query("""
             MATCH (currentUser:User {id: $userId})-[:IS_MEMBER_OF]->(chat:Chat)<-[:IS_MEMBER_OF]-(target:User)
             WHERE target.id <> $userId
-            
-            // Filter by search query
-            WHERE $query IS NULL OR
+            AND
                   toLower(target.givenName + ' ' + target.familyName) CONTAINS toLower($query) OR
                   toLower(target.username) CONTAINS toLower($query)
             

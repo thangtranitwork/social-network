@@ -5,6 +5,7 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
 import org.springframework.data.neo4j.core.schema.Relationship;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.Collections;
 import java.util.List;
@@ -26,25 +27,22 @@ public class File {
     @ToString.Exclude
     User uploader;
 
-    private static final String selfOrigin = "http://localhost";
-
     public static String getPath(File file) {
         if (file == null) return null;
-        return selfOrigin + "/v1/files/" + file.getId();
-//        return ServletUriComponentsBuilder.fromCurrentContextPath()
-//                .path("/v1/files/")
-//                .path(file.getId())
-//                .toUriString();
+
+        return ServletUriComponentsBuilder.fromCurrentContextPath()
+                .path("/v1/files/")
+                .path(file.getId())
+                .toUriString();
     }
 
     public static String getPath(String id) {
         if (id == null) return null;
-        return selfOrigin + "/v1/files/" + id;
 
-//        return ServletUriComponentsBuilder.fromCurrentContextPath()
-//                .path("/v1/files/")
-//                .path(id)
-//                .toUriString();
+        return ServletUriComponentsBuilder.fromCurrentContextPath()
+                .path("/v1/files/")
+                .path(id)
+                .toUriString();
     }
 
     public static List<String> getPath(List<File> attachedFiles) {

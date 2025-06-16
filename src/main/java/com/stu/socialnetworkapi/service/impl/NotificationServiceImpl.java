@@ -55,7 +55,7 @@ public class NotificationServiceImpl implements NotificationService {
         notifications.forEach(noti ->
                 CompletableFuture.runAsync(() -> {
                     String destination = WebSocketConfig.NOTIFICATION_CHANNEL_PREFIX + "/" + noti.getReceiver().getId();
-                    messagingTemplate.convertAndSend(destination, noti);
+                    messagingTemplate.convertAndSend(destination, notificationMapper.toNotificationResponse(noti));
                 })
         );
     }

@@ -41,6 +41,7 @@ public class SecurityConfig {
             "/v1/posts/{id}",
             "/v1/posts/of-user/{username}",
             "/v1/comments/of-post/{postId}",
+            "/v1/stringee/**",
             "/ws/**" //authorize in handshake interceptor
     };
 
@@ -70,6 +71,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
         corsConfiguration.addAllowedOrigin(frontEndOrigin);
+        corsConfiguration.setAllowedOriginPatterns(List.of(frontEndOrigin, "https://*.stringee.com"));
         corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         corsConfiguration.setAllowedHeaders(List.of("*"));
         corsConfiguration.setAllowCredentials(true);

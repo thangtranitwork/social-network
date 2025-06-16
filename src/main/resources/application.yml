@@ -46,6 +46,10 @@ jwt:
     duration: ${JWT_REFRESH_TOKEN_DURATION} # days
 front-end:
   origin: ${FRONTEND_ORIGIN}
+stringee:
+  api:
+    sid: ${STRINGEE_API_SID}
+    secret-key: ${STRINGEE_API_SECRET_KEY}
 logging:
   level:
     root: error

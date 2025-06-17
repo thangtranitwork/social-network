@@ -1,5 +1,6 @@
 package com.stu.socialnetworkapi.service.impl;
 
+import com.stu.socialnetworkapi.dto.request.Neo4jPageable;
 import com.stu.socialnetworkapi.dto.request.PostRequest;
 import com.stu.socialnetworkapi.dto.request.PostUpdateContentRequest;
 import com.stu.socialnetworkapi.dto.request.SharePostRequest;
@@ -50,24 +51,21 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public List<PostResponse> getPostsOfUser(String authorUsername, Pageable pageable) {
+    public List<PostResponse> getPostsOfUser(String authorUsername, Neo4jPageable pageable) {
         UUID currentUserId = userService.getCurrentUserId();
         UUID targetId = userService.getUserId(authorUsername);
-        List<PostPrivacy> visiblePrivacies = getVisiblePrivacies(currentUserId, targetId);
-
+        blockService.validateBlock(targetId, currentUserId);
         return postRepository
-                .findAllByAuthorIdAndPrivacyIsInAndDeletedAtIsNull(targetId, visiblePrivacies, pageable).stream()
+                .findAllByAuthorId(targetId, currentUserId, pageable.getSkip(), pageable.getLimit()).stream()
                 .map(postMapper::toPostResponse)
-                .map(post -> mapIsLiked(post, currentUserId))
                 .toList();
     }
 
     @Override
-    public List<PostResponse> getSuggestedPosts(Pageable pageable) {
+    public List<PostResponse> getSuggestedPosts(Neo4jPageable pageable) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
-        return postRepository.findAllById(postRepository.getSuggestedPosts(currentUserId, pageable)).stream()
+        return postRepository.getSuggestedPosts(currentUserId, pageable.getSkip(), pageable.getLimit()).stream()
                 .map(postMapper::toPostResponse)
-                .map(post -> mapIsLiked(post, currentUserId))
                 .toList();
     }
 
@@ -156,7 +154,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public PostResponse updateContent(UUID postId, PostUpdateContentRequest request) {
+    public void updateContent(UUID postId, PostUpdateContentRequest request) {
         Post post = getPostById(postId);
         validateAuthor(post);
         validateUpdateContentPost(post, request);
@@ -170,9 +168,7 @@ public class PostServiceImpl implements PostService {
             post.setContent(trimmedContent);
         }
         post.setUpdatedAt(ZonedDateTime.now());
-        PostResponse response = postMapper.toPostResponse(postRepository.save(post));
-        mapIsLiked(response, post.getAuthor().getId());
-        return response;
+        postRepository.save(post);
     }
 
     @Override
@@ -373,11 +369,6 @@ public class PostServiceImpl implements PostService {
         if (!post.getAuthor().getId().equals(currentUserId)) {
             throw new ApiException(ErrorCode.UNAUTHORIZED);
         }
-    }
-
-    private PostResponse mapIsLiked(PostResponse post, UUID userId) {
-        post.setLiked(postRepository.isLiked(post.getId(), userId));
-        return post;
     }
 
     private void sendNotificationWhenPost(User author, Post post) {

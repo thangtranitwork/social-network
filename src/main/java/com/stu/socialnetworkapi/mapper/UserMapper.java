@@ -1,9 +1,6 @@
 package com.stu.socialnetworkapi.mapper;
 
-import com.stu.socialnetworkapi.dto.projection.ChatProjection;
-import com.stu.socialnetworkapi.dto.projection.NotificationProjection;
-import com.stu.socialnetworkapi.dto.projection.UserProfileProjection;
-import com.stu.socialnetworkapi.dto.projection.UserProjection;
+import com.stu.socialnetworkapi.dto.projection.*;
 import com.stu.socialnetworkapi.dto.response.OnlineResponse;
 import com.stu.socialnetworkapi.dto.response.UserCommonInformationResponse;
 import com.stu.socialnetworkapi.dto.response.UserProfileResponse;
@@ -116,6 +113,32 @@ public class UserMapper {
                 .isOnline(online.isOnline())
                 .lastOnline(online.getLastOnlineAt())
                 .isFriend(projection.isFriend())
+                .build();
+    }
+
+    public UserCommonInformationResponse toPostAuthorCommonInformationResponse(final PostProjection projection) {
+        OnlineResponse online = isOnlineRedisRepository.getLastSeen(projection.authorId());
+        return UserCommonInformationResponse.builder()
+                .id(projection.authorId())
+                .givenName(projection.authorGivenName())
+                .familyName(projection.authorFamilyName())
+                .username(projection.authorUsername())
+                .profilePictureUrl(File.getPath(projection.authorProfilePictureId()))
+                .isOnline(online.isOnline())
+                .lastOnline(online.getLastOnlineAt())
+                .build();
+    }
+
+    public UserCommonInformationResponse toOriginalPostAuthorCommonInformationResponse(final PostProjection projection) {
+        OnlineResponse online = isOnlineRedisRepository.getLastSeen(projection.originalPostId());
+        return UserCommonInformationResponse.builder()
+                .id(projection.originalPostAuthorId())
+                .givenName(projection.originalPostAuthorGivenName())
+                .familyName(projection.originalPostAuthorFamilyName())
+                .username(projection.originalPostAuthorUsername())
+                .profilePictureUrl(File.getPath(projection.originalPostAuthorProfilePictureId()))
+                .isOnline(online.isOnline())
+                .lastOnline(online.getLastOnlineAt())
                 .build();
     }
 }

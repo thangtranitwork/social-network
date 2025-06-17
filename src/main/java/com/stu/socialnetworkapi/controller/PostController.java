@@ -1,5 +1,6 @@
 package com.stu.socialnetworkapi.controller;
 
+import com.stu.socialnetworkapi.dto.request.Neo4jPageable;
 import com.stu.socialnetworkapi.dto.request.PostRequest;
 import com.stu.socialnetworkapi.dto.request.PostUpdateContentRequest;
 import com.stu.socialnetworkapi.dto.request.SharePostRequest;
@@ -23,12 +24,12 @@ public class PostController {
     private final PostService postService;
 
     @GetMapping("/newsfeed")
-    public ApiResponse<List<PostResponse>> getPosts(Pageable pageable) {
+    public ApiResponse<List<PostResponse>> getPosts(Neo4jPageable pageable) {
         return ApiResponse.success(postService.getSuggestedPosts(pageable));
     }
 
     @GetMapping("/of-user/{username}")
-    public ApiResponse<List<PostResponse>> getPosts(@PathVariable @Username String username, Pageable pageable) {
+    public ApiResponse<List<PostResponse>> getPosts(@PathVariable @Username String username, Neo4jPageable pageable) {
         return ApiResponse.success(postService.getPostsOfUser(username, pageable));
     }
 
@@ -65,8 +66,9 @@ public class PostController {
     }
 
     @PatchMapping("/update-content/{postId}")
-    public ApiResponse<PostResponse> updatePostContent(@PathVariable UUID postId, @Valid PostUpdateContentRequest request) {
-        return ApiResponse.success(postService.updateContent(postId, request));
+    public ApiResponse<Void> updatePostContent(@PathVariable UUID postId, @Valid PostUpdateContentRequest request) {
+        postService.updateContent(postId, request);
+        return ApiResponse.success();
     }
 
     @DeleteMapping("/unlike/{postId}")

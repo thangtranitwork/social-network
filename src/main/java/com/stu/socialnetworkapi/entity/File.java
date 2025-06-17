@@ -40,10 +40,10 @@ public class File {
         if (id == null) return null;
 
         try {
-                return ServletUriComponentsBuilder.fromCurrentContextPath()
-                        .path("/v1/files/")
-                        .path(id)
-                        .toUriString();
+            return ServletUriComponentsBuilder.fromCurrentContextPath()
+                    .path("/v1/files/")
+                    .path(id)
+                    .toUriString();
         } catch (IllegalStateException e) {
             return selfOrigin + "/v1/files/" + id;
         }
@@ -52,6 +52,13 @@ public class File {
     public static List<String> getPath(List<File> attachedFiles) {
         if (attachedFiles == null) return Collections.emptyList();
         return attachedFiles.stream()
+                .map(File::getPath)
+                .toList();
+    }
+
+    public static List<String> getPathByIds(List<String> ids) {
+        if (ids == null || ids.isEmpty()) return Collections.emptyList();
+        return ids.stream()
                 .map(File::getPath)
                 .toList();
     }

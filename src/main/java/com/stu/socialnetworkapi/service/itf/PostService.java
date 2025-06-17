@@ -1,5 +1,6 @@
 package com.stu.socialnetworkapi.service.itf;
 
+import com.stu.socialnetworkapi.dto.request.Neo4jPageable;
 import com.stu.socialnetworkapi.dto.request.PostRequest;
 import com.stu.socialnetworkapi.dto.request.PostUpdateContentRequest;
 import com.stu.socialnetworkapi.dto.request.SharePostRequest;
@@ -16,9 +17,9 @@ public interface PostService {
 
     PostResponse get(UUID postId);
 
-    List<PostResponse> getPostsOfUser(String authorUsername, Pageable pageable);
+    List<PostResponse> getPostsOfUser(String authorUsername, Neo4jPageable pageable);
 
-    List<PostResponse> getSuggestedPosts(Pageable pageable);
+    List<PostResponse> getSuggestedPosts(Neo4jPageable pageable);
 
     PostResponse post(PostRequest request);
 
@@ -28,7 +29,7 @@ public interface PostService {
 
     void updatePrivacy(UUID postId, PostPrivacy privacy);
 
-    PostResponse updateContent(UUID postId, PostUpdateContentRequest request);
+    void updateContent(UUID postId, PostUpdateContentRequest request);
 
     void like(UUID postId);
 

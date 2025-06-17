@@ -14,6 +14,7 @@ import com.stu.socialnetworkapi.enums.PostPrivacy;
 import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.mapper.PostMapper;
+import com.stu.socialnetworkapi.repository.FileRepository;
 import com.stu.socialnetworkapi.repository.PostRepository;
 import com.stu.socialnetworkapi.service.itf.*;
 import com.stu.socialnetworkapi.util.JwtUtil;
@@ -38,6 +39,7 @@ public class PostServiceImpl implements PostService {
     private final FriendService friendService;
     private final BlockService blockService;
     private final PostRepository postRepository;
+    private final FileRepository fileRepository;
     private final NotificationService notificationService;
 
     @Override
@@ -51,25 +53,7 @@ public class PostServiceImpl implements PostService {
     public List<PostResponse> getPostsOfUser(String authorUsername, Pageable pageable) {
         UUID currentUserId = userService.getCurrentUserId();
         UUID targetId = userService.getUserId(authorUsername);
-        boolean isAuthenticated = currentUserId != null;
-        boolean isAuthor = isAuthenticated && currentUserId.equals(targetId);
-
-        if (isAuthenticated) {
-            blockService.validateBlock(currentUserId, targetId);
-        }
-
-        List<PostPrivacy> visiblePrivacies;
-
-        if (isAuthor) {
-            // Tác giả có thể xem mọi bài viết của mình
-            visiblePrivacies = List.of(PostPrivacy.PUBLIC, PostPrivacy.FRIEND, PostPrivacy.PRIVATE);
-        } else if (isAuthenticated && friendService.isFriend(currentUserId, targetId)) {
-            // Nếu là bạn bè ⇒ được xem bài public + friend
-            visiblePrivacies = List.of(PostPrivacy.PUBLIC, PostPrivacy.FRIEND);
-        } else {
-            // Người lạ ⇒ chỉ được xem bài public
-            visiblePrivacies = List.of(PostPrivacy.PUBLIC);
-        }
+        List<PostPrivacy> visiblePrivacies = getVisiblePrivacies(currentUserId, targetId);
 
         return postRepository
                 .findAllByAuthorIdAndPrivacyIsInAndDeletedAtIsNull(targetId, visiblePrivacies, pageable).stream()
@@ -234,6 +218,17 @@ public class PostServiceImpl implements PostService {
             throw new ApiException(ErrorCode.DELETED_POST);
         }
         return post;
+    }
+
+    @Override
+    public List<String> getFilesInPostsOfUser(String username, Pageable pageable) {
+        UUID currentUserId = userService.getCurrentUserId();
+        User target = userService.getUser(username);
+        blockService.validateBlock(currentUserId, target.getId());
+        List<PostPrivacy> privacies = getVisiblePrivacies(currentUserId, target.getId());
+        return fileRepository.findFileInPostByUserIdAndPrivacyIsIn(target.getId(), privacies, pageable)
+                .stream().map(File::getPath)
+                .toList();
     }
 
     private static void validatePostRequest(String content, List<MultipartFile> files) {
@@ -427,5 +422,28 @@ public class PostServiceImpl implements PostService {
                 .action(NotificationAction.LIKE_POST)
                 .build();
         notificationService.send(notification);
+    }
+
+    private List<PostPrivacy> getVisiblePrivacies(UUID currentUserId, UUID targetId) {
+        boolean isAuthenticated = currentUserId != null;
+        boolean isAuthor = isAuthenticated && currentUserId.equals(targetId);
+
+        if (isAuthenticated) {
+            blockService.validateBlock(currentUserId, targetId);
+        }
+
+        List<PostPrivacy> visiblePrivacies;
+
+        if (isAuthor) {
+            // Tác giả có thể xem mọi bài viết của mình
+            visiblePrivacies = List.of(PostPrivacy.PUBLIC, PostPrivacy.FRIEND, PostPrivacy.PRIVATE);
+        } else if (isAuthenticated && friendService.isFriend(currentUserId, targetId)) {
+            // Nếu là bạn bè ⇒ được xem bài public + friend
+            visiblePrivacies = List.of(PostPrivacy.PUBLIC, PostPrivacy.FRIEND);
+        } else {
+            // Người lạ ⇒ chỉ được xem bài public
+            visiblePrivacies = List.of(PostPrivacy.PUBLIC);
+        }
+        return visiblePrivacies;
     }
 }

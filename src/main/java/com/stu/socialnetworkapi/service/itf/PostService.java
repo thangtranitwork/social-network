@@ -35,4 +35,6 @@ public interface PostService {
     void unlike(UUID postId);
 
     void validateViewPost(UUID postId, UUID userId);
+
+    List<String> getFilesInPostsOfUser(String username, Pageable pageable);
 }

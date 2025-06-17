@@ -32,6 +32,11 @@ public class PostController {
         return ApiResponse.success(postService.getPostsOfUser(username, pageable));
     }
 
+    @GetMapping("/files/{username}")
+    public ApiResponse<List<String>> getFiles(@PathVariable @Username String username, Pageable pageable) {
+        return ApiResponse.success(postService.getFilesInPostsOfUser(username, pageable));
+    }
+
     @GetMapping("/{id}")
     public ApiResponse<PostResponse> getPost(@PathVariable UUID id) {
         return ApiResponse.success(postService.get(id));

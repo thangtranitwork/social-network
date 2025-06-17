@@ -20,4 +20,6 @@ public interface CommentService {
     void delete(UUID id);
 
     List<CommentResponse> getComments(UUID postId, Pageable pageable);
+
+    List<CommentResponse> getRepliedComments(UUID commentId);
 }

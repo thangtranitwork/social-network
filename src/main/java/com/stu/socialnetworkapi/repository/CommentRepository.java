@@ -18,4 +18,6 @@ public interface CommentRepository extends Neo4jRepository<Comment, UUID> {
     boolean isLiked(UUID commentId, UUID likerId);
 
     List<Comment> findAllByPostId(UUID postId, Pageable pageable);
+
+    List<Comment> findRepliedCommentByOriginalCommentId(UUID originalCommentId);
 }

@@ -163,6 +163,15 @@ public class CommentServiceImpl implements CommentService {
                 .toList();
     }
 
+    @Override
+    public List<CommentResponse> getRepliedComments(UUID commentId) {
+        UUID currentUserId = userService.getCurrentUserId();
+        return commentRepository.findRepliedCommentByOriginalCommentId(commentId).stream()
+                .map(commentMapper::toCommentResponse)
+                .map(response -> mapIsLiked(response, currentUserId))
+                .toList();
+    }
+
     private Comment getCommentById(UUID id) {
         return commentRepository.findById(id)
                 .orElseThrow(() -> new ApiException(ErrorCode.COMMENT_NOT_FOUND));

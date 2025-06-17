@@ -14,7 +14,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    @Value("${front-end.origin}")
+    @Value("${origin.front-end}")
     private String frontendOrigin;
     private final WebSocketAuthInterceptor webSocketAuthInterceptor;
 

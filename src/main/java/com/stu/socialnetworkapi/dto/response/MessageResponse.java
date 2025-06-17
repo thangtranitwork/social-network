@@ -16,4 +16,6 @@ public class MessageResponse {
     UserCommonInformationResponse sender;
     String attachment;
     String attachmentName;
+    boolean deleted;
+    boolean updated;
 }

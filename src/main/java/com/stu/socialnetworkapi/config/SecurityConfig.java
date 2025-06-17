@@ -26,7 +26,7 @@ import java.util.List;
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-    @Value("${front-end.origin}")
+    @Value("${origin.front-end}")
     private String frontEndOrigin;
     private final CustomJwtDecoder jwtDecoder;
     private static final String[] PUBLIC_ENDPOINTS = new String[]{

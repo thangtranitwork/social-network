@@ -27,22 +27,26 @@ public class File {
     @ToString.Exclude
     User uploader;
 
+    @Setter
+    private static String selfOrigin;
+
     public static String getPath(File file) {
         if (file == null) return null;
 
-        return ServletUriComponentsBuilder.fromCurrentContextPath()
-                .path("/v1/files/")
-                .path(file.getId())
-                .toUriString();
+        return getPath(file.id);
     }
 
     public static String getPath(String id) {
         if (id == null) return null;
 
-        return ServletUriComponentsBuilder.fromCurrentContextPath()
-                .path("/v1/files/")
-                .path(id)
-                .toUriString();
+        try {
+                return ServletUriComponentsBuilder.fromCurrentContextPath()
+                        .path("/v1/files/")
+                        .path(id)
+                        .toUriString();
+        } catch (IllegalStateException e) {
+            return selfOrigin + "/v1/files/" + id;
+        }
     }
 
     public static List<String> getPath(List<File> attachedFiles) {

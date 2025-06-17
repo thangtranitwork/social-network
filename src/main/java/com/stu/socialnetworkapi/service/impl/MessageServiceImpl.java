@@ -125,6 +125,7 @@ public class MessageServiceImpl implements MessageService {
         validateEditMessage(message, request.text());
         String content = request.text().trim();
         message.setContent(content);
+        message.setUpdateAt(ZonedDateTime.now());
         messageRepository.save(message);
         MessageCommand command = MessageCommand.builder()
                 .id(message.getId())
@@ -145,10 +146,11 @@ public class MessageServiceImpl implements MessageService {
                 .orElseThrow(() -> new ApiException(ErrorCode.MESSAGE_NOT_FOUND));
         Chat chat = message.getChat();
         validateDeleteMessage(message, user);
-        File file = message.getAttachedFile();
-        messageRepository.delete(message);
-        if (file != null) {
-            fileService.deleteFile(file);
+        message.setDeleteAt(ZonedDateTime.now());
+        message.setContent("deleted");
+        messageRepository.save(message);
+        if (message.getAttachedFile() != null) {
+            fileService.deleteFile(message.getAttachedFile());
         }
         MessageCommand command = MessageCommand.builder()
                 .id(messageId)

@@ -25,7 +25,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class RegisterServiceImpl implements RegisterService {
     private static final long VERIFY_EMAIL_VALIDITY_SECONDS = 900L; // 15 minutes
-    @Value("${front-end.origin}")
+    @Value("${origin.front-end}")
     private String frontEndOrigin;
 
     private final AccountRepository accountRepository;

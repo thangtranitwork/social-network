@@ -44,8 +44,9 @@ jwt:
     duration: ${JWT_ACCESS_TOKEN_DURATION} # seconds
   refresh-token:
     duration: ${JWT_REFRESH_TOKEN_DURATION} # days
-front-end:
-  origin: ${FRONTEND_ORIGIN}
+origin:
+  front-end: ${FRONTEND_ORIGIN}
+  self: ${SELF_ORIGIN}
 stringee:
   api:
     sid: ${STRINGEE_API_SID}

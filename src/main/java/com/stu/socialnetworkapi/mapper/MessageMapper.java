@@ -21,6 +21,8 @@ public class MessageMapper {
                 .attachmentName(message.getAttachedFile() != null ? message.getAttachedFile().getName() : null)
                 .sentAt(message.getSentAt())
                 .sender(userMapper.toUserCommonInformationResponse(message.getSender()))
+                .deleted(message.getDeleteAt() != null)
+                .updated(message.getUpdateAt() != null)
                 .build();
     }
 

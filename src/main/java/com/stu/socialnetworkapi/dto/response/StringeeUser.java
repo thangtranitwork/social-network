@@ -11,15 +11,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class StringeeResponse {
-    private String action;
-    private String eventUrl;
-    private String format;
-    private StringeeUser from;
-    private StringeeUser to;
-    private String customData;
-    private int timeout;
-    private int maxConnectTime;
-    private boolean peerToPeerCall;
+public class StringeeUser {
+    private String type;
+    private String number;
+    private String alias;
 }
-

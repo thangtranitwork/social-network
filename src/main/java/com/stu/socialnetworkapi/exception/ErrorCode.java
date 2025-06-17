@@ -79,11 +79,7 @@ public enum ErrorCode {
     POST_CONTENT_UNCHANGED(5008, "Post content unchanged", HttpStatus.BAD_REQUEST),
     LIKED_POST(5009, "Liked post", HttpStatus.BAD_REQUEST),
     NOT_LIKED_POST(5010, "Not liked post", HttpStatus.BAD_REQUEST),
-    HAVE_PINNED_A_POST(5011, "Have pinned a post", HttpStatus.BAD_REQUEST),
-    HAVE_NOT_PINNED_A_POST(5012, "Have not pinned a post", HttpStatus.BAD_REQUEST),
-    STORED_POST(5013, "Stored post", HttpStatus.BAD_REQUEST),
-    NOT_STORED_POST(5014, "Not stored", HttpStatus.BAD_REQUEST),
-    STORED_POST_LIMIT_REACHED(5015, "Stored post limit reached", HttpStatus.BAD_REQUEST),
+    DELETED_POST(5011, "Deleted post", HttpStatus.BAD_REQUEST),
 
     COMMENT_NOT_FOUND(6000, "Comment not found", HttpStatus.NOT_FOUND),
     COMMENT_CONTENT_AND_ATTACH_FILE_BOTH_EMPTY(6001, "Comment content and attach file cannot be empty", HttpStatus.BAD_REQUEST),

@@ -16,7 +16,7 @@ import java.util.UUID;
 
 @Repository
 public interface PostRepository extends Neo4jRepository<Post, UUID> {
-    List<Post> findAllByAuthorIdAndPrivacyIsIn(UUID authorId, Collection<PostPrivacy> privacies, Pageable pageable);
+    List<Post> findAllByAuthorIdAndPrivacyIsInAndDeletedAtIsNull(UUID authorId, Collection<PostPrivacy> privacies, Pageable pageable);
 
     @Query("""
             MATCH (p:Post {id: $postId})<-[like:LIKED]-(u:User {id: $likerId})
@@ -111,7 +111,7 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
             
             MATCH (post:Post)
             OPTIONAL MATCH (post)-[attach:ATTACH_FILES]->(:File)
-            
+            WHERE post.deleteAt IS NOT NULL
             RETURN
               count(post) AS totalPosts,
               sum(post.likeCount) AS totalLikes,

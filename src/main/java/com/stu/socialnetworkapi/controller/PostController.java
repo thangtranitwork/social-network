@@ -70,4 +70,9 @@ public class PostController {
         return ApiResponse.success();
     }
 
+    @DeleteMapping("/{postId}")
+    public ApiResponse<Void> deletePost(@PathVariable UUID postId) {
+        postService.delete(postId);
+        return ApiResponse.success();
+    }
 }

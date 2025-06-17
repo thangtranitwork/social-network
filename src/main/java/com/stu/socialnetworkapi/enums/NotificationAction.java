@@ -6,6 +6,7 @@ public enum NotificationAction {
     POST,
     SHARE,
     LIKE_POST,
+    DELETE_POST,
     COMMENT,
     REPLY_COMMENT,
     LIKE_COMMENT,

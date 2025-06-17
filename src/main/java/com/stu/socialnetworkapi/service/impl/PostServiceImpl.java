@@ -16,6 +16,7 @@ import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.mapper.PostMapper;
 import com.stu.socialnetworkapi.repository.PostRepository;
 import com.stu.socialnetworkapi.service.itf.*;
+import com.stu.socialnetworkapi.util.JwtUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -30,6 +31,7 @@ import java.util.stream.Collectors;
 @Transactional
 @RequiredArgsConstructor
 public class PostServiceImpl implements PostService {
+    private final JwtUtil jwtUtil;
     private final PostMapper postMapper;
     private final UserService userService;
     private final FileService fileService;
@@ -70,7 +72,7 @@ public class PostServiceImpl implements PostService {
         }
 
         return postRepository
-                .findAllByAuthorIdAndPrivacyIsIn(targetId, visiblePrivacies, pageable).stream()
+                .findAllByAuthorIdAndPrivacyIsInAndDeletedAtIsNull(targetId, visiblePrivacies, pageable).stream()
                 .map(postMapper::toPostResponse)
                 .map(post -> mapIsLiked(post, currentUserId))
                 .toList();
@@ -135,6 +137,27 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public void delete(UUID postId) {
+        User user = userService.getCurrentUserRequiredAuthentication();
+        Post post = getPostById(postId);
+        boolean isAdmin = jwtUtil.isAdmin();
+        boolean isAuthor = post.getAuthor().getId().equals(user.getId());
+        if (!isAdmin && !isAuthor) {
+            throw new ApiException(ErrorCode.UNAUTHORIZED);
+        }
+        post.setContent("deleted");
+        post.setDeletedAt(ZonedDateTime.now());
+        fileService.deleteFiles(post.getAttachedFiles());
+        postRepository.save(post);
+        if (isAdmin) {
+            Notification notification = Notification.builder()
+                    .creator(user)
+                    .receiver(post.getAuthor())
+                    .targetId(post.getId())
+                    .targetType(ObjectType.POST)
+                    .action(NotificationAction.DELETE_POST)
+                    .build();
+            notificationService.send(notification);
+        }
     }
 
     @Override
@@ -205,8 +228,12 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public Post getPostById(UUID postId) {
-        return postRepository.findById(postId)
+        Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ApiException(ErrorCode.POST_NOT_FOUND));
+        if (post.getDeletedAt() != null) {
+            throw new ApiException(ErrorCode.DELETED_POST);
+        }
+        return post;
     }
 
     private static void validatePostRequest(String content, List<MultipartFile> files) {

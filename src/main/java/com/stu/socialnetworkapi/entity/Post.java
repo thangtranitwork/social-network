@@ -28,8 +28,8 @@ public class Post {
     int commentCount;
     @Builder.Default
     ZonedDateTime createdAt = ZonedDateTime.now();
-    @Builder.Default
-    ZonedDateTime updatedAt = ZonedDateTime.now();
+    ZonedDateTime updatedAt;
+    ZonedDateTime deletedAt;
     PostPrivacy privacy;
 
     @ToString.Exclude

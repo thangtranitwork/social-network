@@ -114,12 +114,14 @@ public class CommentServiceImpl implements CommentService {
         User user = userService.getCurrentUserRequiredAuthentication();
         Comment comment = getCommentById(id);
         Post post = comment.getPost();
-        boolean havePermission = jwtUtil.isAdmin()
-                || post.getAuthor().getId().equals(user.getId())
-                || user.getId().equals(comment.getAuthor().getId());
-        if (!havePermission) {
+        boolean isAdmin = jwtUtil.isAdmin();
+        boolean isPostAuthor = post.getAuthor().getId().equals(user.getId());
+        boolean isCommentAuthor = user.getId().equals(comment.getAuthor().getId());
+
+        if (!isAdmin && !isPostAuthor && !isCommentAuthor) {
             throw new ApiException(ErrorCode.UNAUTHORIZED);
         }
+
         if (comment.isRepliedComment()) {
             File attachment = comment.getAttachedFile();
             Comment originalComment = comment.getOriginalComment();
@@ -147,6 +149,7 @@ public class CommentServiceImpl implements CommentService {
             if (!attachments.isEmpty()) {
                 fileService.deleteFiles(attachments);
             }
+            if ((isAdmin || isPostAuthor) && !isCommentAuthor) sendNotificationWhenDeleteComment(user, comment);
         }
     }
 
@@ -216,5 +219,16 @@ public class CommentServiceImpl implements CommentService {
     private CommentResponse mapIsLiked(CommentResponse response, UUID userId) {
         response.setLiked(commentRepository.isLiked(response.getId(), userId));
         return response;
+    }
+
+    private void sendNotificationWhenDeleteComment(User user, Comment comment) {
+        Notification notification = Notification.builder()
+                .creator(user)
+                .receiver(comment.getAuthor())
+                .targetType(ObjectType.COMMENT)
+                .targetId(comment.getId())
+                .action(NotificationAction.DELETE_COMMENT)
+                .build();
+        notificationService.send(notification);
     }
 }

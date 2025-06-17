@@ -10,4 +10,5 @@ public enum NotificationAction {
     COMMENT,
     REPLY_COMMENT,
     LIKE_COMMENT,
+    DELETE_COMMENT,
 }

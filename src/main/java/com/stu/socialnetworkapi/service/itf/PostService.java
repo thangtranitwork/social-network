@@ -7,7 +7,6 @@ import com.stu.socialnetworkapi.dto.request.SharePostRequest;
 import com.stu.socialnetworkapi.dto.response.PostResponse;
 import com.stu.socialnetworkapi.entity.Post;
 import com.stu.socialnetworkapi.enums.PostPrivacy;
-import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.UUID;
@@ -37,5 +36,5 @@ public interface PostService {
 
     void validateViewPost(UUID postId, UUID userId);
 
-    List<String> getFilesInPostsOfUser(String username, Pageable pageable);
+    List<String> getFilesInPostsOfUser(String username, Neo4jPageable pageable);
 }

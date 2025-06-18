@@ -1,5 +1,6 @@
 package com.stu.socialnetworkapi.service.impl;
 
+import com.stu.socialnetworkapi.dto.request.Neo4jPageable;
 import com.stu.socialnetworkapi.dto.response.UserCommonInformationResponse;
 import com.stu.socialnetworkapi.entity.User;
 import com.stu.socialnetworkapi.exception.ApiException;
@@ -11,7 +12,6 @@ import com.stu.socialnetworkapi.service.itf.BlockService;
 import com.stu.socialnetworkapi.service.itf.FriendService;
 import com.stu.socialnetworkapi.service.itf.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -27,11 +27,11 @@ public class FriendServiceImpl implements FriendService {
     private final FriendRepository friendRepository;
 
     @Override
-    public List<UserCommonInformationResponse> getFriends(String username, Pageable pageable) {
+    public List<UserCommonInformationResponse> getFriends(String username, Neo4jPageable pageable) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
         User target = userService.getUser(username);
         blockService.validateBlock(currentUserId, target.getId());
-        return friendRepository.getFriends(target.getId(), pageable).stream()
+        return friendRepository.getFriends(target.getId(), pageable.getSkip(), pageable.getLimit()).stream()
                 .map(userMapper::toUserCommonInformationResponse)
                 .toList();
     }
@@ -53,18 +53,18 @@ public class FriendServiceImpl implements FriendService {
     }
 
     @Override
-    public List<UserCommonInformationResponse> getSuggestedFriends(Pageable pageable) {
+    public List<UserCommonInformationResponse> getSuggestedFriends(Neo4jPageable pageable) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
-        return friendRepository.getSuggestedFriends(currentUserId, pageable).stream()
+        return friendRepository.getSuggestedFriends(currentUserId, pageable.getSkip(), pageable.getLimit()).stream()
                 .map(userMapper::toUserCommonInformationResponse)
                 .toList();
     }
 
     @Override
-    public List<UserCommonInformationResponse> getMutualFriends(String username, Pageable pageable) {
+    public List<UserCommonInformationResponse> getMutualFriends(String username, Neo4jPageable pageable) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
         UUID targetUserId = userService.getUser(username).getId();
-        return friendRepository.getMutualFriends(currentUserId, targetUserId, pageable).stream()
+        return friendRepository.getMutualFriends(currentUserId, targetUserId, pageable.getSkip(), pageable.getLimit()).stream()
                 .map(userMapper::toUserCommonInformationResponse)
                 .toList();
     }

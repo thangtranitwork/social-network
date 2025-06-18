@@ -21,7 +21,6 @@ import com.stu.socialnetworkapi.service.itf.*;
 import com.stu.socialnetworkapi.util.JwtUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -217,12 +216,12 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public List<String> getFilesInPostsOfUser(String username, Pageable pageable) {
+    public List<String> getFilesInPostsOfUser(String username, Neo4jPageable pageable) {
         UUID currentUserId = userService.getCurrentUserId();
         User target = userService.getUser(username);
         blockService.validateBlock(currentUserId, target.getId());
         List<PostPrivacy> privacies = getVisiblePrivacies(currentUserId, target.getId());
-        return fileRepository.findFileInPostByUserIdAndPrivacyIsIn(target.getId(), privacies, pageable)
+        return fileRepository.findFileInPostByUserIdAndPrivacyIsIn(target.getId(), privacies, pageable.getSkip(), pageable.getLimit())
                 .stream().map(File::getPath)
                 .toList();
     }

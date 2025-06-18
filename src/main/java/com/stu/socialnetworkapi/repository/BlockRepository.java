@@ -3,7 +3,6 @@ package com.stu.socialnetworkapi.repository;
 import com.stu.socialnetworkapi.dto.projection.UserProjection;
 import com.stu.socialnetworkapi.entity.relationship.Block;
 import com.stu.socialnetworkapi.enums.BlockStatus;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.stereotype.Repository;
@@ -62,5 +61,5 @@ public interface BlockRepository extends Neo4jRepository<Block, Long> {
                    profile.id AS profilePictureId
             SKIP $skip LIMIT $limit
             """)
-    List<UserProjection> getBlockedUsers(UUID userId, Pageable pageable);
+    List<UserProjection> getBlockedUsers(UUID userId, long skip, long limit);
 }

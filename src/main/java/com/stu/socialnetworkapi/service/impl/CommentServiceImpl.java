@@ -1,6 +1,7 @@
 package com.stu.socialnetworkapi.service.impl;
 
 import com.stu.socialnetworkapi.dto.request.CommentRequest;
+import com.stu.socialnetworkapi.dto.request.Neo4jPageable;
 import com.stu.socialnetworkapi.dto.request.ReplyCommentRequest;
 import com.stu.socialnetworkapi.dto.response.CommentResponse;
 import com.stu.socialnetworkapi.entity.*;
@@ -15,7 +16,6 @@ import com.stu.socialnetworkapi.service.itf.*;
 import com.stu.socialnetworkapi.util.JwtUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -154,19 +154,19 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
-    public List<CommentResponse> getComments(UUID postId, Pageable pageable) {
+    public List<CommentResponse> getComments(UUID postId, Neo4jPageable pageable) {
         UUID currentUserId = userService.getCurrentUserId();
         postService.validateViewPost(postId, currentUserId);
-        return commentRepository.findAllByPostId(postId, pageable).stream()
+        return commentRepository.findAllByPostId(postId, pageable.getSkip(), pageable.getLimit()).stream()
                 .map(commentMapper::toCommentResponse)
                 .map(response -> mapIsLiked(response, currentUserId))
                 .toList();
     }
 
     @Override
-    public List<CommentResponse> getRepliedComments(UUID commentId) {
+    public List<CommentResponse> getRepliedComments(UUID commentId, Neo4jPageable pageable) {
         UUID currentUserId = userService.getCurrentUserId();
-        return commentRepository.findRepliedCommentByOriginalCommentId(commentId).stream()
+        return commentRepository.findRepliedCommentByOriginalCommentId(commentId, pageable.getSkip(), pageable.getLimit()).stream()
                 .map(commentMapper::toCommentResponse)
                 .map(response -> mapIsLiked(response, currentUserId))
                 .toList();

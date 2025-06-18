@@ -1,13 +1,13 @@
 package com.stu.socialnetworkapi.controller;
 
 import com.stu.socialnetworkapi.dto.request.CommentRequest;
+import com.stu.socialnetworkapi.dto.request.Neo4jPageable;
 import com.stu.socialnetworkapi.dto.request.ReplyCommentRequest;
 import com.stu.socialnetworkapi.dto.response.ApiResponse;
 import com.stu.socialnetworkapi.dto.response.CommentResponse;
 import com.stu.socialnetworkapi.service.itf.CommentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,13 +20,13 @@ public class CommentController {
     private final CommentService commentService;
 
     @GetMapping("/of-post/{postId}")
-    public ApiResponse<List<CommentResponse>> getCommentsByPost(@PathVariable UUID postId, Pageable pageable) {
+    public ApiResponse<List<CommentResponse>> getCommentsByPost(@PathVariable UUID postId, Neo4jPageable pageable) {
         return ApiResponse.success(commentService.getComments(postId, pageable));
     }
 
     @GetMapping("/of-comment/{commentId}")
-    public ApiResponse<List<CommentResponse>> getCommentsByOriginalComment(@PathVariable UUID commentId, Pageable pageable) {
-        return ApiResponse.success(commentService.getRepliedComments(commentId));
+    public ApiResponse<List<CommentResponse>> getCommentsByOriginalComment(@PathVariable UUID commentId, Neo4jPageable pageable) {
+        return ApiResponse.success(commentService.getRepliedComments(commentId, pageable));
     }
 
     @PostMapping

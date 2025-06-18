@@ -2,7 +2,6 @@ package com.stu.socialnetworkapi.repository;
 
 import com.stu.socialnetworkapi.dto.projection.UserProjection;
 import com.stu.socialnetworkapi.entity.relationship.Friend;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.stereotype.Repository;
@@ -24,7 +23,7 @@ public interface FriendRepository extends Neo4jRepository<Friend, Long> {
                     profile.id AS profilePictureId
             SKIP $skip LIMIT $limit
             """)
-    List<UserProjection> getFriends(UUID userId, Pageable pageable);
+    List<UserProjection> getFriends(UUID userId, long skip, long limit);
 
     @Query("""
             MATCH (:User {id: $userId})-[friend:FRIEND]->(:User {id: $targetId})
@@ -106,7 +105,7 @@ public interface FriendRepository extends Neo4jRepository<Friend, Long> {
             ORDER BY score DESC
             SKIP $skip LIMIT $limit
             """)
-    List<UserProjection> getSuggestedFriends(UUID userId, Pageable pageable);
+    List<UserProjection> getSuggestedFriends(UUID userId, long skip, long limit);
 
 
     @Query("""
@@ -138,5 +137,5 @@ public interface FriendRepository extends Neo4jRepository<Friend, Long> {
             ORDER BY mutualFriendsCount DESC, mutualFriend.username
             SKIP $skip LIMIT $limit
             """)
-    List<UserProjection> getMutualFriends(UUID userId, UUID targetId, Pageable pageable);
+    List<UserProjection> getMutualFriends(UUID userId, UUID targetId, long skip, long limit);
 }

@@ -1,5 +1,6 @@
 package com.stu.socialnetworkapi.service.impl;
 
+import com.stu.socialnetworkapi.dto.request.Neo4jPageable;
 import com.stu.socialnetworkapi.dto.response.UserCommonInformationResponse;
 import com.stu.socialnetworkapi.entity.Notification;
 import com.stu.socialnetworkapi.entity.User;
@@ -16,7 +17,6 @@ import com.stu.socialnetworkapi.service.itf.UserService;
 import com.stu.socialnetworkapi.util.UserCounterCalculator;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -53,17 +53,17 @@ public class RequestServiceImpl implements RequestService {
     }
 
     @Override
-    public List<UserCommonInformationResponse> getSentRequests(Pageable pageable) {
+    public List<UserCommonInformationResponse> getSentRequests(Neo4jPageable pageable) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
-        return requestRepository.getSentRequest(currentUserId, pageable).stream()
+        return requestRepository.getSentRequest(currentUserId, pageable.getSkip(), pageable.getLimit()).stream()
                 .map(userMapper::toUserCommonInformationResponse)
                 .toList();
     }
 
     @Override
-    public List<UserCommonInformationResponse> getReceivedRequests(Pageable pageable) {
+    public List<UserCommonInformationResponse> getReceivedRequests(Neo4jPageable pageable) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
-        return requestRepository.getReceivedRequest(currentUserId, pageable).stream()
+        return requestRepository.getReceivedRequest(currentUserId, pageable.getSkip(), pageable.getLimit()).stream()
                 .map(userMapper::toUserCommonInformationResponse)
                 .toList();
     }

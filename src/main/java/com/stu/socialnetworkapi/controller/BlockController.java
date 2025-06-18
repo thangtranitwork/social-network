@@ -1,11 +1,11 @@
 package com.stu.socialnetworkapi.controller;
 
+import com.stu.socialnetworkapi.dto.request.Neo4jPageable;
 import com.stu.socialnetworkapi.dto.response.ApiResponse;
 import com.stu.socialnetworkapi.dto.response.UserCommonInformationResponse;
 import com.stu.socialnetworkapi.service.itf.BlockService;
 import com.stu.socialnetworkapi.validation.annotation.Username;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,7 +17,7 @@ public class BlockController {
     private final BlockService blockService;
 
     @GetMapping
-    public ApiResponse<List<UserCommonInformationResponse>> getBlockedUsers(Pageable pageable) {
+    public ApiResponse<List<UserCommonInformationResponse>> getBlockedUsers(Neo4jPageable pageable) {
         return ApiResponse.success(blockService.getBlockedUsers(pageable));
     }
 

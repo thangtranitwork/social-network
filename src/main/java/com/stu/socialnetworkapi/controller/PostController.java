@@ -11,7 +11,6 @@ import com.stu.socialnetworkapi.service.itf.PostService;
 import com.stu.socialnetworkapi.validation.annotation.Username;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -34,7 +33,7 @@ public class PostController {
     }
 
     @GetMapping("/files/{username}")
-    public ApiResponse<List<String>> getFiles(@PathVariable @Username String username, Pageable pageable) {
+    public ApiResponse<List<String>> getFiles(@PathVariable @Username String username, Neo4jPageable pageable) {
         return ApiResponse.success(postService.getFilesInPostsOfUser(username, pageable));
     }
 

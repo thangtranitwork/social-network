@@ -2,7 +2,6 @@ package com.stu.socialnetworkapi.repository;
 
 import com.stu.socialnetworkapi.dto.projection.UserProjection;
 import com.stu.socialnetworkapi.entity.relationship.Request;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.stereotype.Repository;
@@ -24,7 +23,7 @@ public interface RequestRepository extends Neo4jRepository<Request, Long> {
                     profile.id AS profilePictureId
             SKIP $skip LIMIT $limit
             """)
-    List<UserProjection> getSentRequest(UUID userId, Pageable pageable);
+    List<UserProjection> getSentRequest(UUID userId, long skip, long limit);
 
     @Query("""
              MATCH (sender:User)-[r:REQUEST]->(target:User {id: $userId})
@@ -37,7 +36,7 @@ public interface RequestRepository extends Neo4jRepository<Request, Long> {
                     profile.id AS profilePictureId
             SKIP $skip LIMIT $limit
             """)
-    List<UserProjection> getReceivedRequest(UUID userId, Pageable pageable);
+    List<UserProjection> getReceivedRequest(UUID userId, long skip, long limit);
 
     @Query("""
                 MATCH (a:User {id: $senderId})

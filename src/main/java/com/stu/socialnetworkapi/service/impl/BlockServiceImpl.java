@@ -1,5 +1,6 @@
 package com.stu.socialnetworkapi.service.impl;
 
+import com.stu.socialnetworkapi.dto.request.Neo4jPageable;
 import com.stu.socialnetworkapi.dto.response.UserCommonInformationResponse;
 import com.stu.socialnetworkapi.entity.User;
 import com.stu.socialnetworkapi.enums.BlockStatus;
@@ -12,7 +13,6 @@ import com.stu.socialnetworkapi.service.itf.UserService;
 import com.stu.socialnetworkapi.util.UserCounterCalculator;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -76,9 +76,9 @@ public class BlockServiceImpl implements BlockService {
     }
 
     @Override
-    public List<UserCommonInformationResponse> getBlockedUsers(Pageable pageable) {
+    public List<UserCommonInformationResponse> getBlockedUsers(Neo4jPageable pageable) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
-        return blockRepository.getBlockedUsers(currentUserId, pageable).stream()
+        return blockRepository.getBlockedUsers(currentUserId, pageable.getSkip(), pageable.getLimit()).stream()
                 .map(userMapper::toUserCommonInformationResponse)
                 .toList();
     }

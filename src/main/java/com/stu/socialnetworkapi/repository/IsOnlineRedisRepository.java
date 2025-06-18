@@ -1,6 +1,7 @@
 package com.stu.socialnetworkapi.repository;
 
 import com.stu.socialnetworkapi.dto.response.OnlineResponse;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -55,5 +56,24 @@ public class IsOnlineRedisRepository {
     public int countOnlineUsers() {
         String countStr = redisTemplate.opsForValue().get(ONLINE_COUNT_KEY);
         return countStr != null ? Integer.parseInt(countStr) : 0;
+    }
+
+    @PostConstruct
+    public void init() {
+        try {
+            // Xoá toàn bộ is_online:* key
+            redisTemplate.keys(IS_ONLINE_KEY + "*")
+                    .forEach(redisTemplate::delete);
+
+            // Xoá toàn bộ last_online:* key
+            redisTemplate.keys(LAST_ONLINE_KEY + "*")
+                    .forEach(redisTemplate::delete);
+
+            // Reset lại online count
+            redisTemplate.delete(ONLINE_COUNT_KEY);
+
+        } catch (Exception e) {
+            log.error("Error clearing Redis online user state: {}", e.getMessage(), e);
+        }
     }
 }

@@ -157,18 +157,16 @@ public class CommentServiceImpl implements CommentService {
     public List<CommentResponse> getComments(UUID postId, Neo4jPageable pageable) {
         UUID currentUserId = userService.getCurrentUserId();
         postService.validateViewPost(postId, currentUserId);
-        return commentRepository.findAllByPostId(postId, pageable.getSkip(), pageable.getLimit()).stream()
+        return commentRepository.findAllByPostId(postId, currentUserId, pageable.getSkip(), pageable.getLimit()).stream()
                 .map(commentMapper::toCommentResponse)
-                .map(response -> mapIsLiked(response, currentUserId))
                 .toList();
     }
 
     @Override
     public List<CommentResponse> getRepliedComments(UUID commentId, Neo4jPageable pageable) {
         UUID currentUserId = userService.getCurrentUserId();
-        return commentRepository.findRepliedCommentByOriginalCommentId(commentId, pageable.getSkip(), pageable.getLimit()).stream()
+        return commentRepository.findRepliedCommentByOriginalCommentId(commentId, currentUserId, pageable.getSkip(), pageable.getLimit()).stream()
                 .map(commentMapper::toCommentResponse)
-                .map(response -> mapIsLiked(response, currentUserId))
                 .toList();
     }
 
@@ -223,11 +221,6 @@ public class CommentServiceImpl implements CommentService {
         if (content != null && content.trim().length() > Comment.MAX_CONTENT_LENGTH) {
             throw new ApiException(ErrorCode.INVALID_COMMENT_CONTENT_LENGTH);
         }
-    }
-
-    private CommentResponse mapIsLiked(CommentResponse response, UUID userId) {
-        response.setLiked(commentRepository.isLiked(response.getId(), userId));
-        return response;
     }
 
     private void sendNotificationWhenDeleteComment(User user, Comment comment) {

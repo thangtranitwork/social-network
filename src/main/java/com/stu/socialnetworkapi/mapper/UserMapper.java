@@ -145,6 +145,19 @@ public class UserMapper {
                 .build();
     }
 
+    public UserCommonInformationResponse toCommentAuthorCommonInformationResponse(final CommentProjection projection) {
+        OnlineResponse online = isOnlineRedisRepository.getLastSeen(projection.authorId());
+        return UserCommonInformationResponse.builder()
+                .id(projection.authorId())
+                .givenName(projection.authorGivenName())
+                .familyName(projection.authorFamilyName())
+                .username(projection.authorUsername())
+                .profilePictureUrl(File.getPath(projection.authorProfilePictureId()))
+                .isOnline(online.isOnline())
+                .lastOnline(online.getLastOnlineAt())
+                .build();
+    }
+
     public UserCommonInformationResponse toOriginalPostAuthorCommonInformationResponse(final PostProjection projection) {
         OnlineResponse online = isOnlineRedisRepository.getLastSeen(projection.originalPostId());
         return UserCommonInformationResponse.builder()

@@ -14,5 +14,6 @@ import lombok.NoArgsConstructor;
 public class StringeeUser {
     private String type;
     private String number;
+    private boolean is_online;
     private String alias;
 }

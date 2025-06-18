@@ -17,7 +17,7 @@ import com.stu.socialnetworkapi.exception.WebSocketException;
 import com.stu.socialnetworkapi.mapper.MessageMapper;
 import com.stu.socialnetworkapi.repository.ChatRepository;
 import com.stu.socialnetworkapi.repository.MessageRepository;
-import com.stu.socialnetworkapi.service.itf.BlockService;
+import com.stu.socialnetworkapi.service.itf.ChatService;
 import com.stu.socialnetworkapi.service.itf.FileService;
 import com.stu.socialnetworkapi.service.itf.MessageService;
 import com.stu.socialnetworkapi.service.itf.UserService;
@@ -36,7 +36,7 @@ import java.util.UUID;
 public class MessageServiceImpl implements MessageService {
     private final UserService userService;
     private final FileService fileService;
-    private final BlockService blockService;
+    private final ChatService chatService;
     private final MessageMapper messageMapper;
     private final ChatRepository chatRepository;
     private final MessageRepository messageRepository;
@@ -46,7 +46,7 @@ public class MessageServiceImpl implements MessageService {
     public MessageResponse sendMessage(TextMessageRequest request) {
         User sender = userService.getCurrentUserRequiredAuthentication();
         User receiver = userService.getUser(request.username());
-        Chat chat = getOrCreateDirectChat(sender, receiver);
+        Chat chat = chatService.getOrCreateDirectChat(sender, receiver);
         String content = request.text().trim();
         if (content.isEmpty()) throw new ApiException(ErrorCode.TEXT_MESSAGE_CONTENT_REQUIRED);
         if (content.length() > Message.MAX_CONTENT_LENGTH)
@@ -68,7 +68,7 @@ public class MessageServiceImpl implements MessageService {
     public MessageResponse sendMessage(TextMessageRequest request, UUID userId) {
         User sender = userService.getUser(userId);
         User receiver = userService.getUser(request.username());
-        Chat chat = getOrCreateDirectChat(sender, receiver);
+        Chat chat = chatService.getOrCreateDirectChat(sender, receiver);
         String content = request.text().trim();
         if (content.isEmpty()) throw new WebSocketException(ErrorCode.TEXT_MESSAGE_CONTENT_REQUIRED);
         if (content.length() > Message.MAX_CONTENT_LENGTH)
@@ -90,7 +90,7 @@ public class MessageServiceImpl implements MessageService {
     public MessageResponse sendFile(FileMessageRequest request) {
         User sender = userService.getCurrentUserRequiredAuthentication();
         User receiver = userService.getUser(request.username());
-        Chat chat = getOrCreateDirectChat(sender, receiver);
+        Chat chat = chatService.getOrCreateDirectChat(sender, receiver);
         File file = fileService.upload(request.attachment());
         Message message = Message.builder()
                 .chat(chat)
@@ -167,26 +167,6 @@ public class MessageServiceImpl implements MessageService {
         if (ZonedDateTime.now().isAfter(message.getSentAt().plusMinutes(Message.MINUTES_TO_DELETE_MESSAGE))) {
             throw new ApiException(ErrorCode.CAN_NOT_DELETE_MESSAGE);
         }
-    }
-
-    private Chat getOrCreateDirectChat(User sender, User receiver) {
-        blockService.validateBlock(sender.getId(), receiver.getId());
-
-        UUID existingChatId = chatRepository.getDirectChatIdByMemberIds(sender.getId(), receiver.getId())
-                .orElse(null);
-
-        if (existingChatId != null) {
-            return chatRepository.findById(existingChatId)
-                    .orElseThrow(() -> new ApiException(ErrorCode.CHAT_NOT_FOUND));
-        }
-
-        List<User> members = List.of(sender, receiver);
-
-        Chat newChat = Chat.builder()
-                .members(members)
-                .build();
-
-        return chatRepository.save(newChat);
     }
 
     private void validateEditMessage(Message message, String newContent) {

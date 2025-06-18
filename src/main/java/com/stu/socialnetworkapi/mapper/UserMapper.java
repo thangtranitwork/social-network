@@ -99,6 +99,22 @@ public class UserMapper {
                 .build();
     }
 
+    public UserCommonInformationResponse toSenderUserCommonInformationResponse(final MessageProjection projection) {
+        if (projection == null || projection.senderId() == null) {
+            return null;
+        }
+        OnlineResponse online = isOnlineRedisRepository.getLastSeen(projection.senderId());
+        return UserCommonInformationResponse.builder()
+                .id(projection.senderId())
+                .givenName(projection.senderGivenName())
+                .familyName(projection.senderFamilyName())
+                .username(projection.senderUsername())
+                .profilePictureUrl(File.getPath(projection.senderProfilePictureId()))
+                .isOnline(online.isOnline())
+                .lastOnline(online.getLastOnlineAt())
+                .build();
+    }
+
     public UserCommonInformationResponse toTargetUserCommonInformationResponse(final ChatProjection projection) {
         if (projection == null || projection.targetId() == null) {
             return null;

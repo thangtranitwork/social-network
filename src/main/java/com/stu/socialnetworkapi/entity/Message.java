@@ -1,7 +1,9 @@
 package com.stu.socialnetworkapi.entity;
 
+import com.stu.socialnetworkapi.enums.MessageType;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.neo4j.core.schema.GeneratedValue;
 import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
@@ -11,7 +13,7 @@ import java.time.ZonedDateTime;
 import java.util.UUID;
 
 @Node
-@Builder
+@SuperBuilder
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -26,6 +28,8 @@ public class Message {
     ZonedDateTime deleteAt;
     ZonedDateTime updateAt;
     boolean isRead;
+    @Builder.Default
+    MessageType type = MessageType.MESSAGE;
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     @Relationship(type = "SENT", direction = Relationship.Direction.INCOMING)

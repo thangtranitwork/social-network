@@ -1,6 +1,7 @@
 package com.stu.socialnetworkapi.mapper;
 
 import com.stu.socialnetworkapi.dto.projection.ChatProjection;
+import com.stu.socialnetworkapi.dto.projection.MessageProjection;
 import com.stu.socialnetworkapi.dto.response.MessageResponse;
 import com.stu.socialnetworkapi.entity.File;
 import com.stu.socialnetworkapi.entity.Message;
@@ -23,6 +24,27 @@ public class MessageMapper {
                 .sender(userMapper.toUserCommonInformationResponse(message.getSender()))
                 .deleted(message.getDeleteAt() != null)
                 .updated(message.getUpdateAt() != null)
+                .build();
+    }
+
+    public MessageResponse toMessageResponse(MessageProjection projection) {
+        return MessageResponse.builder()
+                .id(projection.id())
+                .chatId(projection.chatId())
+                .content(projection.content())
+                .attachment(File.getPath(projection.attachmentId()))
+                .attachmentName(projection.attachmentId() != null ? projection.attachmentName() : null)
+                .sentAt(projection.sentAt())
+                .sender(userMapper.toSenderUserCommonInformationResponse(projection))
+                .deleted(projection.deleted())
+                .updated(projection.updated())
+                .type(projection.type())
+                .callId(projection.callId())
+                .callAt(projection.callAt())
+                .answerAt(projection.answerAt())
+                .endAt(projection.endAt())
+                .isAnswered(projection.isAnswered())
+                .isVideoCall(projection.isVideoCall())
                 .build();
     }
 

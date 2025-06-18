@@ -1,5 +1,6 @@
 package com.stu.socialnetworkapi.dto.response;
 
+import com.stu.socialnetworkapi.enums.MessageType;
 import lombok.Builder;
 import lombok.Data;
 
@@ -18,4 +19,11 @@ public class MessageResponse {
     String attachmentName;
     boolean deleted;
     boolean updated;
+    MessageType type;
+    String callId;
+    ZonedDateTime callAt;
+    ZonedDateTime answerAt;
+    ZonedDateTime endAt;
+    boolean isAnswered;
+    boolean isVideoCall;
 }

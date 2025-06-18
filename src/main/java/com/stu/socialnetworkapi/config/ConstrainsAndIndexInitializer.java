@@ -28,6 +28,7 @@ public class ConstrainsAndIndexInitializer {
             session.run("CREATE CONSTRAINT post_id_unique IF NOT EXISTS FOR (p:Post) REQUIRE p.id IS UNIQUE");
             session.run("CREATE CONSTRAINT file_id_unique IF NOT EXISTS FOR (f:File) REQUIRE f.id IS UNIQUE");
             session.run("CREATE CONSTRAINT message_id_unique IF NOT EXISTS FOR (m:Message) REQUIRE m.id IS UNIQUE");
+            session.run("CREATE CONSTRAINT call_id_unique IF NOT EXISTS FOR (m:Call) REQUIRE m.callId IS UNIQUE");
             session.run("CREATE CONSTRAINT notification_id_unique IF NOT EXISTS FOR (n:Notification) REQUIRE n.id IS UNIQUE");
             session.run("CREATE CONSTRAINT verify_code_id_unique IF NOT EXISTS FOR (v:VerifyCode) REQUIRE v.id IS UNIQUE");
 

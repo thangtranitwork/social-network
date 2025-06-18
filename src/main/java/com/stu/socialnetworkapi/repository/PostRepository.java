@@ -102,15 +102,77 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
                 MATCH (me:User {id: $userId})
                 CALL db.index.fulltext.queryNodes("postSearchIndex", $query + "*")
                 YIELD node AS post, score
+            
                 MATCH (author:User)-[:POSTED]->(post)
                 WHERE NOT (author)-[:BLOCKED]->(me)
                   AND NOT (me)-[:BLOCKED]->(author)
-                RETURN post.id
-                ORDER BY score DESC
+                  AND post.deletedAt IS NULL
+            
+                OPTIONAL MATCH (me)-[liked:LIKED]->(post)
+                OPTIONAL MATCH (author)-[:HAS_PROFILE_PICTURE]->(profilePic:File)
+                OPTIONAL MATCH (post)-[:ATTACH_FILES]->(file:File)
+            
+                OPTIONAL MATCH (post)-[:SHARED]->(originalPost:Post)
+                OPTIONAL MATCH (originalPost)<-[:POSTED]-(originalAuthor:User)
+                OPTIONAL MATCH (originalAuthor)-[:HAS_PROFILE_PICTURE]->(originalProfilePic:File)
+                OPTIONAL MATCH (originalPost)-[:ATTACH_FILES]->(originalFile:File)
+                OPTIONAL MATCH (me)-[:BLOCK]-(originalAuthor)
+                OPTIONAL MATCH (me)-[originalFriendship:FRIEND]-(originalAuthor)
+            
+                // Check if user can view original post
+                WITH post, author, me, liked, profilePic, file, originalPost, originalAuthor,
+                     originalProfilePic, originalFile, score,
+                     CASE
+                         WHEN originalPost IS NULL THEN true
+                         WHEN originalPost.deletedAt IS NOT NULL THEN false
+                         WHEN (me)-[:BLOCK]-(originalAuthor) THEN false
+                         WHEN originalPost.privacy = 'PUBLIC' THEN true
+                         WHEN originalPost.privacy = 'FRIEND' AND
+                              ($userId = originalAuthor.id OR originalFriendship IS NOT NULL) THEN true
+                         WHEN originalPost.privacy = 'PRIVATE' AND $userId = originalAuthor.id THEN true
+                         ELSE false
+                     END AS originalPostCanView
+            
+                WITH post, author, liked, profilePic, score, COLLECT(DISTINCT file.id) AS files,
+                     originalPost, originalAuthor, originalProfilePic, COLLECT(DISTINCT originalFile.id) AS originalFiles,
+                     originalPostCanView,
+                     EXISTS((me)-[:FRIEND]-(author)) AS isFriend
+            
+                RETURN post.id AS id,
+                       post.content AS content,
+                       post.createdAt AS createdAt,
+                       post.updatedAt AS updatedAt,
+                       post.privacy AS privacy,
+                       files AS files,
+                       post.likeCount AS likeCount,
+                       post.shareCount AS shareCount,
+                       post.commentCount AS commentCount,
+                       liked IS NOT NULL AS liked,
+                       author.id AS authorId,
+                       author.username AS authorUsername,
+                       author.givenName AS authorGivenName,
+                       author.familyName AS authorFamilyName,
+                       profilePic.id AS authorProfilePictureId,
+                       isFriend AS isFriend,
+            
+                       CASE WHEN originalPostCanView THEN originalPost.id ELSE null END AS originalPostId,
+                       CASE WHEN originalPostCanView THEN originalPost.content ELSE null END AS originalPostContent,
+                       CASE WHEN originalPostCanView THEN originalPost.createdAt ELSE null END AS originalPostCreatedAt,
+                       CASE WHEN originalPostCanView THEN originalPost.updatedAt ELSE null END AS originalPostUpdatedAt,
+                       CASE WHEN originalPostCanView THEN originalPost.privacy ELSE null END AS originalPostPrivacy,
+                       CASE WHEN originalPostCanView THEN originalFiles ELSE [] END AS originalPostFiles,
+                       CASE WHEN originalPostCanView THEN originalAuthor.id ELSE null END AS originalPostAuthorId,
+                       CASE WHEN originalPostCanView THEN originalAuthor.username ELSE null END AS originalPostAuthorUsername,
+                       CASE WHEN originalPostCanView THEN originalAuthor.givenName ELSE null END AS originalPostAuthorGivenName,
+                       CASE WHEN originalPostCanView THEN originalAuthor.familyName ELSE null END AS originalPostAuthorFamilyName,
+                       CASE WHEN originalPostCanView THEN originalProfilePic.id ELSE null END AS originalPostAuthorProfilePictureId,
+                       originalPostCanView AS originalPostCanView
+            
+                ORDER BY score DESC, post.createdAt DESC
                 SKIP $skip
                 LIMIT $limit
             """)
-    List<UUID> fullTextSearch(String query, UUID userId, int limit, int skip);
+    List<PostProjection> fullTextSearch(String query, UUID userId, long limit, long skip);
 
     /**
      * Hệ thống chấm điểm

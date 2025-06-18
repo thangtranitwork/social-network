@@ -1,7 +1,7 @@
 package com.stu.socialnetworkapi.service.impl;
 
-import com.stu.socialnetworkapi.entity.Post;
-import com.stu.socialnetworkapi.entity.User;
+import com.stu.socialnetworkapi.dto.projection.PostProjection;
+import com.stu.socialnetworkapi.dto.projection.UserProjection;
 import com.stu.socialnetworkapi.mapper.PostMapper;
 import com.stu.socialnetworkapi.mapper.UserMapper;
 import com.stu.socialnetworkapi.repository.PostRepository;
@@ -28,24 +28,23 @@ public class SearchServiceImpl implements SearchService {
     private final PostRepository postRepository;
 
     @Override
-    public Object search(String query, SearchType type, int page, int limit) {
+    public Object search(String query, SearchType type, long skip, long limit) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
-        int skip = (page) * limit;
         Map<SearchType, List<?>> result = new EnumMap<>(SearchType.class);
         switch (type) {
             case NOT_SET -> {
-                List<User> users = userRepository.findAllById(userRepository.fullTextSearch(query, currentUserId, limit, 0));
-                List<Post> posts = postRepository.findAllById(postRepository.fullTextSearch(query, currentUserId, limit, 0));
+                List<UserProjection> users = userRepository.fullTextSearch(query, currentUserId, limit, 0);
+                List<PostProjection> posts = postRepository.fullTextSearch(query, currentUserId, limit, 0);
                 result.put(SearchType.USER, users.stream()
                         .map(userMapper::toUserCommonInformationResponse)
                         .toList());
                 result.put(SearchType.POST, posts.stream()
-                        .map(postMapper::toPostCommonInformationResponse)
+                        .map(postMapper::toPostResponse)
                         .toList());
                 return result;
             }
             case USER -> {
-                List<User> users = userRepository.findAllById(userRepository.fullTextSearch(query, currentUserId, limit, skip));
+                List<UserProjection> users = userRepository.fullTextSearch(query, currentUserId, limit, skip);
                 result.put(SearchType.USER, users.stream()
                         .map(userMapper::toUserCommonInformationResponse)
                         .toList());
@@ -53,9 +52,9 @@ public class SearchServiceImpl implements SearchService {
                 return result;
             }
             case POST -> {
-                List<Post> posts = postRepository.findAllById(postRepository.fullTextSearch(query, currentUserId, limit, skip));
+                List<PostProjection> posts = postRepository.fullTextSearch(query, currentUserId, limit, skip);
                 result.put(SearchType.POST, posts.stream()
-                        .map(postMapper::toPostCommonInformationResponse)
+                        .map(postMapper::toPostResponse)
                         .toList());
                 result.put(SearchType.USER, null);
                 return result;

@@ -2,6 +2,7 @@ package com.stu.socialnetworkapi.repository;
 
 import com.stu.socialnetworkapi.dto.projection.CountDataProjection;
 import com.stu.socialnetworkapi.dto.projection.UserProfileProjection;
+import com.stu.socialnetworkapi.dto.projection.UserProjection;
 import com.stu.socialnetworkapi.dto.response.UserStatisticsResponse;
 import com.stu.socialnetworkapi.entity.User;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
@@ -86,15 +87,37 @@ public interface UserRepository extends Neo4jRepository<User, UUID> {
     @Query("""
                 MATCH (currentUser:User {id: $currentUserId})
                 CALL db.index.fulltext.queryNodes("userSearchIndex", $query + "*")
-                YIELD node, score
-                WHERE NOT (currentUser)-[:BLOCK]->(node)
-                  AND NOT (node)-[:BLOCK]->(currentUser)
-                RETURN node.id AS user
-                ORDER BY score DESC
+                YIELD node AS targetUser, score
+            
+                WHERE NOT (currentUser)-[:BLOCK]->(targetUser)
+                  AND NOT (targetUser)-[:BLOCK]->(currentUser)
+                  AND currentUser.id <> targetUser.id
+            
+                // Tính shortest path
+                OPTIONAL MATCH p = shortestPath((currentUser)-[*1..4]-(targetUser))
+            
+                // Đếm số bạn chung
+                OPTIONAL MATCH (currentUser)-[:FRIEND]-(mutual:User)-[:FRIEND]-(targetUser)
+            
+                // Avatar
+                OPTIONAL MATCH (targetUser)-[:HAS_PROFILE_PICTURE]->(profilePic:File)
+            
+                RETURN
+                    targetUser.id AS userId,
+                    targetUser.username AS username,
+                    targetUser.givenName AS givenName,
+                    targetUser.familyName AS familyName,
+                    profilePic.id AS profilePictureId,
+                    COUNT(DISTINCT mutual) AS mutualFriendsCount,
+                    EXISTS((currentUser)-[:FRIEND]-(targetUser)) AS isFriend,
+                    score AS score,
+                    CASE WHEN p IS NULL THEN 1000 ELSE length(p) END AS shortestPathLength
+            
+                ORDER BY score DESC, shortestPathLength ASC
                 SKIP $skip
                 LIMIT $limit
             """)
-    List<UUID> fullTextSearch(String query, UUID currentUserId, int limit, int skip);
+    List<UserProjection> fullTextSearch(String query, UUID currentUserId, long limit, long skip);
 
     @Query("""
             MATCH (u:User {id: $userId})

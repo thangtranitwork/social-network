@@ -47,6 +47,7 @@ public class PostMapper {
                 .createdAt(projection.createdAt())
                 .updatedAt(projection.updatedAt())
                 .privacy(projection.privacy())
+                .liked(projection.liked())
                 .originalPostCanView(projection.originalPostCanView())
                 .originalPost(projection.originalPostCanView() && projection.originalPostAuthorId() != null ? this.toPostCommonInformationResponse(projection) : null)
                 .build();

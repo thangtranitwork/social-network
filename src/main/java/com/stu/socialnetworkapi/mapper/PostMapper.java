@@ -26,6 +26,7 @@ public class PostMapper {
                 .shareCount(post.getShareCount())
                 .commentCount(post.getCommentCount())
                 .originalPost(this.toPostCommonInformationResponse(post.getOriginalPost()))
+                .isSharedPost(post.isSharedPost())
                 .createdAt(post.getCreatedAt())
                 .updatedAt(post.getUpdatedAt())
                 .privacy(post.getPrivacy())
@@ -48,6 +49,7 @@ public class PostMapper {
                 .updatedAt(projection.updatedAt())
                 .privacy(projection.privacy())
                 .liked(projection.liked())
+                .isSharedPost(projection.isSharedPost())
                 .originalPostCanView(projection.originalPostCanView())
                 .originalPost(projection.originalPostCanView() && projection.originalPostAuthorId() != null ? this.toPostCommonInformationResponse(projection) : null)
                 .build();

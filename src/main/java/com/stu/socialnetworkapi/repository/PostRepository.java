@@ -15,10 +15,16 @@ import java.util.UUID;
 @Repository
 public interface PostRepository extends Neo4jRepository<Post, UUID> {
     @Query("""
-            MATCH (author:User {id: $authorId})-[:POSTED]->(post:Post)
-            OPTIONAL MATCH (viewer:User {id: $viewerId})-[friendship:FRIEND]->(author)
+            // Match users và posts trước
+            MATCH (author:User {id: $authorId}), (viewer:User {id: $viewerId})
+            MATCH (author)-[:POSTED]->(post:Post)
             WHERE post.deletedAt IS NULL
-            AND (post.privacy = 'PUBLIC'
+            
+            // Kiểm tra friendship riêng biệt
+            OPTIONAL MATCH (viewer)-[friendship:FRIEND]->(author)
+            
+            // Kiểm tra privacy
+            WHERE (post.privacy = 'PUBLIC'
                 OR (post.privacy = 'FRIEND' AND
                    ($viewerId = $authorId OR friendship IS NOT NULL))
                 OR (post.privacy = 'PRIVATE' AND $viewerId = $authorId)
@@ -31,7 +37,7 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
             OPTIONAL MATCH (originalPost)-[:ATTACH_FILES]->(originalFile:File)
             
             // Kiểm tra block relationship giữa viewer và original author
-            OPTIONAL MATCH (viewer:User {id: $viewerId})-[block:BLOCK]-(originalAuthor)
+            OPTIONAL MATCH (viewer)-[block:BLOCK]-(originalAuthor)
             
             // Kiểm tra friendship với original author
             OPTIONAL MATCH (viewer)-[originalFriendship:FRIEND]->(originalAuthor)
@@ -72,6 +78,7 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
                    author.familyName AS authorFamilyName,
                    profilePic.id AS authorProfilePictureId,
                    friendship IS NOT NULL AS isFriend,
+                   originalPost IS NOT NULL AS isSharedPost,
             
                    // Original post information
                    CASE WHEN originalPostCanView THEN originalPost.id ELSE null END AS originalPostId,
@@ -87,7 +94,7 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
                    CASE WHEN originalPostCanView THEN originalProfilePic.id ELSE null END AS originalPostAuthorProfilePictureId,
                    originalPostCanView AS originalPostCanView
             
-                   ORDER BY createdAt DESC
+                   ORDER BY post.createdAt DESC
                    SKIP $skip LIMIT $limit
             """)
     List<PostProjection> findAllByAuthorId(UUID authorId, UUID viewerId, long skip, long limit);
@@ -99,6 +106,7 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
     boolean isLiked(UUID postId, UUID likerId);
 
     @Query("""
+                // Match user trước
                 MATCH (me:User {id: $userId})
                 CALL db.index.fulltext.queryNodes("postSearchIndex", $query + "*")
                 YIELD node AS post, score
@@ -108,6 +116,8 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
                   AND NOT (me)-[:BLOCKED]->(author)
                   AND post.deletedAt IS NULL
             
+                // Kiểm tra friendship riêng biệt
+                OPTIONAL MATCH (me)-[friendship:FRIEND]->(author)
                 OPTIONAL MATCH (me)-[liked:LIKED]->(post)
                 OPTIONAL MATCH (author)-[:HAS_PROFILE_PICTURE]->(profilePic:File)
                 OPTIONAL MATCH (post)-[:ATTACH_FILES]->(file:File)
@@ -121,7 +131,7 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
             
                 // Check if user can view original post
                 WITH post, author, me, liked, profilePic, file, originalPost, originalAuthor,
-                     originalProfilePic, originalFile, score,
+                     originalProfilePic, originalFile, score, friendship,
                      CASE
                          WHEN originalPost IS NULL THEN true
                          WHEN originalPost.deletedAt IS NOT NULL THEN false
@@ -135,8 +145,7 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
             
                 WITH post, author, liked, profilePic, score, COLLECT(DISTINCT file.id) AS files,
                      originalPost, originalAuthor, originalProfilePic, COLLECT(DISTINCT originalFile.id) AS originalFiles,
-                     originalPostCanView,
-                     EXISTS((me)-[:FRIEND]-(author)) AS isFriend
+                     originalPostCanView, friendship IS NOT NULL AS isFriend
             
                 RETURN post.id AS id,
                        post.content AS content,
@@ -154,6 +163,7 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
                        author.familyName AS authorFamilyName,
                        profilePic.id AS authorProfilePictureId,
                        isFriend AS isFriend,
+                       originalPost IS NOT NULL AS isSharedPost,
             
                        CASE WHEN originalPostCanView THEN originalPost.id ELSE null END AS originalPostId,
                        CASE WHEN originalPostCanView THEN originalPost.content ELSE null END AS originalPostContent,
@@ -189,14 +199,18 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
      */
 
     @Query("""
+                    // Match user trước
                     MATCH (u:User {id: $userId})
                     MATCH (author:User)-[:POSTED]->(post:Post)
+                    WHERE post.deletedAt IS NULL
+                      AND NOT (u)-[:BLOCK]-(author)
+            
+                    // Kiểm tra privacy với friendship riêng biệt
+                    OPTIONAL MATCH (u)-[friendship:FRIEND]->(author)
                     WHERE (
                         post.privacy = 'PUBLIC'
-                        OR (post.privacy = 'FRIEND' AND (u)-[:FRIEND]-(author))
+                        OR (post.privacy = 'FRIEND' AND friendship IS NOT NULL)
                     )
-                    AND post.deletedAt IS NULL
-                    AND NOT (u)-[:BLOCK]-(author)
             
                     OPTIONAL MATCH p = shortestPath((u)-[*1..4]->(post))
             
@@ -220,7 +234,7 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
                     OPTIONAL MATCH (u)-[liked:LIKED]->(post)
                     OPTIONAL MATCH (author)-[:HAS_PROFILE_PICTURE]->(profilePic:File)
             
-                    WITH u, post, author,
+                    WITH u, post, author, friendship,
                          CASE WHEN p IS NULL THEN NULL ELSE length(p) END AS shortestPathLength,
                          coalesce(vu.times, 0) AS viewForward,
                          coalesce(uv.times, 0) AS viewBackward,
@@ -248,10 +262,10 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
                          post.shareCount * 5 AS shareScore
             
                     WITH post, author, u, files, originalPost, originalAuthor, originalProfilePic, originalFiles, liked, profilePic,
-                         originalPostCanView, shortestPathLength, viewForward, viewBackward, newPostScore, likeScore, commentScore, shareScore,
+                         originalPostCanView, shortestPathLength, viewForward, viewBackward, newPostScore, likeScore, commentScore, shareScore, friendship,
                          CASE
-                             WHEN (u)-[:FRIEND]-(author) THEN 100
-                             WHEN (u)-[:FRIEND]-()-[:FRIEND]-(author) AND NOT (u)-[:FRIEND]-(author) OR (u)-[:REQUEST]-(author) THEN 50
+                             WHEN friendship IS NOT NULL THEN 100
+                             WHEN (u)-[:FRIEND]-()-[:FRIEND]-(author) AND friendship IS NULL OR (u)-[:REQUEST]-(author) THEN 50
                              ELSE 0
                          END
                          + 2 * viewForward
@@ -262,9 +276,8 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
                          END AS pathScore
             
                     WITH post, author, u, files, originalPost, originalAuthor, originalProfilePic, originalFiles, liked, profilePic,
-                         originalPostCanView,
-                         pathScore + newPostScore + relationshipScore + likeScore + commentScore + shareScore AS totalScore,
-                         EXISTS((u)-[:FRIEND]-(author)) AS isFriend
+                         originalPostCanView, friendship,
+                         pathScore + newPostScore + relationshipScore + likeScore + commentScore + shareScore AS totalScore
             
                     ORDER BY totalScore DESC, post.createdAt DESC
             
@@ -283,7 +296,8 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
                            author.givenName AS authorGivenName,
                            author.familyName AS authorFamilyName,
                            profilePic.id AS authorProfilePictureId,
-                           isFriend AS isFriend,
+                           friendship IS NOT NULL AS isFriend,
+                           originalPost IS NOT NULL AS isSharedPost,
             
                            // Original post information
                            CASE WHEN originalPostCanView THEN originalPost.id ELSE null END AS originalPostId,
@@ -305,11 +319,16 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
     List<PostProjection> getSuggestedPosts(UUID userId, long skip, long limit);
 
     @Query("""
-                MATCH (u:User {id: $userId})-[:FRIEND]-(friend:User)
-                MATCH (friend)-[:POSTED]->(post:Post)
+                // Match user trước
+                MATCH (u:User {id: $userId})
+                MATCH (friend:User)-[:POSTED]->(post:Post)
                 WHERE post.deletedAt IS NULL
                   AND (post.privacy = 'FRIEND' OR post.privacy = 'PUBLIC')
                   AND NOT (u)-[:BLOCK]-(friend)
+            
+                // Kiểm tra friendship riêng biệt
+                OPTIONAL MATCH (u)-[friendship:FRIEND]->(friend)
+                WHERE friendship IS NOT NULL
             
                 OPTIONAL MATCH (u)-[liked:LIKED]->(post)
                 OPTIONAL MATCH (friend)-[:HAS_PROFILE_PICTURE]->(profilePic:File)
@@ -323,7 +342,7 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
             
                 // Check block
                 OPTIONAL MATCH (u)-[:BLOCK]-(originalAuthor)
-                OPTIONAL MATCH (u)-[:FRIEND]-(originalAuthor)
+                OPTIONAL MATCH (u)-[originalFriendship:FRIEND]-(originalAuthor)
             
                 WITH post, friend AS author, u, liked, profilePic, COLLECT(DISTINCT file.id) AS files,
                      originalPost, originalAuthor, originalProfilePic, COLLECT(DISTINCT originalFile.id) AS originalFiles,
@@ -334,7 +353,7 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
                          WHEN (u)-[:BLOCK]-(originalAuthor) THEN false
                          WHEN originalPost.privacy = 'PUBLIC' THEN true
                          WHEN originalPost.privacy = 'FRIEND' AND
-                              (u.id = originalAuthor.id OR (u)-[:FRIEND]-(originalAuthor)) THEN true
+                              (u.id = originalAuthor.id OR originalFriendship IS NOT NULL) THEN true
                          WHEN originalPost.privacy = 'PRIVATE' AND u.id = originalAuthor.id THEN true
                          ELSE false
                      END AS originalPostCanView
@@ -356,6 +375,7 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
                     author.familyName AS authorFamilyName,
                     profilePic.id AS authorProfilePictureId,
                     true AS isFriend,
+                    originalPost IS NOT NULL AS isSharedPost,
             
                     CASE WHEN originalPostCanView THEN originalPost.id ELSE null END AS originalPostId,
                     CASE WHEN originalPostCanView THEN originalPost.content ELSE null END AS originalPostContent,
@@ -377,14 +397,18 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
     List<PostProjection> getFriendPostsOnly(UUID userId, long skip, long limit);
 
     @Query("""
+                // Match user trước
                 MATCH (u:User {id: $userId})
                 MATCH (author:User)-[:POSTED]->(post:Post)
                 WHERE post.deletedAt IS NULL
-                  AND (
-                    post.privacy = 'PUBLIC' OR
-                    (post.privacy = 'FRIEND' AND (u)-[:FRIEND]-(author))
-                  )
                   AND NOT (u)-[:BLOCK]-(author)
+            
+                // Kiểm tra privacy với friendship riêng biệt
+                OPTIONAL MATCH (u)-[friendship:FRIEND]->(author)
+                WHERE (
+                    post.privacy = 'PUBLIC' OR
+                    (post.privacy = 'FRIEND' AND friendship IS NOT NULL)
+                )
             
                 OPTIONAL MATCH (post)-[:ATTACH_FILES]->(file:File)
                 OPTIONAL MATCH (author)-[:HAS_PROFILE_PICTURE]->(profilePic:File)
@@ -406,7 +430,8 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
                     author.givenName AS authorGivenName,
                     author.familyName AS authorFamilyName,
                     profilePic.id AS authorProfilePictureId,
-                    EXISTS((u)-[:FRIEND]-(author)) AS isFriend,
+                    friendship IS NOT NULL AS isFriend,
+                    false AS isSharedPost,
             
                     null AS originalPostId,
                     null AS originalPostContent,

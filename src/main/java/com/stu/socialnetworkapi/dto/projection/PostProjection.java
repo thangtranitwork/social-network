@@ -34,6 +34,7 @@ public record PostProjection(
         String originalPostAuthorGivenName,
         String originalPostAuthorFamilyName,
         String originalPostAuthorProfilePictureId,
+        boolean isSharedPost,
         boolean originalPostCanView
 ) {
 }

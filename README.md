@@ -75,11 +75,11 @@ cd backend
 
 3. Chạy docker compose:
 ```bash
-docker compose --env-file .env.dev up
+docker compose --env-file .env up
 ```
 hoặc
 ```bash
-docker-compose --env-file .env.dev up
+docker-compose --env-file .env up
 ```
 
 ### Chạy ứng dụng

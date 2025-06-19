@@ -28,20 +28,20 @@ services:
       - redis_data:/data
     restart: unless-stopped
 
-  api:
-    build:
-      dockerfile: Dockerfile
-    container_name: api
-    volumes:
-      - ./upload:/app/upload
-    env_file:
-      - .env.dev
-    ports:
-      - "80:80"
-    depends_on:
-      - neo4j
-      - redis
-    restart: no
+#  api:
+#    build:
+#      dockerfile: Dockerfile
+#    container_name: api
+#    volumes:
+#      - ./upload:/app/upload
+#    env_file:
+#      - .env
+#    ports:
+#      - "80:80"
+#    depends_on:
+#      - neo4j
+#      - redis
+#    restart: no
 
 volumes:
   neo4j_data:

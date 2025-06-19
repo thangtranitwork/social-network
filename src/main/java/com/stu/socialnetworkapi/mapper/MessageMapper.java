@@ -58,6 +58,7 @@ public class MessageMapper {
                 .content(projection.latestMessageContent())
                 .attachment(File.getPath(projection.latestMessageFileId()))
                 .sentAt(projection.latestMessageSentAt())
+                .deleted(projection.latestMessageDeleted())
                 .sender(userMapper.toSenderUserCommonInformationResponse(projection))
                 .build();
     }

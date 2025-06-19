@@ -17,6 +17,7 @@ public record ChatProjection(
         String latestMessageSenderGivenName,
         String latestMessageSenderFamilyName,
         String latestMessageSenderProfilePictureId,
+        Boolean latestMessageDeleted,
         UUID targetId,
         String targetUsername,
         String targetGivenName,

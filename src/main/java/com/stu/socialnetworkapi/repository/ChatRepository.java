@@ -61,6 +61,7 @@ public interface ChatRepository extends Neo4jRepository<Chat, UUID> {
                 latestMessage.content AS latestMessageContent,
                 latestMessageFile.id AS latestMessageFileId,
                 latestMessage.sentAt AS latestMessageSentAt,
+                latestMessage.deleteAt IS NOT NULL AS latestMessageDeleted,
                 sender.id AS latestMessageSenderId,
                 sender.username AS latestMessageSenderUsername,
                 sender.givenName AS latestMessageSenderGivenName,

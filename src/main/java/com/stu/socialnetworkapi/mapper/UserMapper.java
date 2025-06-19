@@ -140,6 +140,7 @@ public class UserMapper {
                 .familyName(projection.authorFamilyName())
                 .username(projection.authorUsername())
                 .profilePictureUrl(File.getPath(projection.authorProfilePictureId()))
+                .isFriend(projection.isFriend())
                 .isOnline(online.isOnline())
                 .lastOnline(online.getLastOnlineAt())
                 .build();

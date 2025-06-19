@@ -22,7 +22,7 @@ public record PostProjection(
         String authorGivenName,
         String authorFamilyName,
         String authorProfilePictureId,
-        Boolean isFriend,
+        boolean isFriend,
         UUID originalPostId,
         String originalPostContent,
         ZonedDateTime originalPostCreatedAt,

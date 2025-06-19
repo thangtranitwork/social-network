@@ -10,10 +10,74 @@ import org.springframework.stereotype.Repository;
 
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface PostRepository extends Neo4jRepository<Post, UUID> {
+    @Query("""
+                MATCH (post:Post {id: $id})
+                MATCH (author:User)-[:POSTED]->(post)
+                OPTIONAL MATCH (author)-[:HAS_PROFILE_PICTURE]->(profilePic:File)
+                OPTIONAL MATCH (post)-[:ATTACH_FILES]->(file:File)
+                OPTIONAL MATCH (viewer:User {id: $viewerId})
+                OPTIONAL MATCH (viewer)-[friendship:FRIEND]->(author)
+                OPTIONAL MATCH (viewer)-[liked:LIKED]->(post)
+            
+                OPTIONAL MATCH (post)-[:SHARED]->(originalPost:Post)
+                OPTIONAL MATCH (originalPost)<-[:POSTED]-(originalAuthor:User)
+                OPTIONAL MATCH (originalAuthor)-[:HAS_PROFILE_PICTURE]->(originalProfilePic:File)
+                OPTIONAL MATCH (originalPost)-[:ATTACH_FILES]->(originalFile:File)
+                OPTIONAL MATCH (viewer)-[originalFriendship:FRIEND]->(originalAuthor)
+            
+                WITH post, author, viewer, friendship, liked, profilePic,
+                     originalPost, originalAuthor, originalProfilePic, originalFriendship,
+                     COLLECT(DISTINCT file.id) AS files,
+                     COLLECT(DISTINCT originalFile.id) AS originalFiles,
+            
+                     CASE
+                       WHEN originalPost IS NULL THEN true
+                       WHEN originalPost.deletedAt IS NOT NULL THEN false
+                       WHEN originalPost.privacy = 'PUBLIC' THEN true
+                       WHEN originalPost.privacy = 'FRIEND' AND
+                            ($viewerId = originalAuthor.id OR originalFriendship IS NOT NULL) THEN true
+                       WHEN originalPost.privacy = 'PRIVATE' AND $viewerId = originalAuthor.id THEN true
+                       ELSE false
+                     END AS originalPostCanView
+            
+                RETURN post.id AS id,
+                       post.content AS content,
+                       post.createdAt AS createdAt,
+                       post.updatedAt AS updatedAt,
+                       post.privacy AS privacy,
+                       files AS files,
+                       post.likeCount AS likeCount,
+                       post.shareCount AS shareCount,
+                       post.commentCount AS commentCount,
+                       liked IS NOT NULL AS liked,
+                       author.id AS authorId,
+                       author.username AS authorUsername,
+                       author.givenName AS authorGivenName,
+                       author.familyName AS authorFamilyName,
+                       profilePic.id AS authorProfilePictureId,
+                       friendship IS NOT NULL AS isFriend,
+                       originalPost IS NOT NULL AS isSharedPost,
+            
+                       CASE WHEN originalPostCanView THEN originalPost.id ELSE null END AS originalPostId,
+                       CASE WHEN originalPostCanView THEN originalPost.content ELSE null END AS originalPostContent,
+                       CASE WHEN originalPostCanView THEN originalPost.createdAt ELSE null END AS originalPostCreatedAt,
+                       CASE WHEN originalPostCanView THEN originalPost.updatedAt ELSE null END AS originalPostUpdatedAt,
+                       CASE WHEN originalPostCanView THEN originalPost.privacy ELSE null END AS originalPostPrivacy,
+                       CASE WHEN originalPostCanView THEN originalFiles ELSE [] END AS originalPostFiles,
+                       CASE WHEN originalPostCanView THEN originalAuthor.id ELSE null END AS originalPostAuthorId,
+                       CASE WHEN originalPostCanView THEN originalAuthor.username ELSE null END AS originalPostAuthorUsername,
+                       CASE WHEN originalPostCanView THEN originalAuthor.givenName ELSE null END AS originalPostAuthorGivenName,
+                       CASE WHEN originalPostCanView THEN originalAuthor.familyName ELSE null END AS originalPostAuthorFamilyName,
+                       CASE WHEN originalPostCanView THEN originalProfilePic.id ELSE null END AS originalPostAuthorProfilePictureId,
+                       originalPostCanView AS originalPostCanView
+            """)
+    Optional<PostProjection> findPostProjectionById(UUID id, UUID viewerId);
+
     @Query("""
             // Match users và posts trước
             MATCH (author:User {id: $authorId}), (viewer:User {id: $viewerId})

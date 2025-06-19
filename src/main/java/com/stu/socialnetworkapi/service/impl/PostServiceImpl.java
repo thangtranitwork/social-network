@@ -45,9 +45,12 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public PostResponse get(UUID postId) {
-        Post post = getPostById(postId);
-        validateViewPost(post, userService.getCurrentUserId());
-        return postMapper.toPostResponse(post);
+        User user = userService.getCurrentUserRequiredAuthentication();
+        PostProjection projection = postRepository.findPostProjectionById(postId, user.getId())
+                .orElseThrow(() -> new ApiException(ErrorCode.POST_NOT_FOUND));
+
+        validateViewPost(projection, userService.getCurrentUserId());
+        return postMapper.toPostResponse(projection);
     }
 
     @Override
@@ -275,6 +278,30 @@ public class PostServiceImpl implements PostService {
         // Friend can not be blocked
         if (PostPrivacy.FRIEND.equals(privacy)) {
             if (!isAuthenticated || !friendService.isFriend(viewerId, authorId)) {
+                throw new ApiException(ErrorCode.UNAUTHORIZED);
+            }
+            return;
+        }
+        //Other case: PRIVATE, ...
+        throw new ApiException(ErrorCode.UNAUTHORIZED);
+    }
+
+    private void validateViewPost(PostProjection projection, UUID viewerId) {
+        PostPrivacy privacy = projection.privacy();
+
+        boolean isAuthenticated = viewerId != null;
+        boolean isAuthor = isAuthenticated && viewerId.equals(projection.authorId());
+
+        if (isAuthor) {
+            return;
+        }
+        if (PostPrivacy.PUBLIC.equals(privacy)) {
+            if (isAuthenticated) blockService.validateBlock(viewerId, projection.authorId());
+            return;
+        }
+        // Friend can not be blocked
+        if (PostPrivacy.FRIEND.equals(privacy)) {
+            if (!isAuthenticated || !projection.isFriend()) {
                 throw new ApiException(ErrorCode.UNAUTHORIZED);
             }
             return;

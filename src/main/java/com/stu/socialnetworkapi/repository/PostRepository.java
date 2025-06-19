@@ -305,6 +305,129 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
     List<PostProjection> getSuggestedPosts(UUID userId, long skip, long limit);
 
     @Query("""
+                MATCH (u:User {id: $userId})-[:FRIEND]-(friend:User)
+                MATCH (friend)-[:POSTED]->(post:Post)
+                WHERE post.deletedAt IS NULL
+                  AND (post.privacy = 'FRIEND' OR post.privacy = 'PUBLIC')
+                  AND NOT (u)-[:BLOCK]-(friend)
+            
+                OPTIONAL MATCH (u)-[liked:LIKED]->(post)
+                OPTIONAL MATCH (friend)-[:HAS_PROFILE_PICTURE]->(profilePic:File)
+                OPTIONAL MATCH (post)-[:ATTACH_FILES]->(file:File)
+            
+                // Xử lý nếu là bài chia sẻ
+                OPTIONAL MATCH (post)-[:SHARED]->(originalPost:Post)
+                OPTIONAL MATCH (originalPost)<-[:POSTED]-(originalAuthor:User)
+                OPTIONAL MATCH (originalAuthor)-[:HAS_PROFILE_PICTURE]->(originalProfilePic:File)
+                OPTIONAL MATCH (originalPost)-[:ATTACH_FILES]->(originalFile:File)
+            
+                // Check block
+                OPTIONAL MATCH (u)-[:BLOCK]-(originalAuthor)
+                OPTIONAL MATCH (u)-[:FRIEND]-(originalAuthor)
+            
+                WITH post, friend AS author, u, liked, profilePic, COLLECT(DISTINCT file.id) AS files,
+                     originalPost, originalAuthor, originalProfilePic, COLLECT(DISTINCT originalFile.id) AS originalFiles,
+            
+                     CASE
+                         WHEN originalPost IS NULL THEN true
+                         WHEN originalPost.deletedAt IS NOT NULL THEN false
+                         WHEN (u)-[:BLOCK]-(originalAuthor) THEN false
+                         WHEN originalPost.privacy = 'PUBLIC' THEN true
+                         WHEN originalPost.privacy = 'FRIEND' AND
+                              (u.id = originalAuthor.id OR (u)-[:FRIEND]-(originalAuthor)) THEN true
+                         WHEN originalPost.privacy = 'PRIVATE' AND u.id = originalAuthor.id THEN true
+                         ELSE false
+                     END AS originalPostCanView
+            
+                RETURN
+                    post.id AS id,
+                    post.content AS content,
+                    post.createdAt AS createdAt,
+                    post.updatedAt AS updatedAt,
+                    post.privacy AS privacy,
+                    files AS files,
+                    post.likeCount AS likeCount,
+                    post.shareCount AS shareCount,
+                    post.commentCount AS commentCount,
+                    liked IS NOT NULL AS liked,
+                    author.id AS authorId,
+                    author.username AS authorUsername,
+                    author.givenName AS authorGivenName,
+                    author.familyName AS authorFamilyName,
+                    profilePic.id AS authorProfilePictureId,
+                    true AS isFriend,
+            
+                    CASE WHEN originalPostCanView THEN originalPost.id ELSE null END AS originalPostId,
+                    CASE WHEN originalPostCanView THEN originalPost.content ELSE null END AS originalPostContent,
+                    CASE WHEN originalPostCanView THEN originalPost.createdAt ELSE null END AS originalPostCreatedAt,
+                    CASE WHEN originalPostCanView THEN originalPost.updatedAt ELSE null END AS originalPostUpdatedAt,
+                    CASE WHEN originalPostCanView THEN originalPost.privacy ELSE null END AS originalPostPrivacy,
+                    CASE WHEN originalPostCanView THEN originalFiles ELSE [] END AS originalPostFiles,
+                    CASE WHEN originalPostCanView THEN originalAuthor.id ELSE null END AS originalPostAuthorId,
+                    CASE WHEN originalPostCanView THEN originalAuthor.username ELSE null END AS originalPostAuthorUsername,
+                    CASE WHEN originalPostCanView THEN originalAuthor.givenName ELSE null END AS originalPostAuthorGivenName,
+                    CASE WHEN originalPostCanView THEN originalAuthor.familyName ELSE null END AS originalPostAuthorFamilyName,
+                    CASE WHEN originalPostCanView THEN originalProfilePic.id ELSE null END AS originalPostAuthorProfilePictureId,
+                    originalPostCanView AS originalPostCanView
+            
+                ORDER BY post.createdAt DESC
+                SKIP $skip
+                LIMIT $limit
+            """)
+    List<PostProjection> getFriendPostsOnly(UUID userId, long skip, long limit);
+
+    @Query("""
+                MATCH (u:User {id: $userId})
+                MATCH (author:User)-[:POSTED]->(post:Post)
+                WHERE post.deletedAt IS NULL
+                  AND (
+                    post.privacy = 'PUBLIC' OR
+                    (post.privacy = 'FRIEND' AND (u)-[:FRIEND]-(author))
+                  )
+                  AND NOT (u)-[:BLOCK]-(author)
+            
+                OPTIONAL MATCH (post)-[:ATTACH_FILES]->(file:File)
+                OPTIONAL MATCH (author)-[:HAS_PROFILE_PICTURE]->(profilePic:File)
+                OPTIONAL MATCH (u)-[liked:LIKED]->(post)
+            
+                RETURN
+                    post.id AS id,
+                    post.content AS content,
+                    post.createdAt AS createdAt,
+                    post.updatedAt AS updatedAt,
+                    post.privacy AS privacy,
+                    COLLECT(DISTINCT file.id) AS files,
+                    post.likeCount AS likeCount,
+                    post.shareCount AS shareCount,
+                    post.commentCount AS commentCount,
+                    liked IS NOT NULL AS liked,
+                    author.id AS authorId,
+                    author.username AS authorUsername,
+                    author.givenName AS authorGivenName,
+                    author.familyName AS authorFamilyName,
+                    profilePic.id AS authorProfilePictureId,
+                    EXISTS((u)-[:FRIEND]-(author)) AS isFriend,
+            
+                    null AS originalPostId,
+                    null AS originalPostContent,
+                    null AS originalPostCreatedAt,
+                    null AS originalPostUpdatedAt,
+                    null AS originalPostPrivacy,
+                    [] AS originalPostFiles,
+                    null AS originalPostAuthorId,
+                    null AS originalPostAuthorUsername,
+                    null AS originalPostAuthorGivenName,
+                    null AS originalPostAuthorFamilyName,
+                    null AS originalPostAuthorProfilePictureId,
+                    false AS originalPostCanView
+            
+                ORDER BY post.createdAt DESC
+                SKIP $skip
+                LIMIT $limit
+            """)
+    List<PostProjection> getPostsOrderByCreatedAtDesc(UUID userId, long skip, long limit);
+
+    @Query("""
             WITH datetime() AS today
             WITH today,
                  datetime({year: today.year, month: today.month, day: 1}) AS startOfMonth,

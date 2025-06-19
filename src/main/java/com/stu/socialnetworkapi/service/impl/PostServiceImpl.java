@@ -1,5 +1,6 @@
 package com.stu.socialnetworkapi.service.impl;
 
+import com.stu.socialnetworkapi.dto.projection.PostProjection;
 import com.stu.socialnetworkapi.dto.request.Neo4jPageable;
 import com.stu.socialnetworkapi.dto.request.PostRequest;
 import com.stu.socialnetworkapi.dto.request.PostUpdateContentRequest;
@@ -63,10 +64,20 @@ public class PostServiceImpl implements PostService {
     @Override
     public List<PostResponse> getSuggestedPosts(Neo4jPageable pageable) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
-        return postRepository.getSuggestedPosts(currentUserId, pageable.getSkip(), pageable.getLimit()).stream()
+
+        List<PostProjection> projections = switch (pageable.getType()) {
+            case RELEVANT -> postRepository.getSuggestedPosts(currentUserId, pageable.getSkip(), pageable.getLimit());
+            case FRIEND_ONLY ->
+                    postRepository.getFriendPostsOnly(currentUserId, pageable.getSkip(), pageable.getLimit());
+            case TIME ->
+                    postRepository.getPostsOrderByCreatedAtDesc(currentUserId, pageable.getSkip(), pageable.getLimit());
+        };
+
+        return projections.stream()
                 .map(postMapper::toPostResponse)
                 .toList();
     }
+
 
     @Override
     public PostResponse post(PostRequest request) {

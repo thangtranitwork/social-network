@@ -1,5 +1,6 @@
 package com.stu.socialnetworkapi.service.impl;
 
+import com.stu.socialnetworkapi.dto.projection.CommentProjection;
 import com.stu.socialnetworkapi.dto.request.CommentRequest;
 import com.stu.socialnetworkapi.dto.request.Neo4jPageable;
 import com.stu.socialnetworkapi.dto.request.ReplyCommentRequest;
@@ -157,7 +158,15 @@ public class CommentServiceImpl implements CommentService {
     public List<CommentResponse> getComments(UUID postId, Neo4jPageable pageable) {
         UUID currentUserId = userService.getCurrentUserId();
         postService.validateViewPost(postId, currentUserId);
-        return commentRepository.findAllByPostId(postId, currentUserId, pageable.getSkip(), pageable.getLimit()).stream()
+        List<CommentProjection> projections = (switch (pageable.getType()) {
+            case RELEVANT ->
+                    commentRepository.getSuggestedComments(postId, currentUserId, pageable.getSkip(), pageable.getLimit());
+            case FRIEND_ONLY ->
+                    commentRepository.getFriendComments(postId, currentUserId, pageable.getSkip(), pageable.getLimit());
+            case TIME ->
+                    commentRepository.getCommentsOrderByCreatedAtDesc(postId, currentUserId, pageable.getSkip(), pageable.getLimit());
+        });
+        return projections.stream()
                 .map(commentMapper::toCommentResponse)
                 .toList();
     }

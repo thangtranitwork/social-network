@@ -81,22 +81,22 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
         String userId = Optional.ofNullable(attributes.get(USER_ID_KEY))
                 .map(Object::toString)
                 .orElseThrow(() -> new WebSocketException(ErrorCode.UNAUTHORIZED));
-        if (destination.startsWith(WebSocketConfig.NOTIFICATION_CHANNEL_PREFIX)) {
-            String userIdDestination = destination.substring(WebSocketConfig.NOTIFICATION_CHANNEL_PREFIX.length() + 1);
+        if (destination.startsWith(WebSocketChannelPrefix.NOTIFICATION_CHANNEL_PREFIX)) {
+            String userIdDestination = destination.substring(WebSocketChannelPrefix.NOTIFICATION_CHANNEL_PREFIX.length() + 1);
             return userIdDestination.equals(userId);
         }
 
-        if (destination.startsWith(WebSocketConfig.CHAT_CHANNEL_PREFIX)) {
-            String chatId = destination.substring(WebSocketConfig.CHAT_CHANNEL_PREFIX.length() + 1);
+        if (destination.startsWith(WebSocketChannelPrefix.CHAT_CHANNEL_PREFIX)) {
+            String chatId = destination.substring(WebSocketChannelPrefix.CHAT_CHANNEL_PREFIX.length() + 1);
             return chatRepository.existInChat(UUID.fromString(chatId), UUID.fromString(userId));
         }
 
-        if (destination.startsWith(WebSocketConfig.MESSAGE_CHANNEL_PREFIX)) {
-            String userIdDestination = destination.substring(WebSocketConfig.MESSAGE_CHANNEL_PREFIX.length() + 1);
+        if (destination.startsWith(WebSocketChannelPrefix.MESSAGE_CHANNEL_PREFIX)) {
+            String userIdDestination = destination.substring(WebSocketChannelPrefix.MESSAGE_CHANNEL_PREFIX.length() + 1);
             return userIdDestination.equals(userId);
         }
 
-        if (destination.startsWith(WebSocketConfig.USER_WEBSOCKET_ERROR_CHANNEL_PREFIX)) {
+        if (destination.startsWith(WebSocketChannelPrefix.USER_WEBSOCKET_ERROR_CHANNEL_PREFIX)) {
             // Always success for receive error
             return true;
         }

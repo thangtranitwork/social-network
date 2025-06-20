@@ -28,6 +28,13 @@ public interface ChatRepository extends Neo4jRepository<Chat, UUID> {
     @Query("""
             MATCH (currentUser:User {id: $userId})-[:IS_MEMBER_OF]->(chat:Chat)<-[:IS_MEMBER_OF]-(target:User)
             WHERE target.id <> $userId
+            RETURN target.id
+            """)
+    List<UUID> getTargetIds(UUID userId);
+
+    @Query("""
+            MATCH (currentUser:User {id: $userId})-[:IS_MEMBER_OF]->(chat:Chat)<-[:IS_MEMBER_OF]-(target:User)
+            WHERE target.id <> $userId
             
             // Get latest message
             OPTIONAL MATCH (chat)-[:HAS_MESSAGE]->(message:Message)

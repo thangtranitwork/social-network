@@ -27,7 +27,7 @@ public class UserMapper {
                 .friendCount(projection.friendCount())
                 .birthdate(projection.birthdate())
                 .isOnline(online.isOnline())
-                .lastOnline(online.getLastOnlineAt())
+                .lastOnline(online.getLastOnline())
                 .isFriend(projection.isFriend())
                 .mutualFriendsCount(projection.mutualFriendsCount())
                 .request(projection.request())
@@ -50,7 +50,7 @@ public class UserMapper {
                 .givenName(user.getGivenName())
                 .familyName(user.getFamilyName())
                 .isOnline(online.isOnline())
-                .lastOnline(online.getLastOnlineAt())
+                .lastOnline(online.getLastOnline())
                 .profilePictureUrl(profilePictureUrl)
                 .build();
     }
@@ -64,7 +64,7 @@ public class UserMapper {
                 .username(projection.username())
                 .profilePictureUrl(File.getPath(projection.profilePictureId()))
                 .isOnline(online.isOnline())
-                .lastOnline(online.getLastOnlineAt())
+                .lastOnline(online.getLastOnline())
                 .isFriend(projection.isFriend())
                 .mutualFriendsCount(projection.mutualFriendsCount())
                 .build();
@@ -79,7 +79,7 @@ public class UserMapper {
                 .username(projection.username())
                 .profilePictureUrl(File.getPath(projection.profilePictureId()))
                 .isOnline(online.isOnline())
-                .lastOnline(online.getLastOnlineAt())
+                .lastOnline(online.getLastOnline())
                 .build();
     }
 
@@ -95,7 +95,7 @@ public class UserMapper {
                 .username(projection.latestMessageSenderUsername())
                 .profilePictureUrl(File.getPath(projection.latestMessageSenderProfilePictureId()))
                 .isOnline(online.isOnline())
-                .lastOnline(online.getLastOnlineAt())
+                .lastOnline(online.getLastOnline())
                 .build();
     }
 
@@ -111,7 +111,7 @@ public class UserMapper {
                 .username(projection.senderUsername())
                 .profilePictureUrl(File.getPath(projection.senderProfilePictureId()))
                 .isOnline(online.isOnline())
-                .lastOnline(online.getLastOnlineAt())
+                .lastOnline(online.getLastOnline())
                 .build();
     }
 
@@ -127,7 +127,7 @@ public class UserMapper {
                 .username(projection.targetUsername())
                 .profilePictureUrl(File.getPath(projection.targetProfilePictureId()))
                 .isOnline(online.isOnline())
-                .lastOnline(online.getLastOnlineAt())
+                .lastOnline(online.getLastOnline())
                 .isFriend(projection.isFriend())
                 .build();
     }
@@ -142,7 +142,7 @@ public class UserMapper {
                 .profilePictureUrl(File.getPath(projection.authorProfilePictureId()))
                 .isFriend(projection.isFriend())
                 .isOnline(online.isOnline())
-                .lastOnline(online.getLastOnlineAt())
+                .lastOnline(online.getLastOnline())
                 .build();
     }
 
@@ -155,7 +155,7 @@ public class UserMapper {
                 .username(projection.authorUsername())
                 .profilePictureUrl(File.getPath(projection.authorProfilePictureId()))
                 .isOnline(online.isOnline())
-                .lastOnline(online.getLastOnlineAt())
+                .lastOnline(online.getLastOnline())
                 .build();
     }
 
@@ -168,7 +168,7 @@ public class UserMapper {
                 .username(projection.originalPostAuthorUsername())
                 .profilePictureUrl(File.getPath(projection.originalPostAuthorProfilePictureId()))
                 .isOnline(online.isOnline())
-                .lastOnline(online.getLastOnlineAt())
+                .lastOnline(online.getLastOnline())
                 .build();
     }
 }

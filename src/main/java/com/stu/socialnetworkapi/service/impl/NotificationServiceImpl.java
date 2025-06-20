@@ -1,6 +1,6 @@
 package com.stu.socialnetworkapi.service.impl;
 
-import com.stu.socialnetworkapi.config.WebSocketConfig;
+import com.stu.socialnetworkapi.config.WebSocketChannelPrefix;
 import com.stu.socialnetworkapi.dto.request.Neo4jPageable;
 import com.stu.socialnetworkapi.dto.response.NotificationResponse;
 import com.stu.socialnetworkapi.entity.Notification;
@@ -12,12 +12,12 @@ import com.stu.socialnetworkapi.service.itf.NotificationService;
 import com.stu.socialnetworkapi.service.itf.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 
 @Service
 @Transactional
@@ -39,6 +39,7 @@ public class NotificationServiceImpl implements NotificationService {
         return notificationMapper.toNotificationResponse(notification);
     }
 
+    @Async
     @Override
     public void sendToFriends(Notification notification) {
         List<User> friends = notification.getCreator().getFriends();
@@ -53,11 +54,7 @@ public class NotificationServiceImpl implements NotificationService {
         notificationRepository.saveAll(notifications);
 
         notifications.forEach(noti ->
-                CompletableFuture.runAsync(() -> {
-                    String destination = WebSocketConfig.NOTIFICATION_CHANNEL_PREFIX + "/" + noti.getReceiver().getId();
-                    messagingTemplate.convertAndSend(destination, notificationMapper.toNotificationResponse(noti));
-                })
-        );
+                messagingTemplate.convertAndSend(WebSocketChannelPrefix.NOTIFICATION_CHANNEL_PREFIX + "/" + noti.getReceiver().getId(), notificationMapper.toNotificationResponse(noti)));
     }
 
     @Override
@@ -76,7 +73,7 @@ public class NotificationServiceImpl implements NotificationService {
                 notification.setSentAt(ZonedDateTime.now());
             }
         }
-        String destination = WebSocketConfig.NOTIFICATION_CHANNEL_PREFIX + "/" + notification.getReceiver().getId();
+        String destination = WebSocketChannelPrefix.NOTIFICATION_CHANNEL_PREFIX + "/" + notification.getReceiver().getId();
         messagingTemplate.convertAndSend(destination, save(notification));
     }
 

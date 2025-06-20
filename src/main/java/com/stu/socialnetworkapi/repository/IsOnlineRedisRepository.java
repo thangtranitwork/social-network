@@ -16,7 +16,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class IsOnlineRedisRepository {
     private final RedisTemplate<String, String> redisTemplate;
-
+    private final TargetChatIdRedisRepository targetChatIdRedisRepository;
     private static final String ONLINE_COUNT_KEY = "online_user_count";
     private static final String USER_ONLINE_COUNTER_KEY = "user_online_counter:";
     private static final String LAST_ONLINE_KEY = "last_online:";
@@ -29,9 +29,8 @@ public class IsOnlineRedisRepository {
         if (count != null && count == 1L) {
             redisTemplate.opsForValue().increment(ONLINE_COUNT_KEY);
             log.debug("User {} is now ONLINE", userKey);
+            targetChatIdRedisRepository.sendToChatTarget(userId, true, null);
         }
-
-        redisTemplate.opsForValue().set(LAST_ONLINE_KEY + userKey, ZonedDateTime.now().toString());
     }
 
     public void onUserDisconnected(UUID userId) {
@@ -42,8 +41,10 @@ public class IsOnlineRedisRepository {
             // User thực sự offline
             redisTemplate.delete(USER_ONLINE_COUNTER_KEY + userKey);
             redisTemplate.opsForValue().decrement(ONLINE_COUNT_KEY);
-            redisTemplate.opsForValue().set(LAST_ONLINE_KEY + userKey, ZonedDateTime.now().toString());
+            ZonedDateTime now = ZonedDateTime.now();
+            redisTemplate.opsForValue().set(LAST_ONLINE_KEY + userKey, now.toString());
             log.debug("User {} is now OFFLINE", userKey);
+            targetChatIdRedisRepository.sendToChatTarget(userId, false, now);
         }
     }
 
@@ -61,7 +62,7 @@ public class IsOnlineRedisRepository {
 
         return OnlineResponse.builder()
                 .isOnline(isOnline)
-                .lastOnlineAt(lastOnline)
+                .lastOnline(lastOnline)
                 .build();
     }
 

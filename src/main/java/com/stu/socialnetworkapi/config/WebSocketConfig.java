@@ -9,6 +9,8 @@ import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBr
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
+import static com.stu.socialnetworkapi.config.WebSocketChannelPrefix.*;
+
 @Configuration
 @EnableWebSocketMessageBroker
 @RequiredArgsConstructor
@@ -17,12 +19,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Value("${origin.front-end}")
     private String frontendOrigin;
     private final WebSocketAuthInterceptor webSocketAuthInterceptor;
-
-    public static final String NOTIFICATION_CHANNEL_PREFIX = "/notifications"; // /notifications/{userid} Realtime notification
-    public static final String CHAT_CHANNEL_PREFIX = "/chat"; // /chat/{chatid} Receive new message and chat info state when chat is on screen
-    public static final String MESSAGE_CHANNEL_PREFIX = "/message"; // /message/{userid} Received new message for notification (chat is not on screen)
-    public static final String USER_WEBSOCKET_ERROR_CHANNEL_PREFIX = "/errors"; // Send websocket error
-    public static final String CALL_CHANNEL_PREFIX = "/call";
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {

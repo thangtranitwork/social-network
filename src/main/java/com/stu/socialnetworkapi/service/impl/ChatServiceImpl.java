@@ -7,6 +7,7 @@ import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.mapper.ChatMapper;
 import com.stu.socialnetworkapi.repository.ChatRepository;
+import com.stu.socialnetworkapi.repository.TargetChatIdRedisRepository;
 import com.stu.socialnetworkapi.service.itf.BlockService;
 import com.stu.socialnetworkapi.service.itf.ChatService;
 import com.stu.socialnetworkapi.service.itf.UserService;
@@ -26,6 +27,7 @@ public class ChatServiceImpl implements ChatService {
     private final UserService userService;
     private final BlockService blockService;
     private final ChatRepository chatRepository;
+    private final TargetChatIdRedisRepository targetChatIdRedisRepository;
 
     @Override
     public void createChatIfNotExist(User user1, User user2) {
@@ -59,7 +61,8 @@ public class ChatServiceImpl implements ChatService {
         Chat newChat = Chat.builder()
                 .members(members)
                 .build();
-
+        targetChatIdRedisRepository.invalidate(sender.getId());
+        targetChatIdRedisRepository.invalidate(receiver.getId());
         return chatRepository.save(newChat);
     }
 

@@ -1,6 +1,6 @@
 # ỨNG DỤNG MÔ HÌNH ĐỒ THỊ TRONG XÂY DỰNG WEBSITE MẠNG XÃ HỘI
 
-![Mạng xã hội](https://via.placeholder.com/800x400?text=M%E1%BA%A1ng+X%C3%A3+H%E1%BB%99i+Vi%E1%BB%87t+Nam)
+![Mạng xã hội](https://cdnv2.tgdd.vn/mwg-static/common/News/1571187/2.jpg)
 
 ## Giới thiệu
 

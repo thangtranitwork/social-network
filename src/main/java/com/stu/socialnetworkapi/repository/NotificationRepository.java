@@ -25,16 +25,52 @@ public interface NotificationRepository extends Neo4jRepository<Notification, UU
                 // Lấy ảnh đại diện nếu có
                 OPTIONAL MATCH (creator)-[:HAS_PROFILE_PICTURE]->(pf:File)
             
+                // Xử lý theo targetType
+                // Nếu targetType là POST, lấy post
+                OPTIONAL MATCH (post:Post {id: n.targetId})
+                WHERE n.targetType = 'POST'
+            
+                // Nếu targetType là COMMENT, lấy comment
+                OPTIONAL MATCH (comment:Comment {id: n.targetId})
+                WHERE n.targetType = 'COMMENT'
+            
+                // Nếu comment là replied comment, lấy comment cha
+                OPTIONAL MATCH (comment)-[:REPLIED]->(originalComment:Comment)
+            
+                // Lấy post của comment 
+                // Nếu là replied comment, lấy post từ comment cha
+                // Nếu là comment gốc, lấy post trực tiếp
+                OPTIONAL MATCH (postFromComment:Post)-[:HAS_COMMENT]-(commentWithPost:Comment)
+                WHERE commentWithPost = CASE 
+                    WHEN originalComment IS NOT NULL THEN originalComment 
+                    ELSE comment 
+                END
+            
                 // Gom kết quả
-                WITH n, creator, pf
+                WITH n, creator, pf, post, comment, originalComment, postFromComment
                 ORDER BY n.sentAt DESC
                 SKIP $skip LIMIT $limit
+            
                 // Trả về projection
                 SET n.isRead = true
                 RETURN n.id AS id,
                        n.action AS action,
                        n.targetType AS targetType,
                        n.targetId AS targetId,
+                       CASE 
+                           WHEN n.targetType = 'POST' THEN post.id
+                           WHEN n.targetType = 'COMMENT' THEN postFromComment.id
+                           ELSE NULL 
+                       END AS postId,
+                       CASE 
+                           WHEN n.targetType = 'COMMENT' AND originalComment IS NOT NULL THEN originalComment.id
+                           WHEN n.targetType = 'COMMENT' AND originalComment IS NULL THEN comment.id
+                           ELSE NULL 
+                       END AS commentId,
+                       CASE 
+                           WHEN n.targetType = 'COMMENT' AND originalComment IS NOT NULL THEN comment.id
+                           ELSE NULL 
+                       END AS repliedCommentId,
                        n.sentAt AS sentAt,
                        n.isRead as isRead,
                        creator.id AS userId,

@@ -6,16 +6,20 @@ import com.stu.socialnetworkapi.enums.ObjectType;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 
-public record NotificationProjection (
+public record NotificationProjection(
         UUID id,
         NotificationAction action,
         ObjectType targetType,
         UUID targetId,
+        UUID postId,
+        UUID commentId,
+        UUID repliedCommentId,
         ZonedDateTime sentAt,
         boolean isRead,
         UUID userId,
         String username,
         String givenName,
         String familyName,
-        String profilePictureId){
+        String profilePictureId
+) {
 }

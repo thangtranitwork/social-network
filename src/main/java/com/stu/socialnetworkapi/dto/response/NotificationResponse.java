@@ -15,6 +15,10 @@ public class NotificationResponse {
     NotificationAction action;
     ObjectType targetType;
     UUID targetId;
+    UUID postId;
+    UUID commentId;
+    UUID repliedCommentId;
+    String username;
     UserCommonInformationResponse creator;
     ZonedDateTime sentAt;
     boolean isRead;

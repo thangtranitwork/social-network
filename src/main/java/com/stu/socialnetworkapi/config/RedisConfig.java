@@ -8,7 +8,6 @@ import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.util.List;
-import java.util.UUID;
 
 @Configuration
 public class RedisConfig {
@@ -23,17 +22,21 @@ public class RedisConfig {
     }
 
     @Bean(name = "uuidListRedisTemplate")
-    public RedisTemplate<String, List<UUID>> uuidListRedisTemplate(RedisConnectionFactory factory) {
-        RedisTemplate<String, List<UUID>> template = new RedisTemplate<>();
+    public RedisTemplate<String, List<String>> uuidListRedisTemplate(RedisConnectionFactory factory) {
+        RedisTemplate<String, List<String>> template = new RedisTemplate<>();
         template.setConnectionFactory(factory);
 
-        // Dùng Jackson để serialize List<UUID>
-        Jackson2JsonRedisSerializer<List<UUID>> serializer = new Jackson2JsonRedisSerializer<>(
-                (Class<List<UUID>>) (Class<?>) List.class
+        // Use String serializer for keys
+        template.setKeySerializer(new StringRedisSerializer());
+
+        // Use Jackson serializer for List<String> values
+        Jackson2JsonRedisSerializer<List<String>> serializer = new Jackson2JsonRedisSerializer<>(
+                (Class<List<String>>) (Class<?>) List.class
         );
-        template.setDefaultSerializer(serializer);
+
+        template.setValueSerializer(serializer);
+        template.setHashValueSerializer(serializer);
 
         return template;
     }
 }
-

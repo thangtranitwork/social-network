@@ -1,9 +1,11 @@
 package com.stu.socialnetworkapi.repository;
 
+import com.stu.socialnetworkapi.event.UserOnlineEvent;
 import com.stu.socialnetworkapi.dto.response.OnlineResponse;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -15,8 +17,8 @@ import java.util.UUID;
 @Repository
 @RequiredArgsConstructor
 public class IsOnlineRedisRepository {
+    private final ApplicationEventPublisher eventPublisher;
     private final RedisTemplate<String, String> redisTemplate;
-    private final TargetChatIdRedisRepository targetChatIdRedisRepository;
     private static final String ONLINE_COUNT_KEY = "online_user_count";
     private static final String USER_ONLINE_COUNTER_KEY = "user_online_counter:";
     private static final String LAST_ONLINE_KEY = "last_online:";
@@ -29,7 +31,7 @@ public class IsOnlineRedisRepository {
         if (count != null && count == 1L) {
             redisTemplate.opsForValue().increment(ONLINE_COUNT_KEY);
             log.debug("User {} is now ONLINE", userKey);
-            targetChatIdRedisRepository.sendToChatTarget(userId, true, null);
+            eventPublisher.publishEvent(new UserOnlineEvent(this, userId, true, null));
         }
     }
 
@@ -44,7 +46,7 @@ public class IsOnlineRedisRepository {
             ZonedDateTime now = ZonedDateTime.now();
             redisTemplate.opsForValue().set(LAST_ONLINE_KEY + userKey, now.toString());
             log.debug("User {} is now OFFLINE", userKey);
-            targetChatIdRedisRepository.sendToChatTarget(userId, false, now);
+            eventPublisher.publishEvent(new UserOnlineEvent(this, userId, false, now));
         }
     }
 

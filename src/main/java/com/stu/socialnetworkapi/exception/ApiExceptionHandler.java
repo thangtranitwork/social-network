@@ -1,7 +1,7 @@
 package com.stu.socialnetworkapi.exception;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
-import com.stu.socialnetworkapi.config.WebSocketConfig;
+import com.stu.socialnetworkapi.config.WebSocketChannelPrefix;
 import com.stu.socialnetworkapi.dto.response.ApiResponse;
 import com.stu.socialnetworkapi.dto.response.WebSocketExceptionResponse;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +36,7 @@ public class ApiExceptionHandler {
                 .code(errorCode.getCode())
                 .message(errorCode.getMessage())
                 .build();
-        messagingTemplate.convertAndSend(WebSocketConfig.USER_WEBSOCKET_ERROR_CHANNEL_PREFIX + "/" + principal.getName(), response);
+        messagingTemplate.convertAndSend(WebSocketChannelPrefix.USER_WEBSOCKET_ERROR_CHANNEL_PREFIX + "/" + principal.getName(), response);
         return null;
     }
 

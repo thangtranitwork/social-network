@@ -17,5 +17,4 @@ public interface ChatService {
     List<ChatResponse> getChatList();
 
     List<ChatResponse> search(String query);
-
 }

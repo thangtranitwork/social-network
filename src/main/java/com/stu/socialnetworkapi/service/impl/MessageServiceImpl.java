@@ -1,6 +1,6 @@
 package com.stu.socialnetworkapi.service.impl;
 
-import com.stu.socialnetworkapi.config.WebSocketConfig;
+import com.stu.socialnetworkapi.config.WebSocketChannelPrefix;
 import com.stu.socialnetworkapi.dto.request.EditMessageRequest;
 import com.stu.socialnetworkapi.dto.request.FileMessageRequest;
 import com.stu.socialnetworkapi.dto.request.Neo4jPageable;
@@ -136,7 +136,7 @@ public class MessageServiceImpl implements MessageService {
     }
 
     private void sendMessageCommand(UUID chatId, MessageCommand command) {
-        messagingTemplate.convertAndSend(WebSocketConfig.CHAT_CHANNEL_PREFIX + "/" + chatId, command);
+        messagingTemplate.convertAndSend(WebSocketChannelPrefix.CHAT_CHANNEL_PREFIX + "/" + chatId, command);
     }
 
     @Override
@@ -188,8 +188,8 @@ public class MessageServiceImpl implements MessageService {
 
     private void sendMessageNotification(UUID chatId, UUID targetId, MessageResponse response) {
         // Gửi tin lên đoạn chat (người dùng đang mở đoạn chat trên màn hình)
-        messagingTemplate.convertAndSend(WebSocketConfig.CHAT_CHANNEL_PREFIX + "/" + chatId, response);
+        messagingTemplate.convertAndSend(WebSocketChannelPrefix.CHAT_CHANNEL_PREFIX + "/" + chatId, response);
         // Gửi thông báo tin nhắn cho người nhận
-        messagingTemplate.convertAndSend(WebSocketConfig.MESSAGE_CHANNEL_PREFIX + "/" + targetId, response);
+        messagingTemplate.convertAndSend(WebSocketChannelPrefix.MESSAGE_CHANNEL_PREFIX + "/" + targetId, response);
     }
 }

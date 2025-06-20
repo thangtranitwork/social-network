@@ -48,7 +48,7 @@ public interface ChatRepository extends Neo4jRepository<Chat, UUID> {
             WHERE NOT EXISTS((currentUser)-[:SENT]->(unreadMsg)) AND unreadMsg.isRead = false
             
             // Check friendship status
-            OPTIONAL MATCH (currentUser)-[friendRel:FRIEND]-(target)
+            OPTIONAL MATCH (currentUser)-[friendRel:FRIEND]->(target)
             
             // Check block status
             OPTIONAL MATCH (currentUser)-[blockOut:BLOCK]->(target)

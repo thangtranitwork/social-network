@@ -23,6 +23,14 @@ public class AuthenticationController {
                 .authenticate(request, response));
     }
 
+    @PostMapping("/login-admin")
+    public ApiResponse<AuthenticationResponse> authenticateAdmin(
+            @Valid @RequestBody LoginRequest request,
+            HttpServletResponse response) {
+        return ApiResponse.success(authenticationService
+                .authenticateAdmin(request, response));
+    }
+
     @PostMapping("/refresh")
     public ApiResponse<AuthenticationResponse> refresh(@CookieValue(name = "token", required = false) String token) {
         return ApiResponse.success(authenticationService.refresh(token));

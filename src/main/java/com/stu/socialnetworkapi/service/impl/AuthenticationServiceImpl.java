@@ -3,6 +3,7 @@ package com.stu.socialnetworkapi.service.impl;
 import com.stu.socialnetworkapi.dto.request.LoginRequest;
 import com.stu.socialnetworkapi.dto.response.AuthenticationResponse;
 import com.stu.socialnetworkapi.entity.Account;
+import com.stu.socialnetworkapi.enums.AccountRole;
 import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.repository.AccountRepository;
@@ -28,7 +29,18 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public AuthenticationResponse authenticate(LoginRequest request, HttpServletResponse response) {
-        Account account = accountRepository.findByEmail(request.email())
+        Account account = accountRepository.findByEmailAndRoleIs(request.email(), AccountRole.USER)
+                .orElseThrow(() -> new ApiException(ErrorCode.ACCOUNT_NOT_FOUND));
+        validateLogin(account);
+        boolean matches = passwordEncoder.matches(request.password(), account.getPassword());
+        if (!matches) processLoginFailed(account);
+
+        return processLoginSucceed(account, response);
+    }
+
+    @Override
+    public AuthenticationResponse authenticateAdmin(LoginRequest request, HttpServletResponse response) {
+        Account account = accountRepository.findByEmailAndRoleIs(request.email(), AccountRole.ADMIN)
                 .orElseThrow(() -> new ApiException(ErrorCode.ACCOUNT_NOT_FOUND));
         validateLogin(account);
         boolean matches = passwordEncoder.matches(request.password(), account.getPassword());

@@ -16,37 +16,49 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class IsOnlineRedisRepository {
     private final RedisTemplate<String, String> redisTemplate;
-    private static final String IS_ONLINE_KEY = "is_online:";
-    private static final String LAST_ONLINE_KEY = "last_online:";
+
     private static final String ONLINE_COUNT_KEY = "online_user_count";
+    private static final String USER_ONLINE_COUNTER_KEY = "user_online_counter:";
+    private static final String LAST_ONLINE_KEY = "last_online:";
 
-    public void save(UUID userId, boolean isOnline) {
-        String id = userId.toString();
+    public void onUserConnected(UUID userId) {
+        String userKey = userId.toString();
+        Long count = redisTemplate.opsForValue().increment(USER_ONLINE_COUNTER_KEY + userKey);
 
-        boolean wasOnline = Optional.ofNullable(redisTemplate.opsForValue().get(IS_ONLINE_KEY + id))
-                .map(Boolean::valueOf)
-                .orElse(false);
-
-        redisTemplate.opsForValue().set(IS_ONLINE_KEY + id, String.valueOf(isOnline));
-        redisTemplate.opsForValue().set(LAST_ONLINE_KEY + id, ZonedDateTime.now().toString());
-
-        // Chỉ thay đổi count khi trạng thái thực sự thay đổi
-        if (isOnline && !wasOnline) {
+        // Nếu lần đầu tiên online → tăng tổng số user online
+        if (count != null && count == 1L) {
             redisTemplate.opsForValue().increment(ONLINE_COUNT_KEY);
-        } else if (!isOnline && wasOnline) {
-            redisTemplate.opsForValue().decrement(ONLINE_COUNT_KEY);
+            log.debug("User {} is now ONLINE", userKey);
         }
 
-        log.debug("User {} is {}", id, (isOnline ? "online" : "offline"));
+        redisTemplate.opsForValue().set(LAST_ONLINE_KEY + userKey, ZonedDateTime.now().toString());
+    }
+
+    public void onUserDisconnected(UUID userId) {
+        String userKey = userId.toString();
+        Long count = redisTemplate.opsForValue().decrement(USER_ONLINE_COUNTER_KEY + userKey);
+
+        if (count == null || count <= 0) {
+            // User thực sự offline
+            redisTemplate.delete(USER_ONLINE_COUNTER_KEY + userKey);
+            redisTemplate.opsForValue().decrement(ONLINE_COUNT_KEY);
+            redisTemplate.opsForValue().set(LAST_ONLINE_KEY + userKey, ZonedDateTime.now().toString());
+            log.debug("User {} is now OFFLINE", userKey);
+        }
     }
 
     public OnlineResponse getLastSeen(UUID userId) {
-        boolean isOnline = Optional.ofNullable(redisTemplate.opsForValue().get(IS_ONLINE_KEY + userId))
-                .map(Boolean::valueOf)
-                .orElse(false);
-        ZonedDateTime lastOnline = Optional.ofNullable(redisTemplate.opsForValue().get(LAST_ONLINE_KEY + userId))
+        String userKey = userId.toString();
+
+        long sessionCount = Optional.ofNullable(redisTemplate.opsForValue().get(USER_ONLINE_COUNTER_KEY + userKey))
+                .map(Long::parseLong)
+                .orElse(0L);
+        boolean isOnline = sessionCount > 0;
+
+        ZonedDateTime lastOnline = Optional.ofNullable(redisTemplate.opsForValue().get(LAST_ONLINE_KEY + userKey))
                 .map(ZonedDateTime::parse)
                 .orElse(null);
+
         return OnlineResponse.builder()
                 .isOnline(isOnline)
                 .lastOnlineAt(lastOnline)
@@ -61,17 +73,14 @@ public class IsOnlineRedisRepository {
     @PostConstruct
     public void init() {
         try {
-            // Xoá toàn bộ is_online:* key
-            redisTemplate.keys(IS_ONLINE_KEY + "*")
+            // Xoá toàn bộ user_online_counter:* key
+            redisTemplate.keys(USER_ONLINE_COUNTER_KEY + "*")
                     .forEach(redisTemplate::delete);
 
-            // Xoá toàn bộ last_online:* key
             redisTemplate.keys(LAST_ONLINE_KEY + "*")
                     .forEach(redisTemplate::delete);
 
-            // Reset lại online count
             redisTemplate.delete(ONLINE_COUNT_KEY);
-
         } catch (Exception e) {
             log.error("Error clearing Redis online user state: {}", e.getMessage(), e);
         }

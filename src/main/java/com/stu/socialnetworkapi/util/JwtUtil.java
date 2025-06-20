@@ -3,7 +3,6 @@ package com.stu.socialnetworkapi.util;
 import com.stu.socialnetworkapi.enums.AccountRole;
 import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
-import com.stu.socialnetworkapi.repository.IsOnlineRedisRepository;
 import com.stu.socialnetworkapi.repository.TokenRedisRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -38,7 +37,6 @@ public class JwtUtil {
     private String secret;
 
     private final TokenRedisRepository tokenRedisRepository;
-    private final IsOnlineRedisRepository isOnlineRedisRepository;
     private static final String SCOPE_CLAIM_KEY = "scope";
     private static final String USERNAME_CLAIM_KEY = "username";
     private static final String REFRESH_TOKEN_COOKIE_NAME = "token";
@@ -85,9 +83,6 @@ public class JwtUtil {
      * Xóa refresh token trong Redis + cookie.
      */
     public void revokeRefreshToken(String token, HttpServletResponse response) {
-        tokenRedisRepository.findUserIdByToken(token)
-                .map(UUID::fromString)
-                .ifPresent(userId -> isOnlineRedisRepository.save(userId, false));
         tokenRedisRepository.delete(token);
         Cookie cookie = new Cookie(REFRESH_TOKEN_COOKIE_NAME, null);
         cookie.setHttpOnly(true);
@@ -122,15 +117,6 @@ public class JwtUtil {
             return UUID.fromString((jwtAuthenticationToken).getToken().getSubject());
         }
         return null;
-    }
-
-    public UUID getUserId(String token) {
-        try {
-            Claims claims = validateToken(token);
-            return UUID.fromString(claims.getSubject());
-        } catch (Exception e) {
-            return null;
-        }
     }
 
     public UUID getUserIdRequiredAuthentication() {

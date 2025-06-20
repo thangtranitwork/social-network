@@ -57,7 +57,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             attributes.put(ROLE_KEY, role);
             accessor.setUser(userId::toString);
 
-            isOnlineRedisRepository.save(UUID.fromString(userId.toString()), true);
+            isOnlineRedisRepository.onUserConnected(UUID.fromString(userId.toString()));
         }
         //Xác thực khi SUBSCRIBE
         else if (StompCommand.SUBSCRIBE.equals(command)) {
@@ -67,7 +67,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
 
         } else if (StompCommand.DISCONNECT.equals(command)) {
             UUID userId = UUID.fromString(attributes.get(USER_ID_KEY).toString());
-            isOnlineRedisRepository.save(userId, false);
+            isOnlineRedisRepository.onUserDisconnected(userId);
         }
 
         return message;

@@ -1,6 +1,7 @@
 package com.stu.socialnetworkapi.service.itf;
 
 import com.stu.socialnetworkapi.dto.request.StringeeCallEvent;
+import com.stu.socialnetworkapi.dto.response.AuthenticationResponse;
 import com.stu.socialnetworkapi.dto.response.StringeeResponse;
 
 import java.util.List;
@@ -16,11 +17,13 @@ public interface StringeeService {
             boolean isRecord,
             String recordFormat,
             boolean fromInternal,
-            UUID fromid,
-            UUID toid,
+            String fromid,
+            String toid,
             String projectId,
             String callId,
             boolean videocall);
 
     Map<String, String> handleEvent(StringeeCallEvent event);
+
+    AuthenticationResponse createToken();
 }

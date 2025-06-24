@@ -65,4 +65,7 @@ public class User {
     public static final int MAX_USERNAME_LENGTH = 32;
 
     //Method
+    public String getFullName() {
+        return givenName + " " + familyName;
+    }
 }

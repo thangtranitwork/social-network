@@ -1,6 +1,8 @@
 package com.stu.socialnetworkapi.controller;
 
 import com.stu.socialnetworkapi.dto.request.StringeeCallEvent;
+import com.stu.socialnetworkapi.dto.response.ApiResponse;
+import com.stu.socialnetworkapi.dto.response.AuthenticationResponse;
 import com.stu.socialnetworkapi.dto.response.StringeeResponse;
 import com.stu.socialnetworkapi.service.itf.StringeeService;
 import lombok.RequiredArgsConstructor;
@@ -26,8 +28,8 @@ public class StringeeController {
             @RequestParam(defaultValue = "false", name = "record") boolean isRecord,
             @RequestParam(defaultValue = "mp3") String recordFormat,
             @RequestParam boolean fromInternal,
-            @RequestParam(name = "from") UUID fromid,
-            @RequestParam(name = "to") UUID toid,
+            @RequestParam(name = "from") String fromid,
+            @RequestParam(name = "to") String toid,
             @RequestParam String projectId,
             @RequestParam String callId,
             @RequestParam(defaultValue = "false") boolean videocall) {
@@ -40,4 +42,10 @@ public class StringeeController {
         // Trả về response success
         return ResponseEntity.ok(stringeeService.handleEvent(event));
     }
+    @PostMapping("/create-token")
+    public ApiResponse<AuthenticationResponse> getToken() {
+
+        return ApiResponse.success(stringeeService.createToken());
+    }
+
 }

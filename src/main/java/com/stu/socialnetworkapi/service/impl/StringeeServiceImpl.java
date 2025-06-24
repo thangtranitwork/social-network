@@ -1,6 +1,7 @@
 package com.stu.socialnetworkapi.service.impl;
 
 import com.stu.socialnetworkapi.dto.request.StringeeCallEvent;
+import com.stu.socialnetworkapi.dto.response.AuthenticationResponse;
 import com.stu.socialnetworkapi.dto.response.StringeeResponse;
 import com.stu.socialnetworkapi.dto.response.StringeeUser;
 import com.stu.socialnetworkapi.entity.Call;
@@ -15,6 +16,9 @@ import com.stu.socialnetworkapi.repository.InCallRedisRepository;
 import com.stu.socialnetworkapi.service.itf.BlockService;
 import com.stu.socialnetworkapi.service.itf.ChatService;
 import com.stu.socialnetworkapi.service.itf.StringeeService;
+import com.stu.socialnetworkapi.service.itf.UserService;
+import com.stu.socialnetworkapi.util.JwtUtil;
+import com.stu.socialnetworkapi.util.StringeeTokenUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,23 +27,30 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 @Service
 @Transactional
 @RequiredArgsConstructor
 public class StringeeServiceImpl implements StringeeService {
+    private final JwtUtil jwtUtil;
     private final ChatService chatService;
+    private final UserService userService;
     private final BlockService blockService;
     private final CallRepository callRepository;
+    private final StringeeTokenUtil stringeeTokenUtil;
     private final InCallRedisRepository inCallRedisRepository;
 
     @Override
-    public List<StringeeResponse> handleAnswer(String appToPhone, int timeout, int maxConnectTime, boolean peerToPeerCall, boolean isRecord, String recordFormat, boolean fromInternal, UUID fromid, UUID toid, String projectId, String callId, boolean videocall) {
-        List<StringeeResponse> sccoList = new ArrayList<>();
+    public AuthenticationResponse createToken() {
+        return new AuthenticationResponse(stringeeTokenUtil.createAccessToken(jwtUtil.getUsernameRequiredAuthentication()));
+    }
 
-        // Cần websocket để thông báo
-        if (inCallRedisRepository.isInCall(toid) || !BlockStatus.NORMAL.equals(blockService.getBlockStatus(fromid, toid))) {
+    @Override
+    public List<StringeeResponse> handleAnswer(String appToPhone, int timeout, int maxConnectTime, boolean peerToPeerCall, boolean isRecord, String recordFormat, boolean fromInternal, String fromid, String toid, String projectId, String callId, boolean videocall) {
+        List<StringeeResponse> sccoList = new ArrayList<>();
+        User caller = userService.getUser(fromid);
+        User callee = userService.getUser(toid);
+        if (inCallRedisRepository.isInCall(toid) || !BlockStatus.NORMAL.equals(blockService.getBlockStatus(caller.getId(), callee.getId()))) {
             return sccoList;
         }
 
@@ -51,13 +62,7 @@ public class StringeeServiceImpl implements StringeeService {
             sccoList.add(recordAction);
         }
 
-        // Determine call type based on appToPhone parameter
-        boolean isAppToPhone = false;
-        if ("true".equalsIgnoreCase(appToPhone)) {
-            isAppToPhone = true;
-        } else if ("auto".equalsIgnoreCase(appToPhone)) {
-            isAppToPhone = false;
-        }
+        boolean isAppToPhone = "true".equalsIgnoreCase(appToPhone);
 
         // Create connect action
         StringeeResponse connectAction = new StringeeResponse();
@@ -65,14 +70,14 @@ public class StringeeServiceImpl implements StringeeService {
 
         StringeeUser from = new StringeeUser();
         from.setType(fromInternal ? "internal" : "external");
-        from.setNumber(fromid.toString());
-        from.setAlias(fromid.toString());
+        from.setNumber(caller.getUsername());
+        from.setAlias(caller.getFullName());
         connectAction.setFrom(from);
 
         StringeeUser to = new StringeeUser();
         to.setType(isAppToPhone ? "external" : "internal");
-        to.setNumber(toid.toString());
-        to.setAlias(toid.toString());
+        to.setNumber(callee.getUsername());
+        to.setAlias(callee.getFullName());
         connectAction.setTo(to);
 
         connectAction.setTimeout(timeout);
@@ -88,13 +93,12 @@ public class StringeeServiceImpl implements StringeeService {
     public Map<String, String> handleEvent(StringeeCallEvent event) {
         String eventType = event.type();
         String callId = event.call_id();
-        UUID callerId = UUID.fromString(event.from().getNumber());
-        UUID calleeId = UUID.fromString(event.to().getNumber());
-        Chat chat = chatService.getOrCreateDirectChat(callerId, calleeId);
-        User caller = chat.getMembers().stream()
-                .filter(member -> member.getId().equals(callerId))
-                .findFirst()
-                .orElse(null);
+        String callerUsername = event.from().getNumber();
+        String calleeUsername = event.to().getNumber();
+        User caller = userService.getUser(callerUsername);
+        User callee = userService.getUser(calleeUsername);
+
+        Chat chat = chatService.getOrCreateDirectChat(caller, callee);
 
         if (eventType == null) {
             return Map.of("status", "success");
@@ -113,7 +117,7 @@ public class StringeeServiceImpl implements StringeeService {
                             .callAt(ZonedDateTime.now())
                             .build();
                     callRepository.save(call);
-                    inCallRedisRepository.call(callerId, calleeId);
+                    inCallRedisRepository.call(callerUsername, calleeUsername);
                     break;
                 case "ringing":
                     System.out.println("📞 Cuộc gọi đang đổ chuông - Call ID: " + callId);
@@ -133,7 +137,7 @@ public class StringeeServiceImpl implements StringeeService {
                             .orElseThrow(() -> new ApiException(ErrorCode.MESSAGE_NOT_FOUND));
                     endCall.setEndAt(ZonedDateTime.now());
                     callRepository.save(endCall);
-                    inCallRedisRepository.endCall(callerId, calleeId);
+                    inCallRedisRepository.endCall(callerUsername, calleeUsername);
                     break;
                 case "failed":
                     System.out.println("❌ Cuộc gọi thất bại - Call ID: " + callId);

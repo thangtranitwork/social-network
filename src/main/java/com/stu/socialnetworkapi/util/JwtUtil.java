@@ -125,6 +125,20 @@ public class JwtUtil {
         return userId;
     }
 
+    public String getUsername() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication instanceof JwtAuthenticationToken jwtAuthenticationToken) {
+            return (String) jwtAuthenticationToken.getToken().getClaims().get(USERNAME_CLAIM_KEY);
+        }
+        return null;
+    }
+
+    public String getUsernameRequiredAuthentication() {
+        String username = getUsername();
+        if (username == null) throw new ApiException(ErrorCode.UNAUTHENTICATED);
+        return username;
+    }
+
     public Claims validateToken(String token) {
         try {
             return Jwts.parser()

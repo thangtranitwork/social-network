@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
-import java.util.UUID;
 
 @Component
 public class StringeeTokenUtil {
@@ -23,7 +22,7 @@ public class StringeeTokenUtil {
     @Value("${stringee.api.secret-key}")
     private String apiKeySecret;
 
-    public String createAccessToken(UUID userId) {
+    public String createAccessToken(String username) {
         try {
 
             long currentTime = System.currentTimeMillis() / 1000;
@@ -37,15 +36,15 @@ public class StringeeTokenUtil {
                     .claim("jti", apiKeySid + "-" + currentTime)
                     .claim("iss", apiKeySid)
                     .claim("exp", currentTime + DEFAULT_EXPIRE_IN_SECONDS)
-                    .claim("userId", userId.toString())
+                    .claim("userId", username)
                     .signWith(Keys.hmacShaKeyFor(apiKeySecret.getBytes(StandardCharsets.UTF_8)), Jwts.SIG.HS256)
                     .compact();
 
-            logger.info("Access token created successfully for user: {}", userId);
+            logger.info("Access token created successfully for user: {}", username);
             return token;
 
         } catch (Exception ex) {
-            logger.error("Error creating access token for user: {}", userId, ex);
+            logger.error("Error creating access token for user: {}", username, ex);
             throw new RuntimeException("Failed to create Stringee access token", ex);
         }
     }

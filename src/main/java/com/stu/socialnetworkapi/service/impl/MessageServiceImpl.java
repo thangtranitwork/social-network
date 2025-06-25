@@ -1,10 +1,7 @@
 package com.stu.socialnetworkapi.service.impl;
 
 import com.stu.socialnetworkapi.config.WebSocketChannelPrefix;
-import com.stu.socialnetworkapi.dto.request.EditMessageRequest;
-import com.stu.socialnetworkapi.dto.request.FileMessageRequest;
-import com.stu.socialnetworkapi.dto.request.Neo4jPageable;
-import com.stu.socialnetworkapi.dto.request.TextMessageRequest;
+import com.stu.socialnetworkapi.dto.request.*;
 import com.stu.socialnetworkapi.dto.response.MessageCommand;
 import com.stu.socialnetworkapi.dto.response.MessageResponse;
 import com.stu.socialnetworkapi.entity.Chat;
@@ -157,6 +154,15 @@ public class MessageServiceImpl implements MessageService {
                 .command(MessageCommand.Command.DELETE)
                 .build();
         sendMessageCommand(chat.getId(), command);
+    }
+
+    @Override
+    public void typing(UserTypingRequest request, UUID userId) {
+        MessageCommand command = MessageCommand.builder()
+                .command(MessageCommand.Command.TYPING)
+                .id(userId)
+                .build();
+        messagingTemplate.convertAndSend(WebSocketChannelPrefix.CHAT_CHANNEL_PREFIX + "/" + request.chatId(), command);
     }
 
     private static void validateDeleteMessage(Message message, User user) {

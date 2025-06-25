@@ -1,6 +1,7 @@
 package com.stu.socialnetworkapi.controller;
 
 import com.stu.socialnetworkapi.dto.request.TextMessageRequest;
+import com.stu.socialnetworkapi.dto.request.UserTypingRequest;
 import com.stu.socialnetworkapi.dto.response.MessageResponse;
 import com.stu.socialnetworkapi.service.itf.MessageService;
 import lombok.RequiredArgsConstructor;
@@ -20,5 +21,11 @@ public class ChatWebSocketController {
     public MessageResponse sendMessage(@Payload TextMessageRequest text, Principal principal) {
         UUID userId = UUID.fromString(principal.getName());
         return messageService.sendMessage(text, userId);
+    }
+
+    @MessageMapping("/chat.typing")
+    public void typing(@Payload UserTypingRequest request, Principal principal) {
+        UUID userId = UUID.fromString(principal.getName());
+        messageService.typing(request, userId);
     }
 }

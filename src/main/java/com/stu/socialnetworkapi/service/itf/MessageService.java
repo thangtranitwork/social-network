@@ -1,9 +1,6 @@
 package com.stu.socialnetworkapi.service.itf;
 
-import com.stu.socialnetworkapi.dto.request.EditMessageRequest;
-import com.stu.socialnetworkapi.dto.request.FileMessageRequest;
-import com.stu.socialnetworkapi.dto.request.Neo4jPageable;
-import com.stu.socialnetworkapi.dto.request.TextMessageRequest;
+import com.stu.socialnetworkapi.dto.request.*;
 import com.stu.socialnetworkapi.dto.response.MessageResponse;
 
 import java.util.List;
@@ -22,4 +19,5 @@ public interface MessageService {
 
     void deleteMessage(UUID messageId);
 
+    void typing(UserTypingRequest request, UUID userId);
 }

@@ -14,7 +14,8 @@ public class MessageCommand {
 
     public enum Command {
         DELETE,
-        EDIT
+        EDIT,
+        TYPING,
     }
 }
 

@@ -96,6 +96,11 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             return userIdDestination.equals(userId);
         }
 
+        if (destination.startsWith(WebSocketChannelPrefix.ONLINE_CHANNEL_PREFIX)) {
+            String userIdDestination = destination.substring(WebSocketChannelPrefix.ONLINE_CHANNEL_PREFIX.length() + 1);
+            return userIdDestination.equals(userId);
+        }
+
         if (destination.startsWith(WebSocketChannelPrefix.USER_WEBSOCKET_ERROR_CHANNEL_PREFIX)) {
             // Always success for receive error
             return true;

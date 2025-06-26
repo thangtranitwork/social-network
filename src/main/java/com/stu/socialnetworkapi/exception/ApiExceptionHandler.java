@@ -30,14 +30,17 @@ public class ApiExceptionHandler {
     private final SimpMessagingTemplate messagingTemplate;
 
     @MessageExceptionHandler(WebSocketException.class)
-    public Void handleWebSocketException(WebSocketException exception, Principal principal) {
+    public void handleWebSocketException(WebSocketException exception, Principal principal) {
+
         ErrorCode errorCode = exception.getErrorCode();
         WebSocketExceptionResponse response = WebSocketExceptionResponse.builder()
                 .code(errorCode.getCode())
                 .message(errorCode.getMessage())
                 .build();
-        messagingTemplate.convertAndSend(WebSocketChannelPrefix.USER_WEBSOCKET_ERROR_CHANNEL_PREFIX + "/" + principal.getName(), response);
-        return null;
+        String userId = principal.getName();
+        if (userId != null && !userId.isBlank() && !userId.equals("anonymousUser"))
+            messagingTemplate.convertAndSend(WebSocketChannelPrefix.USER_WEBSOCKET_ERROR_CHANNEL_PREFIX + "/" + userId, response);
+        else log.error("WebSocket error: {}", response);
     }
 
     @ExceptionHandler(ApiException.class)

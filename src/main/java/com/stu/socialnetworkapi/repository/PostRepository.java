@@ -524,8 +524,8 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
                  datetime($startOfWeek) AS startOfWeek
             
             MATCH (post:Post)
+            WHERE post.deleteAt IS NULL
             OPTIONAL MATCH (post)-[attach:ATTACH_FILES]->(:File)
-            WHERE post.deleteAt IS NOT NULL
             RETURN
               count(post) AS totalPosts,
               sum(post.likeCount) AS totalLikes,

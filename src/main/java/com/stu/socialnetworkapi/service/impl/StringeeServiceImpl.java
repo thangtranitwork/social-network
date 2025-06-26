@@ -6,9 +6,11 @@ import com.stu.socialnetworkapi.dto.response.StringeeResponse;
 import com.stu.socialnetworkapi.dto.response.StringeeUser;
 import com.stu.socialnetworkapi.entity.User;
 import com.stu.socialnetworkapi.enums.BlockStatus;
-import com.stu.socialnetworkapi.repository.CallRepository;
 import com.stu.socialnetworkapi.repository.InCallRedisRepository;
-import com.stu.socialnetworkapi.service.itf.*;
+import com.stu.socialnetworkapi.service.itf.BlockService;
+import com.stu.socialnetworkapi.service.itf.CallService;
+import com.stu.socialnetworkapi.service.itf.StringeeService;
+import com.stu.socialnetworkapi.service.itf.UserService;
 import com.stu.socialnetworkapi.util.JwtUtil;
 import com.stu.socialnetworkapi.util.StringeeTokenUtil;
 import jakarta.transaction.Transactional;
@@ -25,10 +27,8 @@ import java.util.Map;
 public class StringeeServiceImpl implements StringeeService {
     private final JwtUtil jwtUtil;
     private final CallService callService;
-    private final ChatService chatService;
     private final UserService userService;
     private final BlockService blockService;
-    private final CallRepository callRepository;
     private final StringeeTokenUtil stringeeTokenUtil;
     private final InCallRedisRepository inCallRedisRepository;
 

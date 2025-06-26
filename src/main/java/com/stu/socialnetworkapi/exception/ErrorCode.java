@@ -101,6 +101,10 @@ public enum ErrorCode {
     CAN_NOT_EDIT_FILE_MESSAGE(7008, "Can't edit file message", HttpStatus.BAD_REQUEST),
     CAN_NOT_EDIT_MESSAGE(7009, "Can't edit message", HttpStatus.BAD_REQUEST),
     FILE_MESSAGE_REQUIRED(7010, "File message is required", HttpStatus.BAD_REQUEST),
+    ALREADY_IN_CALL(7011, "You are already in call", HttpStatus.BAD_REQUEST),
+    TARGET_ALREADY_IN_IN_CALL(7012, "Target is already in call", HttpStatus.BAD_REQUEST),
+    CALL_NOT_FOUND(7013, "Call not found", HttpStatus.NOT_FOUND),
+    NOT_READY_FOR_CALL(7014, "Not ready for call", HttpStatus.BAD_REQUEST),
 
     SEARCH_QUERY_REQUIRED(9000, "Search query is required", HttpStatus.BAD_REQUEST),
     INVALID_WEBSOCKET_CHANNEL(9992, "Invalid websocket channel", HttpStatus.BAD_REQUEST),

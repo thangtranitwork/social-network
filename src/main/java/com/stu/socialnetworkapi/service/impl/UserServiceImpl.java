@@ -64,6 +64,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public String getCurrentUsernameRequiredAuthentication() {
+        return jwtUtil.getUsernameRequiredAuthentication();
+    }
+
+    @Override
     public UserProfileResponse getUserProfile(String username) {
         UUID currentUserId = jwtUtil.getUserId();
         UserProfileProjection targetUser = userRepository.findProfileByUsername(username, currentUserId)

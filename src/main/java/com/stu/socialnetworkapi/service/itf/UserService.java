@@ -20,6 +20,8 @@ public interface UserService {
 
     UUID getCurrentUserIdRequiredAuthentication();
 
+    String getCurrentUsernameRequiredAuthentication();
+
     UserProfileResponse getUserProfile(String username);
 
     LocalDate updateUsername(String username);

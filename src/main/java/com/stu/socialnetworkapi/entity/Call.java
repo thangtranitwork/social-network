@@ -17,8 +17,8 @@ import java.time.ZonedDateTime;
 public class Call extends Message {
     String callId;
     ZonedDateTime callAt;
-    ZonedDateTime answerAt;
     ZonedDateTime endAt;
     boolean isAnswered;
+    boolean isRejected;
     boolean isVideoCall;
 }

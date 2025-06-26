@@ -4,26 +4,17 @@ import com.stu.socialnetworkapi.dto.request.StringeeCallEvent;
 import com.stu.socialnetworkapi.dto.response.AuthenticationResponse;
 import com.stu.socialnetworkapi.dto.response.StringeeResponse;
 import com.stu.socialnetworkapi.dto.response.StringeeUser;
-import com.stu.socialnetworkapi.entity.Call;
-import com.stu.socialnetworkapi.entity.Chat;
 import com.stu.socialnetworkapi.entity.User;
 import com.stu.socialnetworkapi.enums.BlockStatus;
-import com.stu.socialnetworkapi.enums.MessageType;
-import com.stu.socialnetworkapi.exception.ApiException;
-import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.repository.CallRepository;
 import com.stu.socialnetworkapi.repository.InCallRedisRepository;
-import com.stu.socialnetworkapi.service.itf.BlockService;
-import com.stu.socialnetworkapi.service.itf.ChatService;
-import com.stu.socialnetworkapi.service.itf.StringeeService;
-import com.stu.socialnetworkapi.service.itf.UserService;
+import com.stu.socialnetworkapi.service.itf.*;
 import com.stu.socialnetworkapi.util.JwtUtil;
 import com.stu.socialnetworkapi.util.StringeeTokenUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -33,12 +24,15 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class StringeeServiceImpl implements StringeeService {
     private final JwtUtil jwtUtil;
+    private final CallService callService;
     private final ChatService chatService;
     private final UserService userService;
     private final BlockService blockService;
     private final CallRepository callRepository;
     private final StringeeTokenUtil stringeeTokenUtil;
     private final InCallRedisRepository inCallRedisRepository;
+
+    private static final Map<String, String> success = Map.of("status", "success");
 
     @Override
     public AuthenticationResponse createToken() {
@@ -95,49 +89,27 @@ public class StringeeServiceImpl implements StringeeService {
         String callId = event.call_id();
         String callerUsername = event.from().getNumber();
         String calleeUsername = event.to().getNumber();
-        User caller = userService.getUser(callerUsername);
-        User callee = userService.getUser(calleeUsername);
-
-        Chat chat = chatService.getOrCreateDirectChat(caller, callee);
-
+        boolean isVideoCall = event.isVideoCall();
         if (eventType == null) {
-            return Map.of("status", "success");
+            return success;
         }
 
         if (eventType.equals("stringee_call")) {
             String callStatus = event.call_status();
             switch (callStatus) {
                 case "started":
-                    Call call = Call.builder()
-                            .chat(chat)
-                            .sender(caller)
-                            .callId(callId)
-                            .type(MessageType.CALL)
-                            .isVideoCall(true)
-                            .callAt(ZonedDateTime.now())
-                            .build();
-                    callRepository.save(call);
-                    inCallRedisRepository.call(callerUsername, calleeUsername);
+                    callService.start(callId, callerUsername, calleeUsername, isVideoCall);
                     break;
                 case "ringing":
                     System.out.println("📞 Cuộc gọi đang đổ chuông - Call ID: " + callId);
                     break;
                 case "answered":
-                    Call answeredCall = callRepository.findByCallId(callId)
-                            .orElseThrow(() -> new ApiException(ErrorCode.MESSAGE_NOT_FOUND));
-                    answeredCall.setAnswered(true);
-                    answeredCall.setAnswerAt(ZonedDateTime.now());
-                    callRepository.save(answeredCall);
+                    callService.answer(callId);
                     System.out.println("✅ Cuộc gọi được trả lời - Call ID: " + callId);
                     break;
                 case "ended":
-                    // reject sẽ vào kết thúc luôn, hủy cũng z
                     System.out.println("🔚 Cuộc gọi kết thúc - Call ID: " + callId);
-                    Call endCall = callRepository.findByCallId(callId)
-                            .orElseThrow(() -> new ApiException(ErrorCode.MESSAGE_NOT_FOUND));
-                    endCall.setEndAt(ZonedDateTime.now());
-                    callRepository.save(endCall);
-                    inCallRedisRepository.endCall(callerUsername, calleeUsername);
+                    callService.end(callId, callerUsername, calleeUsername);
                     break;
                 case "failed":
                     System.out.println("❌ Cuộc gọi thất bại - Call ID: " + callId);
@@ -154,6 +126,6 @@ public class StringeeServiceImpl implements StringeeService {
         } else {
             System.out.println("❓ Event không xác định: " + eventType + " - Call ID: " + callId);
         }
-        return Map.of("status", "success");
+        return success;
     }
 }

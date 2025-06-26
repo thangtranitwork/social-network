@@ -36,7 +36,7 @@ server:
     session:
       cookie:
         same-site: lax
-  port: 80
+  port: 2003
 
 jwt:
   access-token:

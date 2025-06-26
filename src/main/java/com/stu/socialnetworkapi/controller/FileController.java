@@ -4,6 +4,7 @@ import com.stu.socialnetworkapi.dto.response.FileResponse;
 import com.stu.socialnetworkapi.service.itf.FileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,6 +23,7 @@ public class FileController {
         FileResponse file = fileService.load(id);
         return ResponseEntity.ok()
                 .header("Content-Disposition", "inline; filename=\"" + file.getName() + "\"")
+                .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600, immutable") // Cache file trong 1 tieng
                 .contentType(MediaType.parseMediaType(file.getContentType()))
                 .body(file.getResource());
     }

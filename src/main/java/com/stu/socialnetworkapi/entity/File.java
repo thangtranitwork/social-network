@@ -5,7 +5,6 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
 import org.springframework.data.neo4j.core.schema.Relationship;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.Collections;
 import java.util.List;
@@ -38,15 +37,7 @@ public class File {
 
     public static String getPath(String id) {
         if (id == null) return null;
-
-        try {
-            return ServletUriComponentsBuilder.fromCurrentContextPath()
-                    .path("/v1/files/")
-                    .path(id)
-                    .toUriString();
-        } catch (IllegalStateException e) {
-            return selfOrigin + "/v1/files/" + id;
-        }
+        return selfOrigin + "/v1/files/" + id;
     }
 
     public static List<String> getPath(List<File> attachedFiles) {

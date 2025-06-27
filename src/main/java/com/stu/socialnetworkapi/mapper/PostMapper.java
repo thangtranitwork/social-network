@@ -52,6 +52,7 @@ public class PostMapper {
                 .isSharedPost(projection.isSharedPost())
                 .originalPostCanView(projection.originalPostCanView())
                 .originalPost(projection.originalPostCanView() && projection.originalPostAuthorId() != null ? this.toPostCommonInformationResponse(projection) : null)
+                .score(projection.score())
                 .build();
     }
 

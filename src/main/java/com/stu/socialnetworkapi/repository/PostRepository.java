@@ -152,9 +152,9 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
                    CASE WHEN originalPostCanView THEN originalPost.privacy ELSE null END AS originalPostPrivacy,
                    CASE WHEN originalPostCanView THEN originalFiles ELSE [] END AS originalPostFiles,
                    CASE WHEN originalPostCanView THEN originalAuthor.id ELSE null END AS originalPostAuthorId,
-                   CASE WHEN originalPostCanView THEN originalAuthor.username ELSE null END AS originalPostAuthorUsername,
-                   CASE WHEN originalPostCanView THEN originalAuthor.givenName ELSE null END AS originalPostAuthorGivenName,
-                   CASE WHEN originalPostCanView THEN originalAuthor.familyName ELSE null END AS originalPostAuthorFamilyName,
+                   CASE WHEN originalPostCanView THEN originalPostAuthor.username ELSE null END AS originalPostAuthorUsername,
+                   CASE WHEN originalPostCanView THEN originalPostAuthor.givenName ELSE null END AS originalPostAuthorGivenName,
+                   CASE WHEN originalPostCanView THEN originalPostAuthor.familyName ELSE null END AS originalPostAuthorFamilyName,
                    CASE WHEN originalPostCanView THEN originalProfilePic.id ELSE null END AS originalPostAuthorProfilePictureId,
                    originalPostCanView AS originalPostCanView
             
@@ -236,9 +236,9 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
                        CASE WHEN originalPostCanView THEN originalPost.privacy ELSE null END AS originalPostPrivacy,
                        CASE WHEN originalPostCanView THEN originalFiles ELSE [] END AS originalPostFiles,
                        CASE WHEN originalPostCanView THEN originalAuthor.id ELSE null END AS originalPostAuthorId,
-                       CASE WHEN originalPostCanView THEN originalAuthor.username ELSE null END AS originalPostAuthorUsername,
-                       CASE WHEN originalPostCanView THEN originalAuthor.givenName ELSE null END AS originalPostAuthorGivenName,
-                       CASE WHEN originalPostCanView THEN originalAuthor.familyName ELSE null END AS originalPostAuthorFamilyName,
+                       CASE WHEN originalPostCanView THEN originalPostAuthor.username ELSE null END AS originalPostAuthorUsername,
+                       CASE WHEN originalPostCanView THEN originalPostAuthor.givenName ELSE null END AS originalPostAuthorGivenName,
+                       CASE WHEN originalPostCanView THEN originalPostAuthor.familyName ELSE null END AS originalPostAuthorFamilyName,
                        CASE WHEN originalPostCanView THEN originalProfilePic.id ELSE null END AS originalPostAuthorProfilePictureId,
                        originalPostCanView AS originalPostCanView
             
@@ -267,15 +267,12 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
                     MATCH (u:User {id: $userId})
                     MATCH (author:User)-[:POSTED]->(post:Post)
                     WHERE post.deletedAt IS NULL
-                      AND NOT (u)-[:BLOCK]-(author)
-            
-                    // Kiểm tra privacy với friendship riêng biệt
-                    OPTIONAL MATCH (u)-[friendship:FRIEND]->(author)
-                    WHERE (
+                    AND NOT (u)-[:BLOCK]-(author)
+                    AND (
                         post.privacy = 'PUBLIC'
-                        OR (post.privacy = 'FRIEND' AND friendship IS NOT NULL)
-                    )
-            
+                        OR (post.privacy = 'FRIEND' AND EXISTS((u)-[:FRIEND]->(author)))
+                        )
+                    OPTIONAL MATCH (u)-[friendship:FRIEND]->(author)
                     OPTIONAL MATCH p = shortestPath((u)-[*1..4]->(post))
             
                     OPTIONAL MATCH (u)-[vu:VIEW_PROFILE]->(author)
@@ -320,7 +317,11 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
                          END AS originalPostCanView,
             
                          // Tính điểm
-                         CASE WHEN post.createdAt > datetime() - duration('P1D') THEN 200 ELSE 0 END AS newPostScore,
+                        CASE
+                            WHEN post.createdAt > datetime() - duration('P1D')
+                            THEN 240 - duration.between(post.createdAt, datetime()).hours * 10
+                            ELSE 0
+                            END AS newPostScore,
                          post.likeCount * 2 AS likeScore,
                          post.commentCount * 3 AS commentScore,
                          post.shareCount * 5 AS shareScore
@@ -346,6 +347,7 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
                     ORDER BY totalScore DESC, post.createdAt DESC
             
                     RETURN post.id AS id,
+                           totalScore AS score,
                            post.content AS content,
                            post.createdAt AS createdAt,
                            post.updatedAt AS updatedAt,
@@ -385,15 +387,13 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
     @Query("""
                 // Match user trước
                 MATCH (u:User {id: $userId})
-                MATCH (friend:User)-[:POSTED]->(post:Post)
+                MATCH (u)-[friendship:FRIEND]->(friend:User)
+                MATCH (friend)-[:POSTED]->(post:Post)
                 WHERE post.deletedAt IS NULL
                   AND (post.privacy = 'FRIEND' OR post.privacy = 'PUBLIC')
                   AND NOT (u)-[:BLOCK]-(friend)
             
                 // Kiểm tra friendship riêng biệt
-                OPTIONAL MATCH (u)-[friendship:FRIEND]->(friend)
-                WHERE friendship IS NOT NULL
-            
                 OPTIONAL MATCH (u)-[liked:LIKED]->(post)
                 OPTIONAL MATCH (friend)-[:HAS_PROFILE_PICTURE]->(profilePic:File)
                 OPTIONAL MATCH (post)-[:ATTACH_FILES]->(file:File)

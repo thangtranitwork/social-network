@@ -15,4 +15,5 @@ public class PostResponse extends PostCommonInformationResponse {
     boolean isSharedPost;
     boolean originalPostCanView;
     PostCommonInformationResponse originalPost;
+    Double score;
 }

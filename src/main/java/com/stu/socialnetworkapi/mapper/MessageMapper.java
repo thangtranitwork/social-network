@@ -60,6 +60,12 @@ public class MessageMapper {
                 .sentAt(projection.latestMessageSentAt())
                 .deleted(projection.latestMessageDeleted())
                 .sender(userMapper.toSenderUserCommonInformationResponse(projection))
+                .type(projection.latestMessageType())
+                .callId(projection.latestMessageCallId())
+                .callAt(projection.latestMessageCallAt())
+                .endAt(projection.latestMessageEndAt())
+                .isAnswered(projection.latestMessageAnswered())
+                .isVideoCall(projection.latestMessageIsVideoCall())
                 .build();
     }
 }

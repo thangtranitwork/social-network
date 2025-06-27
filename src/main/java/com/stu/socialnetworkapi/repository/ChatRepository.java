@@ -64,16 +64,25 @@ public interface ChatRepository extends Neo4jRepository<Chat, UUID> {
             RETURN
                 chat.id AS chatId,
                 target.givenName + ' ' + target.familyName AS name,
+            
                 latestMessage.id AS latestMessageId,
                 latestMessage.content AS latestMessageContent,
                 latestMessageFile.id AS latestMessageFileId,
                 latestMessage.sentAt AS latestMessageSentAt,
                 latestMessage.deleteAt IS NOT NULL AS latestMessageDeleted,
+                latestMessage.type AS latestMessageType,
+                latestMessage.callId AS latestMessageCallId,
+                latestMessage.callAt AS latestMessageCallAt,
+                latestMessage.endAt AS latestMessageEndAt,
+                latestMessage.isAnswered AS latestMessageAnswered,
+                latestMessage.isVideoCall AS latestMessageIsVideoCall,
+            
                 sender.id AS latestMessageSenderId,
                 sender.username AS latestMessageSenderUsername,
                 sender.givenName AS latestMessageSenderGivenName,
                 sender.familyName AS latestMessageSenderFamilyName,
                 senderProfilePic.id AS latestMessageSenderProfilePictureId,
+            
                 target.id AS targetId,
                 target.username AS targetUsername,
                 target.givenName AS targetGivenName,
@@ -126,10 +135,19 @@ public interface ChatRepository extends Neo4jRepository<Chat, UUID> {
             RETURN
                 chat.id AS chatId,
                 target.givenName + ' ' + target.familyName AS name,
+            
                 latestMessage.id AS latestMessageId,
                 latestMessage.content AS latestMessageContent,
                 latestMessageFile.id AS latestMessageFileId,
                 latestMessage.sentAt AS latestMessageSentAt,
+                latestMessage.deleteAt IS NOT NULL AS latestMessageDeleted,
+                latestMessage.type AS latestMessageType,
+                latestMessage.callId AS latestMessageCallId,
+                latestMessage.callAt AS latestMessageCallAt,
+                latestMessage.endAt AS latestMessageEndAt,
+                latestMessage.isAnswered AS latestMessageAnswered,
+                latestMessage.isVideoCall AS latestMessageIsVideoCall,
+            
                 sender.id AS latestMessageSenderId,
                 sender.username AS latestMessageSenderUsername,
                 sender.givenName AS latestMessageSenderGivenName,

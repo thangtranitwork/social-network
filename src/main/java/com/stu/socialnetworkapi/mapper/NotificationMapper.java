@@ -19,6 +19,7 @@ public class NotificationMapper {
                 .targetId(notification.getTargetId())
                 .targetType(notification.getTargetType())
                 .sentAt(notification.getSentAt())
+                .isRead(notification.isRead())
                 .build();
     }
 
@@ -34,6 +35,7 @@ public class NotificationMapper {
                 .targetType(projection.targetType())
                 .sentAt(projection.sentAt())
                 .creator(userMapper.toUserCommonInformationResponse(projection))
+                .isRead(projection.isRead())
                 .build();
     }
 }

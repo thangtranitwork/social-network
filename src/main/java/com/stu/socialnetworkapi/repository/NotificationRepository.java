@@ -37,13 +37,13 @@ public interface NotificationRepository extends Neo4jRepository<Notification, UU
                 // Nếu comment là replied comment, lấy comment cha
                 OPTIONAL MATCH (comment)-[:REPLIED]->(originalComment:Comment)
             
-                // Lấy post của comment 
+                // Lấy post của comment
                 // Nếu là replied comment, lấy post từ comment cha
                 // Nếu là comment gốc, lấy post trực tiếp
                 OPTIONAL MATCH (postFromComment:Post)-[:HAS_COMMENT]-(commentWithPost:Comment)
-                WHERE commentWithPost = CASE 
-                    WHEN originalComment IS NOT NULL THEN originalComment 
-                    ELSE comment 
+                WHERE commentWithPost = CASE
+                    WHEN originalComment IS NOT NULL THEN originalComment
+                    ELSE comment
                 END
             
                 // Gom kết quả
@@ -57,22 +57,22 @@ public interface NotificationRepository extends Neo4jRepository<Notification, UU
                        n.action AS action,
                        n.targetType AS targetType,
                        n.targetId AS targetId,
-                       CASE 
+                       CASE
                            WHEN n.targetType = 'POST' THEN post.id
                            WHEN n.targetType = 'COMMENT' THEN postFromComment.id
-                           ELSE NULL 
+                           ELSE NULL
                        END AS postId,
-                       CASE 
+                       CASE
                            WHEN n.targetType = 'COMMENT' AND originalComment IS NOT NULL THEN originalComment.id
                            WHEN n.targetType = 'COMMENT' AND originalComment IS NULL THEN comment.id
-                           ELSE NULL 
+                           ELSE NULL
                        END AS commentId,
-                       CASE 
+                       CASE
                            WHEN n.targetType = 'COMMENT' AND originalComment IS NOT NULL THEN comment.id
-                           ELSE NULL 
+                           ELSE NULL
                        END AS repliedCommentId,
                        n.sentAt AS sentAt,
-                       n.isRead as isRead,
+                       true as isRead,
                        creator.id AS userId,
                        creator.username AS username,
                        creator.givenName AS givenName,
@@ -103,4 +103,21 @@ public interface NotificationRepository extends Neo4jRepository<Notification, UU
             UUID targetId,
             ObjectType targetType
     );
+
+    @Query("""
+            MATCH (receiver:User {id: $userId})-[:HAS_NOTIFICATION]->(n:Notification)
+            WHERE n.isRead = false OR n.isRead IS NULL
+            RETURN count(n) AS unreadCount
+            """)
+    long getUnreadNotificationCount(UUID userId);
+
+    @Query("""
+            MATCH (receiver:User {id: $userId})-[:HAS_NOTIFICATION]->(n:Notification)
+            WHERE n.isRead = false OR n.isRead IS NULL
+            WITH n
+            ORDER BY n.sentAt DESC
+            LIMIT $limit
+            SET n.isRead = true
+            """)
+    void markLatestNotificationsAsRead(UUID userId, long limit);
 }

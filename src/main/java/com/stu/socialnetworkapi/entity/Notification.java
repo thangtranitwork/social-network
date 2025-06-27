@@ -23,6 +23,7 @@ public class Notification {
     @GeneratedValue(GeneratedValue.UUIDGenerator.class)
     UUID id;
     NotificationAction action;
+    boolean isRead;
     ObjectType targetType;
     UUID targetId;
     @ToString.Exclude
@@ -44,6 +45,7 @@ public class Notification {
         this.creator = other.creator;
         this.receiver = other.receiver;
         this.sentAt = other.sentAt;
+        this.isRead = other.isRead;
     }
 
     public static final int DAY_ALIVE = 30;

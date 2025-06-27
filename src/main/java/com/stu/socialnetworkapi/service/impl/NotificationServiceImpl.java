@@ -3,6 +3,7 @@ package com.stu.socialnetworkapi.service.impl;
 import com.stu.socialnetworkapi.config.WebSocketChannelPrefix;
 import com.stu.socialnetworkapi.dto.request.Neo4jPageable;
 import com.stu.socialnetworkapi.dto.response.NotificationResponse;
+import com.stu.socialnetworkapi.dto.response.NotificationsResponse;
 import com.stu.socialnetworkapi.entity.Notification;
 import com.stu.socialnetworkapi.entity.User;
 import com.stu.socialnetworkapi.enums.NotificationAction;
@@ -78,11 +79,27 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public List<NotificationResponse> getNotifications(Neo4jPageable pageable) {
+    public NotificationsResponse getNotifications(Neo4jPageable pageable) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
-        return notificationRepository.getNotifications(currentUserId, pageable.getSkip(), pageable.getLimit()).stream()
+        List<NotificationResponse> notifications = notificationRepository.getNotifications(currentUserId, pageable.getSkip(), pageable.getLimit()).stream()
                 .map(notificationMapper::toNotificationResponse)
                 .toList();
+        long unreadNotificationCount = notificationRepository.getUnreadNotificationCount(currentUserId);
+        return NotificationsResponse.builder()
+                .notifications(notifications)
+                .unreadNotificationCount(unreadNotificationCount)
+                .build();
+    }
 
+    @Override
+    public long getUnreadNotificationCount() {
+        UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
+        return notificationRepository.getUnreadNotificationCount(currentUserId);
+    }
+
+    @Override
+    public void markLatestNotificationsAsRead(long limit) {
+        UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
+        notificationRepository.markLatestNotificationsAsRead(currentUserId, limit);
     }
 }

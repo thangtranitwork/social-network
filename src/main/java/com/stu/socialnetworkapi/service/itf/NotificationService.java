@@ -2,9 +2,8 @@ package com.stu.socialnetworkapi.service.itf;
 
 import com.stu.socialnetworkapi.dto.request.Neo4jPageable;
 import com.stu.socialnetworkapi.dto.response.NotificationResponse;
+import com.stu.socialnetworkapi.dto.response.NotificationsResponse;
 import com.stu.socialnetworkapi.entity.Notification;
-
-import java.util.List;
 
 public interface NotificationService {
     NotificationResponse save(Notification notification);
@@ -13,5 +12,9 @@ public interface NotificationService {
 
     void sendToFriends(Notification notification);
 
-    List<NotificationResponse> getNotifications(Neo4jPageable pageable);
+    NotificationsResponse getNotifications(Neo4jPageable pageable);
+
+    long getUnreadNotificationCount();
+
+    void markLatestNotificationsAsRead(long limit);
 }

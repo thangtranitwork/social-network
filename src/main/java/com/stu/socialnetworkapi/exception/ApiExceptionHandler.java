@@ -38,7 +38,7 @@ public class ApiExceptionHandler {
                 .message(errorCode.getMessage())
                 .build();
         String userId = principal.getName();
-        if (userId != null && !userId.isBlank() && !userId.equals("anonymousUser"))
+        if (userId != null)
             messagingTemplate.convertAndSend(WebSocketChannelPrefix.USER_WEBSOCKET_ERROR_CHANNEL_PREFIX + "/" + userId, response);
         else log.error("WebSocket error: {}", response);
     }

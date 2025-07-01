@@ -161,6 +161,7 @@ public class MessageServiceImpl implements MessageService {
         MessageCommand command = MessageCommand.builder()
                 .command(MessageCommand.Command.TYPING)
                 .id(userId)
+                .isTyping(request.isTyping())
                 .build();
         messagingTemplate.convertAndSend(WebSocketChannelPrefix.CHAT_CHANNEL_PREFIX + "/" + request.chatId(), command);
     }

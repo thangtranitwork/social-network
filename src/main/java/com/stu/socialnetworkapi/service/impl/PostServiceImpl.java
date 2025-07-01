@@ -189,7 +189,7 @@ public class PostServiceImpl implements PostService {
         User user = userService.getCurrentUserRequiredAuthentication();
         Post post = getPostById(postId);
 
-        blockService.validateBlock(user.getId(), post.getId());
+        blockService.validateBlock(user.getId(), post.getAuthor().getId());
         if (postRepository.isLiked(post.getId(), user.getId())) {
             throw new ApiException(ErrorCode.LIKED_POST);
         }
@@ -204,7 +204,7 @@ public class PostServiceImpl implements PostService {
         User user = userService.getCurrentUserRequiredAuthentication();
         Post post = getPostById(postId);
 
-        blockService.validateBlock(user.getId(), post.getId());
+        blockService.validateBlock(user.getId(), post.getAuthor().getId());
         if (!postRepository.isLiked(post.getId(), user.getId())) {
             throw new ApiException(ErrorCode.NOT_LIKED_POST);
         }

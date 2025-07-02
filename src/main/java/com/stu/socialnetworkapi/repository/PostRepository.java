@@ -152,9 +152,9 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
                    CASE WHEN originalPostCanView THEN originalPost.privacy ELSE null END AS originalPostPrivacy,
                    CASE WHEN originalPostCanView THEN originalFiles ELSE [] END AS originalPostFiles,
                    CASE WHEN originalPostCanView THEN originalAuthor.id ELSE null END AS originalPostAuthorId,
-                   CASE WHEN originalPostCanView THEN originalPostAuthor.username ELSE null END AS originalPostAuthorUsername,
-                   CASE WHEN originalPostCanView THEN originalPostAuthor.givenName ELSE null END AS originalPostAuthorGivenName,
-                   CASE WHEN originalPostCanView THEN originalPostAuthor.familyName ELSE null END AS originalPostAuthorFamilyName,
+                   CASE WHEN originalPostCanView THEN originalAuthor.username ELSE null END AS originalPostAuthorUsername,
+                   CASE WHEN originalPostCanView THEN originalAuthor.givenName ELSE null END AS originalPostAuthorGivenName,
+                   CASE WHEN originalPostCanView THEN originalAuthor.familyName ELSE null END AS originalPostAuthorFamilyName,
                    CASE WHEN originalPostCanView THEN originalProfilePic.id ELSE null END AS originalPostAuthorProfilePictureId,
                    originalPostCanView AS originalPostCanView
             
@@ -236,9 +236,9 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
                        CASE WHEN originalPostCanView THEN originalPost.privacy ELSE null END AS originalPostPrivacy,
                        CASE WHEN originalPostCanView THEN originalFiles ELSE [] END AS originalPostFiles,
                        CASE WHEN originalPostCanView THEN originalAuthor.id ELSE null END AS originalPostAuthorId,
-                       CASE WHEN originalPostCanView THEN originalPostAuthor.username ELSE null END AS originalPostAuthorUsername,
-                       CASE WHEN originalPostCanView THEN originalPostAuthor.givenName ELSE null END AS originalPostAuthorGivenName,
-                       CASE WHEN originalPostCanView THEN originalPostAuthor.familyName ELSE null END AS originalPostAuthorFamilyName,
+                       CASE WHEN originalPostCanView THEN originalAuthor.username ELSE null END AS originalPostAuthorUsername,
+                       CASE WHEN originalPostCanView THEN originalAuthor.givenName ELSE null END AS originalPostAuthorGivenName,
+                       CASE WHEN originalPostCanView THEN originalAuthor.familyName ELSE null END AS originalPostAuthorFamilyName,
                        CASE WHEN originalPostCanView THEN originalProfilePic.id ELSE null END AS originalPostAuthorProfilePictureId,
                        originalPostCanView AS originalPostCanView
             

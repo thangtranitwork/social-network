@@ -10,6 +10,7 @@ import org.springframework.data.neo4j.core.schema.Relationship;
 
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Node
@@ -48,6 +49,10 @@ public class Post {
     @EqualsAndHashCode.Exclude
     @Relationship(type = "SHARED", direction = Relationship.Direction.OUTGOING)
     Post originalPost;
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @Relationship(type = "HAS_KEYWORDS", direction = Relationship.Direction.OUTGOING)
+    Set<Keyword> keywords;
 
     public static final int MAX_CONTENT_LENGTH = 10000;
     public static final int MAX_ATTACH_FILES = 10;

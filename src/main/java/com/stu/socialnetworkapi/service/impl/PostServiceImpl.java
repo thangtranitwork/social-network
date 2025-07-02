@@ -42,6 +42,7 @@ public class PostServiceImpl implements PostService {
     private final PostRepository postRepository;
     private final FileRepository fileRepository;
     private final NotificationService notificationService;
+    private final KeywordExtractorService keywordExtractorService;
 
     @Override
     public PostResponse get(UUID postId) {
@@ -101,7 +102,7 @@ public class PostServiceImpl implements PostService {
         PostResponse response = postMapper.toPostResponse(postRepository.save(post));
 
         sendNotificationWhenPost(author, post);
-
+        keywordExtractorService.extract(post);
         return response;
     }
 

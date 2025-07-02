@@ -39,7 +39,7 @@ public class IsOnlineRedisRepository {
         String userKey = userId.toString();
         Long count = redisTemplate.opsForValue().decrement(USER_ONLINE_COUNTER_KEY + userKey);
 
-        if (count == null || count <= 0) {
+        if (count == null || count == 0) {
             // User thực sự offline
             redisTemplate.delete(USER_ONLINE_COUNTER_KEY + userKey);
             redisTemplate.opsForValue().decrement(ONLINE_COUNT_KEY);

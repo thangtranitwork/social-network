@@ -131,6 +131,7 @@ public interface UserRepository extends Neo4jRepository<User, UUID> {
     @Query("""
             WITH datetime() AS today
             WITH today,
+                 datetime({year: today.year, month: today.month, day: today.day, hour: 0, minute: 0, second: 0}) AS startOfDay,
                  datetime({year: today.year, month: today.month, day: 1}) AS startOfMonth,
                  datetime({year: today.year, month: 1, day: 1}) AS startOfYear,
                  datetime($startOfWeek) AS startOfWeek
@@ -139,7 +140,7 @@ public interface UserRepository extends Neo4jRepository<User, UUID> {
             
             RETURN
               count(u) AS totalUsers,
-              count(CASE WHEN u.createdAt = today THEN 1 END) AS newUsersToday,
+              count(CASE WHEN u.createdAt = startOfDay THEN 1 END) AS newUsersToday,
               count(CASE WHEN u.createdAt >= startOfWeek THEN 1 END) AS newUsersThisWeek,
               count(CASE WHEN u.createdAt >= startOfMonth THEN 1 END) AS newUsersThisMonth,
               count(CASE WHEN u.createdAt >= startOfYear THEN 1 END) AS newUsersThisYear,

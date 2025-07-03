@@ -574,6 +574,7 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
     @Query("""
             WITH datetime() AS today
             WITH today,
+                 datetime({year: today.year, month: today.month, day: today.day, hour: 0, minute: 0, second: 0}) AS startOfDay,
                  datetime({year: today.year, month: today.month, day: 1}) AS startOfMonth,
                  datetime({year: today.year, month: 1, day: 1}) AS startOfYear,
                  datetime($startOfWeek) AS startOfWeek
@@ -587,7 +588,7 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
               sum(post.commentCount) AS totalComments,
               sum(post.shareCount) AS totalShares,
               count(attach) AS totalFiles,
-              count(CASE WHEN post.createdAt >= today THEN 1 END) AS newPostsToday,
+              count(CASE WHEN post.createdAt >= startOfDay THEN 1 END) AS newPostsToday,
               count(CASE WHEN post.createdAt >= startOfWeek THEN 1 END) AS newPostsThisWeek,
               count(CASE WHEN post.createdAt >= startOfMonth THEN 1 END) AS newPostsThisMonth,
               count(CASE WHEN post.createdAt >= startOfYear THEN 1 END) AS newPostsThisYear

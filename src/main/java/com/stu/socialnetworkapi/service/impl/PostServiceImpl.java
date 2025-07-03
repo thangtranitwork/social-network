@@ -13,6 +13,7 @@ import com.stu.socialnetworkapi.entity.User;
 import com.stu.socialnetworkapi.enums.NotificationAction;
 import com.stu.socialnetworkapi.enums.ObjectType;
 import com.stu.socialnetworkapi.enums.PostPrivacy;
+import com.stu.socialnetworkapi.event.PostCreatedEvent;
 import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.mapper.PostMapper;
@@ -22,6 +23,7 @@ import com.stu.socialnetworkapi.service.itf.*;
 import com.stu.socialnetworkapi.util.JwtUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -42,7 +44,7 @@ public class PostServiceImpl implements PostService {
     private final PostRepository postRepository;
     private final FileRepository fileRepository;
     private final NotificationService notificationService;
-    private final KeywordExtractorService keywordExtractorService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public PostResponse get(UUID postId) {
@@ -100,9 +102,8 @@ public class PostServiceImpl implements PostService {
                 .privacy(request.privacy())
                 .build();
         PostResponse response = postMapper.toPostResponse(postRepository.save(post));
-
+        eventPublisher.publishEvent(new PostCreatedEvent(post.getId()));
         sendNotificationWhenPost(author, post);
-        keywordExtractorService.extract(post);
         return response;
     }
 

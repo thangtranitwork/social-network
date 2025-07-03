@@ -1,7 +1,7 @@
 package com.stu.socialnetworkapi.service.itf;
 
-import com.stu.socialnetworkapi.entity.Post;
+import java.util.UUID;
 
 public interface KeywordExtractorService {
-    void extract(Post post);
+    void extract(UUID postId);
 }

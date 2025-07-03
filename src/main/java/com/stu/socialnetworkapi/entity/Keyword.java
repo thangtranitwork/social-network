@@ -11,6 +11,7 @@ import org.springframework.data.neo4j.core.schema.Node;
 @AllArgsConstructor
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@EqualsAndHashCode(of = "text")
 public class Keyword {
     @Id
     String text;

@@ -12,6 +12,7 @@ import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.mapper.CommentMapper;
 import com.stu.socialnetworkapi.repository.CommentRepository;
+import com.stu.socialnetworkapi.repository.KeywordRepository;
 import com.stu.socialnetworkapi.repository.PostRepository;
 import com.stu.socialnetworkapi.service.itf.*;
 import com.stu.socialnetworkapi.util.JwtUtil;
@@ -36,6 +37,7 @@ public class CommentServiceImpl implements CommentService {
     private final CommentMapper commentMapper;
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
+    private final KeywordRepository keywordRepository;
     private final NotificationService notificationService;
 
     @Override
@@ -56,6 +58,7 @@ public class CommentServiceImpl implements CommentService {
         post.setCommentCount(post.getCommentCount() + 1);
         postRepository.save(post);
         commentRepository.save(comment);
+        keywordRepository.interact(post.getId(), author.getId(), 3);
         sendNotificationWhenComment(post, comment);
         return commentMapper.toCommentResponse(comment);
     }
@@ -83,6 +86,7 @@ public class CommentServiceImpl implements CommentService {
         post.setCommentCount(post.getCommentCount() + 1);
         postRepository.save(post);
         commentRepository.saveAll(List.of(originalComment, comment));
+        keywordRepository.interact(post.getId(), author.getId(), 3);
         sendNotificationWhenReply(post, comment, originalComment);
         return commentMapper.toCommentResponse(comment);
     }

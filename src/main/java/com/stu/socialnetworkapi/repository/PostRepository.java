@@ -249,17 +249,31 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
     List<PostProjection> fullTextSearch(String query, UUID userId, long limit, long skip);
 
     /**
-     * Hệ thống chấm điểm
-     * - Bài viết mới 24 giờ: 200 điểm
-     * - Bài viết của bạn user: 100 điểm
-     * - Bài viết của bạn của bạn của user: 50 điểm
-     * - Độ dài đường đi ngắn nhất từ user đến bài viết >= 2: 120 / độ dài
-     * - user xem trang cá nhân của tác giả: 2 điểm * số lần
-     * - author xem trang cá nhân user: 1 điểm * số lần
-     * - Số like: 2 điểm
-     * - Số comment: 3 điểm
-     * - Số share: 5 điểm
-     * Cần kiểm tra privacy
+     * Truy vấn đề xuất bài viết dựa trên hệ thống tính điểm, bao gồm:
+     * Hệ thống tính điểm:
+     * - Bài viết mới trong 24h: 240 - 10 * số giờ đã trôi qua
+     * - Bạn bè trực tiếp: +100 điểm
+     * - Bạn của bạn hoặc đã gửi yêu cầu kết bạn: +50 điểm
+     * - Độ dài đường đi ngắn nhất từ user đến post ≥ 2: + (120 / độ dài)
+     * - Xem trang cá nhân của tác giả: +2 điểm * số lần xem
+     * - Tác giả xem trang cá nhân của user: +1 điểm * số lần xem
+     * - Số like: +2 điểm * likeCount
+     * - Số comment: +3 điểm * commentCount
+     * - Số share: +5 điểm * shareCount
+     * - Điểm tương tác với từ khóa (keywordScore): tổng `INTERACT_WITH` giữa user và các keyword của bài viết
+     * - Bài viết đã được tải (loaded.times): -20 điểm * số lần đã load
+     * Chỉ trả về bài viết:
+     * - Không bị xóa (deletedAt IS NULL)
+     * - Không bị block giữa user và tác giả
+     * - Thỏa mãn điều kiện quyền riêng tư:
+     *    + PUBLIC
+     *    + FRIEND nếu là bạn
+     * - Nếu là bài viết chia sẻ:
+     *    + Kiểm tra quyền truy cập bài viết gốc
+     * Truy vấn trả về:
+     * - Thông tin bài viết, tác giả, và bài viết gốc nếu có
+     * - Tổng điểm (score) để phục vụ sắp xếp
+     * Đồng thời cập nhật số lần đã xem bài viết (LOADED.times) giữa user và bài viết.
      */
 
     @Query("""
@@ -292,6 +306,8 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
             
                     // Lấy thông tin post hiện tại
                     OPTIONAL MATCH (post)-[:ATTACH_FILES]->(file:File)
+                    OPTIONAL MATCH (post)-[:HAS_KEYWORDS]->(keyword:Keyword)
+                    OPTIONAL MATCH (u)-[inter:INTERACT_WITH]->(keyword)
                     OPTIONAL MATCH (u)-[liked:LIKED]->(post)
                     OPTIONAL MATCH (author)-[:HAS_PROFILE_PICTURE]->(profilePic:File)
                     OPTIONAL MATCH (u)-[loaded:LOADED]->(post)
@@ -304,7 +320,8 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
                          profilePic, liked,
                          COLLECT(DISTINCT file.id) AS files,
                          COLLECT(DISTINCT originalFile.id) AS originalFiles,
-            
+                         COALESCE(SUM(inter.score), 0) AS keywordScore,
+
                          // Kiểm tra xem bài viết gốc có thể xem được không
                          CASE
                              WHEN originalPost IS NULL THEN true
@@ -332,8 +349,9 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
                             ELSE 0
                          END AS loadedScore
             
+            
                     WITH post, author, u, files, originalPost, originalAuthor, originalProfilePic, originalFiles, liked, profilePic,
-                         originalPostCanView, shortestPathLength, viewForward, viewBackward, newPostScore, likeScore, commentScore, shareScore, friendship, loadedScore,
+                         originalPostCanView, shortestPathLength, viewForward, viewBackward, newPostScore, likeScore, commentScore, shareScore, friendship, loadedScore, keywordScore,
                          CASE
                              WHEN friendship IS NOT NULL THEN 100
                              WHEN (u)-[:FRIEND]-()-[:FRIEND]-(author) AND friendship IS NULL OR (u)-[:REQUEST]-(author) THEN 50
@@ -347,8 +365,8 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
                          END AS pathScore
             
                     WITH post, author, u, files, originalPost, originalAuthor, originalProfilePic, originalFiles, liked, profilePic, loadedScore,
-                         originalPostCanView, friendship,
-                         pathScore + newPostScore + relationshipScore + likeScore + commentScore + shareScore + loadedScore AS totalScore
+                         originalPostCanView, friendship, keywordScore,
+                         pathScore + newPostScore + relationshipScore + likeScore + commentScore + shareScore + loadedScore + keywordScore AS totalScore
             
                     ORDER BY totalScore DESC, post.createdAt DESC
                     SKIP $skip

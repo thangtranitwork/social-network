@@ -109,7 +109,7 @@ public enum ErrorCode {
     SEARCH_QUERY_REQUIRED(9000, "Search query is required", HttpStatus.BAD_REQUEST),
     INVALID_WEBSOCKET_CHANNEL(9992, "Invalid websocket channel", HttpStatus.BAD_REQUEST),
     ONLY_LETTER_ACCEPTED(9993, "Only letter accepted", HttpStatus.BAD_REQUEST),
-    UNAUTHORIZED(9994, "Unauthorized", HttpStatus.UNAUTHORIZED),
+    UNAUTHORIZED(9994, "Unauthorized", HttpStatus.BAD_REQUEST),
     INVALID_INPUT(9995, "Invalid input", HttpStatus.BAD_REQUEST),
     INVALID_UUID(9996, "Invalid uuid", HttpStatus.BAD_REQUEST),
     UNAUTHENTICATED(9997, "Unauthenticated", HttpStatus.UNAUTHORIZED),

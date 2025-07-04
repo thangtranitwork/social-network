@@ -18,6 +18,7 @@ import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.mapper.PostMapper;
 import com.stu.socialnetworkapi.repository.FileRepository;
+import com.stu.socialnetworkapi.repository.KeywordRepository;
 import com.stu.socialnetworkapi.repository.PostRepository;
 import com.stu.socialnetworkapi.service.itf.*;
 import com.stu.socialnetworkapi.util.JwtUtil;
@@ -43,16 +44,18 @@ public class PostServiceImpl implements PostService {
     private final BlockService blockService;
     private final PostRepository postRepository;
     private final FileRepository fileRepository;
+    private final KeywordRepository keywordRepository;
     private final NotificationService notificationService;
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public PostResponse get(UUID postId) {
-        User user = userService.getCurrentUserRequiredAuthentication();
-        PostProjection projection = postRepository.findPostProjectionById(postId, user.getId())
+        UUID currentUserId = userService.getCurrentUserId();
+        PostProjection projection = postRepository.findPostProjectionById(postId, currentUserId)
                 .orElseThrow(() -> new ApiException(ErrorCode.POST_NOT_FOUND));
 
-        validateViewPost(projection, userService.getCurrentUserId());
+        validateViewPost(projection, currentUserId);
+        if(currentUserId != null) keywordRepository.interact(postId, currentUserId, 1);
         return postMapper.toPostResponse(projection);
     }
 
@@ -126,7 +129,7 @@ public class PostServiceImpl implements PostService {
 
         originalPost.setShareCount(originalPost.getShareCount() + 1);
         postRepository.saveAll(List.of(post, originalPost));
-
+        keywordRepository.interact(originalPost.getId(), currentUserId, 5);
         sendNotificationWhenSharePost(author, originalPost, post);
 
         return postMapper.toPostResponse(post);
@@ -198,6 +201,7 @@ public class PostServiceImpl implements PostService {
         post.getLiker().add(user);
         post.setLikeCount(post.getLikeCount() + 1);
         postRepository.save(post);
+        keywordRepository.interact(postId, user.getId(), 2);
         sendNotificationWhenLikePost(postId, user, post);
     }
 

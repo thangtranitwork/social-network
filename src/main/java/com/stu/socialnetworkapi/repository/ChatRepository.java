@@ -122,11 +122,11 @@ public interface ChatRepository extends Neo4jRepository<Chat, UUID> {
             OPTIONAL MATCH (target)-[:HAS_PROFILE_PICTURE]->(targetProfilePic:File)
             
             // Count unread messages
-            OPTIONAL MATCH (chat)-[:HAS_MESSAGE]->(unreadMsg:Message)
-            WHERE NOT EXISTS((currentUser)-[:READ]->(unreadMsg))
+            OPTIONAL MATCH (chat)-[:HAS_MESSAGE]->(unreadMsg:Message)<-[:SENT]-(sender2:User)
+            WHERE sender.id <> currentUser.id AND unreadMsg.isRead
             
             // Check friendship status
-            OPTIONAL MATCH (currentUser)-[friendRel:FRIEND]-(target)
+            OPTIONAL MATCH (currentUser)-[friendRel:FRIEND]->(target)
             
             // Check block status
             OPTIONAL MATCH (currentUser)-[blockOut:BLOCK]->(target)

@@ -66,25 +66,32 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
         }
         //Xác thực khi SUBSCRIBE
         else {
-            String destination = accessor.getDestination();
+            String subcriptionId = accessor.getSubscriptionId();
             if (StompCommand.SUBSCRIBE.equals(command)) {
+                String destination = accessor.getDestination();
                 log.info("User {} subscribed to channel {}", attributes.get(USER_ID_KEY), destination);
                 if (!authorizeSubscription(accessor)) {
                     throw new WebSocketException(ErrorCode.UNAUTHORIZED);
                 }
+                attributes.put("subscription:" + subcriptionId, destination);
             } else if (StompCommand.DISCONNECT.equals(command)) {
                 UUID userId = UUID.fromString(attributes.get(USER_ID_KEY).toString());
                 isOnlineRedisRepository.onUserDisconnected(userId);
             } else if (StompCommand.UNSUBSCRIBE.equals(command)) {
                 UUID userId = UUID.fromString(attributes.get(USER_ID_KEY).toString());
+                String subscriptionId = accessor.getSubscriptionId();
+                String destination = (String) attributes.get("subscription:" + subscriptionId);
                 if (destination != null && destination.startsWith(WebSocketChannelPrefix.TYPING_CHANNEL_PREFIX)) {
                     String chatId = destination.substring(WebSocketChannelPrefix.TYPING_CHANNEL_PREFIX.length() + 1);
                     UUID chatUUID = UUID.fromString(chatId);
-                    UUID userUUID = UUID.fromString(userId.toString());
-                    eventPublisher.publishEvent(new UserTypingRequest(chatUUID, userUUID, false));
+                    eventPublisher.publishEvent(new UserTypingRequest(chatUUID, userId, false));
                 }
-                log.info("User {} unsubscribed from channel {}", userId, destination);
+
+                log.info("User {} unsubscribed from channel {} (subscriptionId={})", userId, destination, subscriptionId);
+
+                attributes.remove("subscription:" + subscriptionId);
             }
+
         }
         return message;
     }

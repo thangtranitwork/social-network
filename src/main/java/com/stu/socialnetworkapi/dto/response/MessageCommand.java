@@ -19,6 +19,7 @@ public class MessageCommand {
         DELETE,
         EDIT,
         TYPING,
+        HAS_BEEN_BLOCKED
     }
 }
 

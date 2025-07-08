@@ -1,6 +1,8 @@
 package com.stu.socialnetworkapi.service.impl;
 
+import com.stu.socialnetworkapi.config.WebSocketChannelPrefix;
 import com.stu.socialnetworkapi.dto.request.Neo4jPageable;
+import com.stu.socialnetworkapi.dto.response.MessageCommand;
 import com.stu.socialnetworkapi.dto.response.UserCommonInformationResponse;
 import com.stu.socialnetworkapi.entity.User;
 import com.stu.socialnetworkapi.enums.BlockStatus;
@@ -13,6 +15,7 @@ import com.stu.socialnetworkapi.service.itf.UserService;
 import com.stu.socialnetworkapi.util.UserCounterCalculator;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,6 +29,7 @@ public class BlockServiceImpl implements BlockService {
     private final UserMapper userMapper;
     private final UserService userService;
     private final BlockRepository blockRepository;
+    private final SimpMessagingTemplate messagingTemplate;
     private final UserCounterCalculator userCounterCalculator;
 
     @Override
@@ -61,6 +65,11 @@ public class BlockServiceImpl implements BlockService {
                     throw new ApiException(ErrorCode.BLOCK_LIMIT_REACHED);
                 blockRepository.blockUser(user.getId(), target.getId());
                 userCounterCalculator.calculateUserCounter(user.getId());
+                MessageCommand command = MessageCommand.builder()
+                        .command(MessageCommand.Command.HAS_BEEN_BLOCKED)
+                        .id(user.getId())
+                        .build();
+                messagingTemplate.convertAndSend(WebSocketChannelPrefix.MESSAGE_CHANNEL_PREFIX + "/" + target.getId(), command);
             }
         }
     }
@@ -73,6 +82,11 @@ public class BlockServiceImpl implements BlockService {
                 .orElseThrow(() -> new ApiException(ErrorCode.BLOCK_NOT_FOUND));
         blockRepository.deleteByUuid(uuid);
         userCounterCalculator.calculateUserCounter(currentUserId);
+        MessageCommand command = MessageCommand.builder()
+                .command(MessageCommand.Command.HAS_BEEN_BLOCKED)
+                .id(currentUserId)
+                .build();
+        messagingTemplate.convertAndSend(WebSocketChannelPrefix.MESSAGE_CHANNEL_PREFIX + "/" + target.getId(), command);
     }
 
     @Override

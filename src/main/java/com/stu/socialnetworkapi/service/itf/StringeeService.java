@@ -6,7 +6,6 @@ import com.stu.socialnetworkapi.dto.response.StringeeResponse;
 
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 public interface StringeeService {
     List<StringeeResponse> handleAnswer(

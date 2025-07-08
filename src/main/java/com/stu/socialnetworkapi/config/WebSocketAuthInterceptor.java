@@ -3,7 +3,6 @@ package com.stu.socialnetworkapi.config;
 import com.stu.socialnetworkapi.dto.request.UserTypingRequest;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.exception.WebSocketException;
-import com.stu.socialnetworkapi.repository.ChatRepository;
 import com.stu.socialnetworkapi.repository.IsOnlineRedisRepository;
 import com.stu.socialnetworkapi.service.itf.ChatService;
 import com.stu.socialnetworkapi.service.itf.MessageService;
@@ -78,7 +77,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
                 isOnlineRedisRepository.onUserDisconnected(userId);
             } else if (StompCommand.UNSUBSCRIBE.equals(command)) {
                 UUID userId = UUID.fromString(attributes.get(USER_ID_KEY).toString());
-                if (destination.startsWith(WebSocketChannelPrefix.TYPING_CHANNEL_PREFIX)) {
+                if (destination != null && destination.startsWith(WebSocketChannelPrefix.TYPING_CHANNEL_PREFIX)) {
                     String chatId = destination.substring(WebSocketChannelPrefix.TYPING_CHANNEL_PREFIX.length() + 1);
                     UUID chatUUID = UUID.fromString(chatId);
                     UUID userUUID = UUID.fromString(userId.toString());

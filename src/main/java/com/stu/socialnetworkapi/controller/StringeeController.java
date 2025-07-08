@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/v1/stringee")
@@ -42,6 +41,7 @@ public class StringeeController {
         // Trả về response success
         return ResponseEntity.ok(stringeeService.handleEvent(event));
     }
+
     @PostMapping("/create-token")
     public ApiResponse<AuthenticationResponse> getToken() {
 

@@ -1,7 +1,6 @@
 package com.stu.socialnetworkapi.controller;
 
 import com.stu.socialnetworkapi.dto.request.TextMessageRequest;
-import com.stu.socialnetworkapi.dto.request.UserTypingRequest;
 import com.stu.socialnetworkapi.dto.response.MessageResponse;
 import com.stu.socialnetworkapi.service.itf.MessageService;
 import lombok.RequiredArgsConstructor;

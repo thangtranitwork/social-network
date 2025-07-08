@@ -140,7 +140,7 @@ public interface UserRepository extends Neo4jRepository<User, UUID> {
             
             RETURN
               count(u) AS totalUsers,
-              count(CASE WHEN u.createdAt = startOfDay THEN 1 END) AS newUsersToday,
+              count(CASE WHEN u.createdAt >= startOfDay THEN 1 END) AS newUsersToday,
               count(CASE WHEN u.createdAt >= startOfWeek THEN 1 END) AS newUsersThisWeek,
               count(CASE WHEN u.createdAt >= startOfMonth THEN 1 END) AS newUsersThisMonth,
               count(CASE WHEN u.createdAt >= startOfYear THEN 1 END) AS newUsersThisYear,

@@ -6,6 +6,7 @@ import com.stu.socialnetworkapi.dto.response.MessageCommand;
 import com.stu.socialnetworkapi.dto.response.UserCommonInformationResponse;
 import com.stu.socialnetworkapi.entity.User;
 import com.stu.socialnetworkapi.enums.BlockStatus;
+import com.stu.socialnetworkapi.event.CommandEvent;
 import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.mapper.UserMapper;
@@ -15,6 +16,7 @@ import com.stu.socialnetworkapi.service.itf.UserService;
 import com.stu.socialnetworkapi.util.UserCounterCalculator;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -29,8 +31,8 @@ public class BlockServiceImpl implements BlockService {
     private final UserMapper userMapper;
     private final UserService userService;
     private final BlockRepository blockRepository;
-    private final SimpMessagingTemplate messagingTemplate;
     private final UserCounterCalculator userCounterCalculator;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public void validateBlock(UUID userId, UUID targetId) {
@@ -69,7 +71,7 @@ public class BlockServiceImpl implements BlockService {
                         .command(MessageCommand.Command.HAS_BEEN_BLOCKED)
                         .id(user.getId())
                         .build();
-                messagingTemplate.convertAndSend(WebSocketChannelPrefix.MESSAGE_CHANNEL_PREFIX + "/" + target.getId(), command);
+                eventPublisher.publishEvent(new CommandEvent(this, command, target.getId()));
             }
         }
     }
@@ -83,10 +85,10 @@ public class BlockServiceImpl implements BlockService {
         blockRepository.deleteByUuid(uuid);
         userCounterCalculator.calculateUserCounter(currentUserId);
         MessageCommand command = MessageCommand.builder()
-                .command(MessageCommand.Command.HAS_BEEN_BLOCKED)
+                .command(MessageCommand.Command.HAS_BEEN_UNBLOCKED)
                 .id(currentUserId)
                 .build();
-        messagingTemplate.convertAndSend(WebSocketChannelPrefix.MESSAGE_CHANNEL_PREFIX + "/" + target.getId(), command);
+        eventPublisher.publishEvent(new CommandEvent(this, command, target.getId()));
     }
 
     @Override

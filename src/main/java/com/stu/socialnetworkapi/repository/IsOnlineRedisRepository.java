@@ -1,7 +1,9 @@
 package com.stu.socialnetworkapi.repository;
 
-import com.stu.socialnetworkapi.event.UserOnlineEvent;
+import com.stu.socialnetworkapi.dto.request.UserTypingRequest;
 import com.stu.socialnetworkapi.dto.response.OnlineResponse;
+import com.stu.socialnetworkapi.event.TypingEvent;
+import com.stu.socialnetworkapi.event.UserOnlineEvent;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +21,7 @@ import java.util.UUID;
 public class IsOnlineRedisRepository {
     private final ApplicationEventPublisher eventPublisher;
     private final RedisTemplate<String, String> redisTemplate;
+    private final IsTypingRedisRepository isTypingRedisRepository;
     private static final String ONLINE_COUNT_KEY = "online_user_count";
     private static final String USER_ONLINE_COUNTER_KEY = "user_online_counter:";
     private static final String LAST_ONLINE_KEY = "last_online:";
@@ -39,6 +42,15 @@ public class IsOnlineRedisRepository {
         String userKey = userId.toString();
         Long count = redisTemplate.opsForValue().decrement(USER_ONLINE_COUNTER_KEY + userKey);
 
+        if (count != null && count < 0) {
+            redisTemplate.delete(USER_ONLINE_COUNTER_KEY + userKey);
+            UUID chatId = isTypingRedisRepository.getChatId(userId);
+            if (chatId != null) {
+                UserTypingRequest request = new UserTypingRequest(chatId, userId, false);
+                eventPublisher.publishEvent(new TypingEvent(this, request));
+            }
+            return;
+        }
         if (count == null || count == 0) {
             // User thực sự offline
             redisTemplate.delete(USER_ONLINE_COUNTER_KEY + userKey);

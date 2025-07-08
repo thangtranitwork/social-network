@@ -5,11 +5,11 @@ import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.exception.WebSocketException;
 import com.stu.socialnetworkapi.repository.IsOnlineRedisRepository;
 import com.stu.socialnetworkapi.service.itf.ChatService;
-import com.stu.socialnetworkapi.service.itf.MessageService;
 import com.stu.socialnetworkapi.util.JwtUtil;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -30,7 +30,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
     private final JwtUtil jwtUtil;
     private final ChatService chatService;
     private final IsOnlineRedisRepository isOnlineRedisRepository;
-    private final MessageService messageService;
+    private final ApplicationEventPublisher eventPublisher;
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
     private static final String USER_ID_KEY = "userId";
@@ -81,7 +81,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
                     String chatId = destination.substring(WebSocketChannelPrefix.TYPING_CHANNEL_PREFIX.length() + 1);
                     UUID chatUUID = UUID.fromString(chatId);
                     UUID userUUID = UUID.fromString(userId.toString());
-                    messageService.typing(new UserTypingRequest(chatUUID, userUUID, false));
+                    eventPublisher.publishEvent(new UserTypingRequest(chatUUID, userUUID, false));
                 }
                 log.info("User {} unsubscribed from channel {}", userId, destination);
             }
@@ -123,7 +123,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             UUID userUUID = UUID.fromString(userId);
             boolean authenticated = chatService.isMemberOfChat(userUUID, chatUUID);
             if (authenticated) {
-                messageService.typing(new UserTypingRequest(chatUUID, userUUID, true));
+                eventPublisher.publishEvent(new UserTypingRequest(chatUUID, userUUID, true));
             }
             return authenticated;
         }

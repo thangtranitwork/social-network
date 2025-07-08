@@ -20,10 +20,10 @@ public interface ChatRepository extends Neo4jRepository<Chat, UUID> {
     Optional<UUID> getDirectChatIdByMemberIds(UUID userId, UUID targetId);
 
     @Query("""
-            MATCH (u:User {id: $userId})-[isMember:IS_MEMBER_OF]->(c:Chat {id: $chatId})
-            RETURN COUNT(isMember) > 0
+            MATCH (u:User {id: $userId})-[:IS_MEMBER_OF]->(chat:Chat)
+            RETURN chat.id
             """)
-    boolean existInChat(UUID chatId, UUID userId);
+    List<UUID> getChatIdsByUserId(UUID userId);
 
     @Query("""
             MATCH (currentUser:User {id: $userId})-[:IS_MEMBER_OF]->(chat:Chat)<-[:IS_MEMBER_OF]-(target:User)

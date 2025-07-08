@@ -27,8 +27,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 CHAT_CHANNEL_PREFIX,
                 MESSAGE_CHANNEL_PREFIX,
                 USER_WEBSOCKET_ERROR_CHANNEL_PREFIX,
-                CALL_CHANNEL_PREFIX,
-                ONLINE_CHANNEL_PREFIX);
+                ONLINE_CHANNEL_PREFIX,
+                TYPING_CHANNEL_PREFIX);
         config.setApplicationDestinationPrefixes("/app");
         config.setUserDestinationPrefix("/user");
     }

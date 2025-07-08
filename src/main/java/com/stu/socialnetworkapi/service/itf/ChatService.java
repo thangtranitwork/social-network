@@ -17,4 +17,6 @@ public interface ChatService {
     List<ChatResponse> getChatList();
 
     List<ChatResponse> search(String query);
+
+    boolean isMemberOfChat(UUID userId, UUID chatId);
 }

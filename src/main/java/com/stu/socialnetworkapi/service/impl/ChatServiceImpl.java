@@ -7,6 +7,7 @@ import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.mapper.ChatMapper;
 import com.stu.socialnetworkapi.repository.ChatRepository;
+import com.stu.socialnetworkapi.repository.InChatRedisRepository;
 import com.stu.socialnetworkapi.repository.TargetChatIdRedisRepository;
 import com.stu.socialnetworkapi.service.itf.BlockService;
 import com.stu.socialnetworkapi.service.itf.ChatService;
@@ -27,15 +28,18 @@ public class ChatServiceImpl implements ChatService {
     private final UserService userService;
     private final BlockService blockService;
     private final ChatRepository chatRepository;
+    private final InChatRedisRepository inChatRedisRepository;
     private final TargetChatIdRedisRepository targetChatIdRedisRepository;
 
     @Override
     public void createChatIfNotExist(User user1, User user2) {
         Optional<UUID> optional = chatRepository.getDirectChatIdByMemberIds(user1.getId(), user2.getId());
         if (optional.isEmpty()) {
-            chatRepository.save(Chat.builder()
+            Chat chat = chatRepository.save(Chat.builder()
                     .members(List.of(user1, user2))
                     .build());
+            inChatRedisRepository.save(user1.getId(), chat.getId());
+            inChatRedisRepository.save(user2.getId(), chat.getId());
         }
     }
 
@@ -80,5 +84,10 @@ public class ChatServiceImpl implements ChatService {
         return chatRepository.searchChats(userId, query)
                 .stream().map(chatMapper::toChatResponse)
                 .toList();
+    }
+
+    @Override
+    public boolean isMemberOfChat(UUID userId, UUID chatId) {
+        return inChatRedisRepository.isInChat(userId, chatId);
     }
 }

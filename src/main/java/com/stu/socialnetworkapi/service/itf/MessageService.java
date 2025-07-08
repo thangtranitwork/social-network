@@ -19,5 +19,5 @@ public interface MessageService {
 
     void deleteMessage(UUID messageId);
 
-    void typing(UserTypingRequest request, UUID userId);
+    void typing(UserTypingRequest request);
 }

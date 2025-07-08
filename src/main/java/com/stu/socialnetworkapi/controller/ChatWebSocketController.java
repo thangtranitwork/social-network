@@ -22,10 +22,4 @@ public class ChatWebSocketController {
         UUID userId = UUID.fromString(principal.getName());
         return messageService.sendMessage(text, userId);
     }
-
-    @MessageMapping("/chat.typing")
-    public void typing(@Payload UserTypingRequest request, Principal principal) {
-        UUID userId = UUID.fromString(principal.getName());
-        messageService.typing(request, userId);
-    }
 }

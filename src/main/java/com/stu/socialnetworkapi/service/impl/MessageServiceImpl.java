@@ -13,6 +13,8 @@ import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.exception.WebSocketException;
 import com.stu.socialnetworkapi.mapper.MessageMapper;
 import com.stu.socialnetworkapi.repository.ChatRepository;
+import com.stu.socialnetworkapi.repository.InChatRedisRepository;
+import com.stu.socialnetworkapi.repository.IsTypingRedisRepository;
 import com.stu.socialnetworkapi.repository.MessageRepository;
 import com.stu.socialnetworkapi.service.itf.ChatService;
 import com.stu.socialnetworkapi.service.itf.FileService;
@@ -38,6 +40,8 @@ public class MessageServiceImpl implements MessageService {
     private final ChatRepository chatRepository;
     private final MessageRepository messageRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final InChatRedisRepository inChatRedisRepository;
+    private final IsTypingRedisRepository isTypingRedisRepository;
 
     @Override
     public MessageResponse sendMessage(TextMessageRequest request) {
@@ -103,7 +107,7 @@ public class MessageServiceImpl implements MessageService {
     @Override
     public List<MessageResponse> getHistory(UUID chatId, Neo4jPageable pageable) {
         UUID userId = userService.getCurrentUserIdRequiredAuthentication();
-        if (!chatRepository.existInChat(chatId, userId)) {
+        if (!inChatRedisRepository.isInChat(userId, chatId)) {
             throw new ApiException(ErrorCode.UNAUTHORIZED);
         }
         List<MessageResponse> messages = messageRepository.findAllByChatIdOrderBySentAtDesc(chatId, pageable.getSkip(), pageable.getLimit()).stream()
@@ -157,13 +161,16 @@ public class MessageServiceImpl implements MessageService {
     }
 
     @Override
-    public void typing(UserTypingRequest request, UUID userId) {
+    public void typing(UserTypingRequest request) {
         MessageCommand command = MessageCommand.builder()
                 .command(MessageCommand.Command.TYPING)
-                .id(userId)
+                .id(request.userId())
                 .isTyping(request.isTyping())
                 .build();
-        messagingTemplate.convertAndSend(WebSocketChannelPrefix.CHAT_CHANNEL_PREFIX + "/" + request.chatId(), command);
+        if (request.isTyping())
+            isTypingRedisRepository.save(request.userId(), request.chatId());
+        else isTypingRedisRepository.delete(request.userId());
+        sendMessageCommand(request.chatId(), command);
     }
 
     private static void validateDeleteMessage(Message message, User user) {

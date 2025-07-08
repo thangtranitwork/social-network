@@ -183,7 +183,7 @@ public class MessageServiceImpl implements MessageService {
             throw new ApiException(ErrorCode.UNAUTHORIZED);
         if (message.getContent() == null && message.getAttachedFile() != null)
             throw new ApiException(ErrorCode.CAN_NOT_EDIT_FILE_MESSAGE);
-        if (message.getSentAt().plusMinutes(Message.MINUTES_TO_EDIT_MESSAGE).isAfter(ZonedDateTime.now()))
+        if (ZonedDateTime.now().isAfter(message.getSentAt().plusMinutes(Message.MINUTES_TO_EDIT_MESSAGE)))
             throw new ApiException(ErrorCode.CAN_NOT_EDIT_MESSAGE);
         if (content.isEmpty())
             throw new ApiException(ErrorCode.TEXT_MESSAGE_CONTENT_REQUIRED);

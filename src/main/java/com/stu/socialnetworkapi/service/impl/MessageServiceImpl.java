@@ -166,7 +166,7 @@ public class MessageServiceImpl implements MessageService {
                 .build();
         if (request.isTyping())
             isTypingRedisRepository.save(request.userId(), request.chatId());
-        else isTypingRedisRepository.delete(request.userId());
+        else isTypingRedisRepository.delete(request.userId(), request.chatId());
         sendMessageCommand(request.chatId(), command);
     }
 

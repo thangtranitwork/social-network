@@ -5,6 +5,7 @@ import com.stu.socialnetworkapi.event.TypingEvent;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.exception.WebSocketException;
 import com.stu.socialnetworkapi.repository.IsOnlineRedisRepository;
+import com.stu.socialnetworkapi.repository.IsTypingRedisRepository;
 import com.stu.socialnetworkapi.service.itf.ChatService;
 import com.stu.socialnetworkapi.util.JwtUtil;
 import lombok.NonNull;
@@ -19,10 +20,7 @@ import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @Component
@@ -31,6 +29,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
     private final JwtUtil jwtUtil;
     private final ChatService chatService;
     private final IsOnlineRedisRepository isOnlineRedisRepository;
+    private final IsTypingRedisRepository isTypingRedisRepository;
     private final ApplicationEventPublisher eventPublisher;
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
@@ -113,7 +112,18 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
 
         if (destination.startsWith(WebSocketChannelPrefix.CHAT_CHANNEL_PREFIX)) {
             String chatId = destination.substring(WebSocketChannelPrefix.CHAT_CHANNEL_PREFIX.length() + 1);
-            return chatService.isMemberOfChat(UUID.fromString(userId), UUID.fromString(chatId));
+            UUID chatUUID = UUID.fromString(chatId);
+            boolean isMember = chatService.isMemberOfChat(UUID.fromString(userId), chatUUID);
+            if (!isMember) {
+                Set<String> typingUsers = isTypingRedisRepository.getTypingUsersInChat(chatUUID);
+                if (!typingUsers.isEmpty()) {
+                    for (String typingUser : typingUsers) {
+                        UserTypingRequest request = new UserTypingRequest(chatUUID, UUID.fromString(typingUser), true);
+                        eventPublisher.publishEvent(new TypingEvent(this, request));
+                    }
+                }
+            }
+            return isMember;
         }
 
         if (destination.startsWith(WebSocketChannelPrefix.MESSAGE_CHANNEL_PREFIX)) {
@@ -130,12 +140,12 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             String chatId = destination.substring(WebSocketChannelPrefix.TYPING_CHANNEL_PREFIX.length() + 1);
             UUID chatUUID = UUID.fromString(chatId);
             UUID userUUID = UUID.fromString(userId);
-            boolean authenticated = chatService.isMemberOfChat(userUUID, chatUUID);
-            if (authenticated) {
+            boolean isMember = chatService.isMemberOfChat(userUUID, chatUUID);
+            if (isMember) {
                 UserTypingRequest request = new UserTypingRequest(chatUUID, userUUID, true);
                 eventPublisher.publishEvent(new TypingEvent(this, request));
             }
-            return authenticated;
+            return isMember;
         }
 
         if (destination.startsWith(WebSocketChannelPrefix.USER_WEBSOCKET_ERROR_CHANNEL_PREFIX)) {

@@ -13,12 +13,12 @@ public class MessageCommand {
     UUID id;
     Command command;
     String message;
-    Boolean isTyping;
 
     public enum Command {
         DELETE,
         EDIT,
         TYPING,
+        STOP_TYPING,
         HAS_BEEN_BLOCKED,
         HAS_BEEN_UNBLOCKED,
     }

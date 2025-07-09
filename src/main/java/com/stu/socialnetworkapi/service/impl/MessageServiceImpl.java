@@ -12,7 +12,6 @@ import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.exception.WebSocketException;
 import com.stu.socialnetworkapi.mapper.MessageMapper;
-import com.stu.socialnetworkapi.repository.ChatRepository;
 import com.stu.socialnetworkapi.repository.InChatRedisRepository;
 import com.stu.socialnetworkapi.repository.IsTypingRedisRepository;
 import com.stu.socialnetworkapi.repository.MessageRepository;
@@ -37,7 +36,6 @@ public class MessageServiceImpl implements MessageService {
     private final FileService fileService;
     private final ChatService chatService;
     private final MessageMapper messageMapper;
-    private final ChatRepository chatRepository;
     private final MessageRepository messageRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final InChatRedisRepository inChatRedisRepository;
@@ -163,9 +161,8 @@ public class MessageServiceImpl implements MessageService {
     @Override
     public void typing(UserTypingRequest request) {
         MessageCommand command = MessageCommand.builder()
-                .command(MessageCommand.Command.TYPING)
+                .command(request.isTyping() ? MessageCommand.Command.TYPING : MessageCommand.Command.STOP_TYPING)
                 .id(request.userId())
-                .isTyping(request.isTyping())
                 .build();
         if (request.isTyping())
             isTypingRedisRepository.save(request.userId(), request.chatId());

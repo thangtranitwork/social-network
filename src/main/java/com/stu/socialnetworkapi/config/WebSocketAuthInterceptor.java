@@ -1,6 +1,8 @@
 package com.stu.socialnetworkapi.config;
 
 import com.stu.socialnetworkapi.dto.request.UserTypingRequest;
+import com.stu.socialnetworkapi.dto.response.MessageCommand;
+import com.stu.socialnetworkapi.event.CommandEvent;
 import com.stu.socialnetworkapi.event.TypingEvent;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.exception.WebSocketException;
@@ -168,6 +170,11 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             }
         }
         inChatRedisRepository.subscribe(userUUID, chatUUID);
+        MessageCommand command = MessageCommand.builder()
+                .command(MessageCommand.Command.READING)
+                .id(userUUID)
+                .build();
+        eventPublisher.publishEvent(new CommandEvent(this, command, chatUUID));
         return isMember;
     }
 

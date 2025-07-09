@@ -21,6 +21,7 @@ public class MessageCommand {
         STOP_TYPING,
         HAS_BEEN_BLOCKED,
         HAS_BEEN_UNBLOCKED,
+        READING
     }
 }
 

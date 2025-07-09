@@ -1,6 +1,7 @@
 package com.stu.socialnetworkapi.config;
 
 import com.stu.socialnetworkapi.dto.request.UserTypingRequest;
+import com.stu.socialnetworkapi.event.TypingEvent;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.exception.WebSocketException;
 import com.stu.socialnetworkapi.repository.IsOnlineRedisRepository;
@@ -130,7 +131,8 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             UUID userUUID = UUID.fromString(userId);
             boolean authenticated = chatService.isMemberOfChat(userUUID, chatUUID);
             if (authenticated) {
-                eventPublisher.publishEvent(new UserTypingRequest(chatUUID, userUUID, true));
+                UserTypingRequest request = new UserTypingRequest(chatUUID, userUUID, true);
+                eventPublisher.publishEvent(new TypingEvent(this, request));
             }
             return authenticated;
         }

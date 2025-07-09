@@ -55,4 +55,9 @@ public class InChatRedisRepository {
         }
         return Boolean.TRUE.equals(redisTemplate.opsForSet().isMember(key, chatId.toString()));
     }
+
+    public void invalidateUserChat(UUID userId) {
+        String key = USER_CHATS_KEY + userId;
+        redisTemplate.delete(key);
+    }
 }

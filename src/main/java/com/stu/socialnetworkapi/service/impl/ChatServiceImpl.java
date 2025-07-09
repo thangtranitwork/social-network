@@ -35,11 +35,11 @@ public class ChatServiceImpl implements ChatService {
     public void createChatIfNotExist(User user1, User user2) {
         Optional<UUID> optional = chatRepository.getDirectChatIdByMemberIds(user1.getId(), user2.getId());
         if (optional.isEmpty()) {
-            Chat chat = chatRepository.save(Chat.builder()
+            chatRepository.save(Chat.builder()
                     .members(List.of(user1, user2))
                     .build());
-            inChatRedisRepository.save(user1.getId(), chat.getId());
-            inChatRedisRepository.save(user2.getId(), chat.getId());
+            inChatRedisRepository.invalidateUserChat(user1.getId());
+            inChatRedisRepository.invalidateUserChat(user2.getId());
         }
     }
 
@@ -66,8 +66,8 @@ public class ChatServiceImpl implements ChatService {
                 .members(members)
                 .build();
         chatRepository.save(newChat);
-        inChatRedisRepository.save(sender.getId(), newChat.getId());
-        inChatRedisRepository.save(receiver.getId(), newChat.getId());
+        inChatRedisRepository.invalidateUserChat(sender.getId());
+        inChatRedisRepository.invalidateUserChat(receiver.getId());
         targetChatIdRedisRepository.invalidate(sender.getId());
         targetChatIdRedisRepository.invalidate(receiver.getId());
         return newChat;

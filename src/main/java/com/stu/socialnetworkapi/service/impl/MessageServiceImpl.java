@@ -55,6 +55,7 @@ public class MessageServiceImpl implements MessageService {
                 .chat(chat)
                 .content(content)
                 .sender(sender)
+                .isRead(inChatRedisRepository.isSubscribed(receiver.getId(), chat.getId()))
                 .build();
 
         messageRepository.save(message);
@@ -77,6 +78,7 @@ public class MessageServiceImpl implements MessageService {
                 .chat(chat)
                 .content(content)
                 .sender(sender)
+                .isRead(inChatRedisRepository.isSubscribed(receiver.getId(), chat.getId()))
                 .build();
 
         messageRepository.save(message);
@@ -95,6 +97,7 @@ public class MessageServiceImpl implements MessageService {
                 .chat(chat)
                 .sender(sender)
                 .attachedFile(file)
+                .isRead(inChatRedisRepository.isSubscribed(receiver.getId(), chat.getId()))
                 .build();
         messageRepository.save(message);
         MessageResponse response = messageMapper.toMessageResponse(message);

@@ -4,6 +4,7 @@ import com.stu.socialnetworkapi.dto.request.UserTypingRequest;
 import com.stu.socialnetworkapi.event.TypingEvent;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.exception.WebSocketException;
+import com.stu.socialnetworkapi.repository.InChatRedisRepository;
 import com.stu.socialnetworkapi.repository.IsOnlineRedisRepository;
 import com.stu.socialnetworkapi.repository.IsTypingRedisRepository;
 import com.stu.socialnetworkapi.service.itf.ChatService;
@@ -30,6 +31,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
     private final ChatService chatService;
     private final IsOnlineRedisRepository isOnlineRedisRepository;
     private final IsTypingRedisRepository isTypingRedisRepository;
+    private final InChatRedisRepository inChatRedisRepository;
     private final ApplicationEventPublisher eventPublisher;
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
@@ -61,7 +63,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             attributes.put(USER_ID_KEY, userId);
             attributes.put(ROLE_KEY, role);
             accessor.setUser(userId::toString);
-            log.info("User {} connecting", userId);
+            log.debug("User {} connecting", userId);
             isOnlineRedisRepository.onUserConnected(UUID.fromString(userId.toString()));
         }
         //Xác thực khi SUBSCRIBE
@@ -69,7 +71,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             String subcriptionId = accessor.getSubscriptionId();
             if (StompCommand.SUBSCRIBE.equals(command)) {
                 String destination = accessor.getDestination();
-                log.info("User {} subscribed to channel {}", attributes.get(USER_ID_KEY), destination);
+                log.debug("User {} subscribed to channel {}", attributes.get(USER_ID_KEY), destination);
                 if (!authorizeSubscription(accessor)) {
                     throw new WebSocketException(ErrorCode.UNAUTHORIZED);
                 }
@@ -86,10 +88,13 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
                     UUID chatUUID = UUID.fromString(chatId);
                     UserTypingRequest request = new UserTypingRequest(chatUUID, userId, false);
                     eventPublisher.publishEvent(new TypingEvent(this, request));
+                } else if (destination != null && destination.startsWith(WebSocketChannelPrefix.CHAT_CHANNEL_PREFIX)) {
+                    String chatId = destination.substring(WebSocketChannelPrefix.CHAT_CHANNEL_PREFIX.length() + 1);
+                    UUID chatUUID = UUID.fromString(chatId);
+                    inChatRedisRepository.unsubscribe(userId, chatUUID);
                 }
 
-                log.info("User {} unsubscribed from channel {} (subscriptionId={})", userId, destination, subscriptionId);
-
+                log.debug("User {} unsubscribed from channel {} (subscriptionId={})", userId, destination, subscriptionId);
                 attributes.remove("subscription:" + subscriptionId);
             }
 
@@ -111,19 +116,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
         }
 
         if (destination.startsWith(WebSocketChannelPrefix.CHAT_CHANNEL_PREFIX)) {
-            String chatId = destination.substring(WebSocketChannelPrefix.CHAT_CHANNEL_PREFIX.length() + 1);
-            UUID chatUUID = UUID.fromString(chatId);
-            boolean isMember = chatService.isMemberOfChat(UUID.fromString(userId), chatUUID);
-            if (!isMember) {
-                Set<String> typingUsers = isTypingRedisRepository.getTypingUsersInChat(chatUUID);
-                if (!typingUsers.isEmpty()) {
-                    for (String typingUser : typingUsers) {
-                        UserTypingRequest request = new UserTypingRequest(chatUUID, UUID.fromString(typingUser), true);
-                        eventPublisher.publishEvent(new TypingEvent(this, request));
-                    }
-                }
-            }
-            return isMember;
+            return processSubscribeToChatChannel(destination, userId);
         }
 
         if (destination.startsWith(WebSocketChannelPrefix.MESSAGE_CHANNEL_PREFIX)) {
@@ -137,15 +130,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
         }
 
         if (destination.startsWith(WebSocketChannelPrefix.TYPING_CHANNEL_PREFIX)) {
-            String chatId = destination.substring(WebSocketChannelPrefix.TYPING_CHANNEL_PREFIX.length() + 1);
-            UUID chatUUID = UUID.fromString(chatId);
-            UUID userUUID = UUID.fromString(userId);
-            boolean isMember = chatService.isMemberOfChat(userUUID, chatUUID);
-            if (isMember) {
-                UserTypingRequest request = new UserTypingRequest(chatUUID, userUUID, true);
-                eventPublisher.publishEvent(new TypingEvent(this, request));
-            }
-            return isMember;
+            return processSubscribeToTypingChannel(destination, userId);
         }
 
         if (destination.startsWith(WebSocketChannelPrefix.USER_WEBSOCKET_ERROR_CHANNEL_PREFIX)) {
@@ -154,6 +139,36 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
         }
 
         return false;
+    }
+
+    private boolean processSubscribeToTypingChannel(String destination, String userId) {
+        String chatId = destination.substring(WebSocketChannelPrefix.TYPING_CHANNEL_PREFIX.length() + 1);
+        UUID chatUUID = UUID.fromString(chatId);
+        UUID userUUID = UUID.fromString(userId);
+        boolean isMember = chatService.isMemberOfChat(userUUID, chatUUID);
+        if (isMember) {
+            UserTypingRequest request = new UserTypingRequest(chatUUID, userUUID, true);
+            eventPublisher.publishEvent(new TypingEvent(this, request));
+        }
+        return isMember;
+    }
+
+    private boolean processSubscribeToChatChannel(String destination, String userId) {
+        String chatId = destination.substring(WebSocketChannelPrefix.CHAT_CHANNEL_PREFIX.length() + 1);
+        UUID chatUUID = UUID.fromString(chatId);
+        UUID userUUID = UUID.fromString(userId);
+        boolean isMember = chatService.isMemberOfChat(userUUID, chatUUID);
+        if (isMember) {
+            Set<String> typingUsers = isTypingRedisRepository.getTypingUsersInChat(chatUUID);
+            if (!typingUsers.isEmpty()) {
+                for (String typingUser : typingUsers) {
+                    UserTypingRequest request = new UserTypingRequest(chatUUID, UUID.fromString(typingUser), true);
+                    eventPublisher.publishEvent(new TypingEvent(this, request));
+                }
+            }
+        }
+        inChatRedisRepository.subscribe(userUUID, chatUUID);
+        return isMember;
     }
 
 }

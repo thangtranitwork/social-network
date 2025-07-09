@@ -22,6 +22,7 @@ public class IsOnlineRedisRepository {
     private final ApplicationEventPublisher eventPublisher;
     private final RedisTemplate<String, String> redisTemplate;
     private final IsTypingRedisRepository isTypingRedisRepository;
+    private final InChatRedisRepository inChatRedisRepository;
     private static final String ONLINE_COUNT_KEY = "online_user_count";
     private static final String USER_ONLINE_COUNTER_KEY = "user_online_counter:";
     private static final String LAST_ONLINE_KEY = "last_online:";
@@ -44,11 +45,6 @@ public class IsOnlineRedisRepository {
 
         if (count != null && count < 0) {
             redisTemplate.delete(USER_ONLINE_COUNTER_KEY + userKey);
-            UUID chatId = isTypingRedisRepository.getChatId(userId);
-            if (chatId != null) {
-                UserTypingRequest request = new UserTypingRequest(chatId, userId, false);
-                eventPublisher.publishEvent(new TypingEvent(this, request));
-            }
             return;
         }
         if (count == null || count == 0) {
@@ -59,7 +55,18 @@ public class IsOnlineRedisRepository {
             redisTemplate.opsForValue().set(LAST_ONLINE_KEY + userKey, now.toString());
             log.debug("User {} is now OFFLINE", userKey);
             eventPublisher.publishEvent(new UserOnlineEvent(this, userId, false, now));
+            cleanUpTypingAndSubscribeChat(userId);
+
         }
+    }
+
+    private void cleanUpTypingAndSubscribeChat(UUID userId) {
+        UUID chatId = isTypingRedisRepository.getChatId(userId);
+        if (chatId != null) {
+            UserTypingRequest request = new UserTypingRequest(chatId, userId, false);
+            eventPublisher.publishEvent(new TypingEvent(this, request));
+        }
+        inChatRedisRepository.unsubscribeAll(userId);
     }
 
     public OnlineResponse getLastSeen(UUID userId) {

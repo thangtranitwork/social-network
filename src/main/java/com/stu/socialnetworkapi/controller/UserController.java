@@ -1,5 +1,7 @@
 package com.stu.socialnetworkapi.controller;
 
+import com.stu.socialnetworkapi.dto.request.Neo4jPageable;
+import com.stu.socialnetworkapi.dto.response.AdminUserViewResponse;
 import com.stu.socialnetworkapi.dto.response.ApiResponse;
 import com.stu.socialnetworkapi.dto.response.UserProfileResponse;
 import com.stu.socialnetworkapi.entity.User;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -27,6 +30,11 @@ public class UserController {
     @GetMapping("/{username}")
     public ApiResponse<UserProfileResponse> getUser(@PathVariable String username) {
         return ApiResponse.success(userService.getUserProfile(username));
+    }
+
+    @GetMapping
+    public ApiResponse<List<AdminUserViewResponse>> getAll(Neo4jPageable pageable) {
+        return ApiResponse.success(userService.getUsers(pageable));
     }
 
     @PatchMapping("/update-bio")

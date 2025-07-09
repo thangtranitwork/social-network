@@ -1,5 +1,6 @@
 package com.stu.socialnetworkapi.repository;
 
+import com.stu.socialnetworkapi.dto.projection.AdminUserViewProjection;
 import com.stu.socialnetworkapi.dto.projection.CountDataProjection;
 import com.stu.socialnetworkapi.dto.projection.UserProfileProjection;
 import com.stu.socialnetworkapi.dto.projection.UserProjection;
@@ -227,4 +228,65 @@ public interface UserRepository extends Neo4jRepository<User, UUID> {
                 user.blockCount = blockCount
             """)
     void recalculateUserCounters(UUID userId);
+
+    @Query("""
+                MATCH (user:User)
+                WITH user
+                ORDER BY user.createdAt DESC
+                SKIP $skip LIMIT $limit
+            
+                OPTIONAL MATCH (user)-[:HAS_PROFILE_PICTURE]->(profilePic:File)
+                MATCH (user)<-[:HAS_INFO]-(account:Account)
+            
+                CALL {
+                    WITH user
+                    OPTIONAL MATCH (user)-[:POSTED]->(p:Post)
+                    RETURN COUNT(p) AS postCount
+                }
+            
+                CALL {
+                    WITH user
+                    OPTIONAL MATCH (user)-[:COMMENTED]->(c:Comment)
+                    RETURN COUNT(c) AS commentCount
+                }
+            
+                CALL {
+                    WITH user
+                    OPTIONAL MATCH (user)-[:UPLOAD_FILE]->(f:File)
+                    RETURN COUNT(f) AS uploadedFileCount
+                }
+            
+                CALL {
+                    WITH user
+                    OPTIONAL MATCH (user)-[:SENT]->(m:Message)
+                    RETURN COUNT(m) AS messageCount
+                }
+            
+                CALL {
+                    WITH user
+                    OPTIONAL MATCH (user)-[:SENT]->(m:Call)
+                    RETURN COUNT(m) AS callCount
+                }
+            
+                RETURN user.id AS userId,
+                       user.username AS username,
+                       user.givenName AS givenName,
+                       user.familyName AS familyName,
+                       user.bio AS bio,
+                       user.birthdate AS birthdate,
+                       profilePic.id AS profilePictureId,
+                       user.friendCount AS friendCount,
+                       user.blockCount AS blockCount,
+                       user.requestSentCount AS requestSentCount,
+                       user.requestReceivedCount AS requestReceivedCount,
+                       postCount,
+                       commentCount,
+                       uploadedFileCount,
+                       messageCount,
+                       callCount,
+                       account.email AS email,
+                       account.isVerified AS isVerified,
+                       user.createdAt AS registrationDate
+            """)
+    List<AdminUserViewProjection> getAllUsers(long skip, long limit);
 }

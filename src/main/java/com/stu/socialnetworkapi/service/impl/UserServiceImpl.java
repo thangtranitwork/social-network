@@ -1,6 +1,8 @@
 package com.stu.socialnetworkapi.service.impl;
 
 import com.stu.socialnetworkapi.dto.projection.UserProfileProjection;
+import com.stu.socialnetworkapi.dto.request.Neo4jPageable;
+import com.stu.socialnetworkapi.dto.response.AdminUserViewResponse;
 import com.stu.socialnetworkapi.dto.response.UserProfileResponse;
 import com.stu.socialnetworkapi.entity.File;
 import com.stu.socialnetworkapi.entity.User;
@@ -14,10 +16,12 @@ import com.stu.socialnetworkapi.service.itf.FileService;
 import com.stu.socialnetworkapi.service.itf.UserService;
 import com.stu.socialnetworkapi.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -142,6 +146,16 @@ public class UserServiceImpl implements UserService {
         user.setProfilePicture(newPicture);
         userRepository.save(user);
         return File.getPath(newPicture);
+    }
+
+    @Override
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    public List<AdminUserViewResponse> getUsers(Neo4jPageable pageable) {
+
+        return userRepository.getAllUsers(pageable.getSkip(), pageable.getLimit())
+                .stream()
+                .map(userMapper::toAdminUserViewResponse)
+                .toList();
     }
 
     private void validateGetUserProfile(UUID currentUserId, UUID targetUserId) {

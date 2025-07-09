@@ -1,6 +1,7 @@
 package com.stu.socialnetworkapi.mapper;
 
 import com.stu.socialnetworkapi.dto.projection.*;
+import com.stu.socialnetworkapi.dto.response.AdminUserViewResponse;
 import com.stu.socialnetworkapi.dto.response.OnlineResponse;
 import com.stu.socialnetworkapi.dto.response.UserCommonInformationResponse;
 import com.stu.socialnetworkapi.dto.response.UserProfileResponse;
@@ -167,6 +168,33 @@ public class UserMapper {
                 .familyName(projection.originalPostAuthorFamilyName())
                 .username(projection.originalPostAuthorUsername())
                 .profilePictureUrl(File.getPath(projection.originalPostAuthorProfilePictureId()))
+                .isOnline(online.isOnline())
+                .lastOnline(online.getLastOnline())
+                .build();
+    }
+
+    public AdminUserViewResponse toAdminUserViewResponse(final AdminUserViewProjection projection) {
+        OnlineResponse online = isOnlineRedisRepository.getLastSeen(projection.userId());
+        return AdminUserViewResponse.builder()
+                .id(projection.userId())
+                .givenName(projection.givenName())
+                .familyName(projection.familyName())
+                .username(projection.username())
+                .profilePictureUrl(File.getPath(projection.profilePictureId()))
+                .bio(projection.bio())
+                .birthdate(projection.birthdate())
+                .friendCount(projection.friendCount())
+                .blockCount(projection.blockCount())
+                .requestSentCount(projection.requestSentCount())
+                .requestReceivedCount(projection.requestReceivedCount())
+                .postCount(projection.postCount())
+                .commentCount(projection.commentCount())
+                .uploadedFileCount(projection.uploadedFileCount())
+                .messageCount(projection.messageCount() - projection.callCount() )
+                .callCount(projection.callCount())
+                .registrationDate(projection.registrationDate())
+                .email(projection.email())
+                .isVerified(projection.isVerified())
                 .isOnline(online.isOnline())
                 .lastOnline(online.getLastOnline())
                 .build();

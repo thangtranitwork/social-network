@@ -65,9 +65,12 @@ public class ChatServiceImpl implements ChatService {
         Chat newChat = Chat.builder()
                 .members(members)
                 .build();
+        chatRepository.save(newChat);
+        inChatRedisRepository.save(sender.getId(), newChat.getId());
+        inChatRedisRepository.save(receiver.getId(), newChat.getId());
         targetChatIdRedisRepository.invalidate(sender.getId());
         targetChatIdRedisRepository.invalidate(receiver.getId());
-        return chatRepository.save(newChat);
+        return newChat;
     }
 
     @Override

@@ -108,6 +108,7 @@ public enum ErrorCode {
     NOT_READY_FOR_CALL(7014, "Not ready for call", HttpStatus.BAD_REQUEST),
 
     SEARCH_QUERY_REQUIRED(9000, "Search query is required", HttpStatus.BAD_REQUEST),
+    TOO_MANY_REQUESTS(9991, "Too many requests, please  wait a minutes", HttpStatus.TOO_MANY_REQUESTS),
     INVALID_WEBSOCKET_CHANNEL(9992, "Invalid websocket channel", HttpStatus.BAD_REQUEST),
     ONLY_LETTER_ACCEPTED(9993, "Only letter accepted", HttpStatus.BAD_REQUEST),
     UNAUTHORIZED(9994, "Unauthorized", HttpStatus.BAD_REQUEST),

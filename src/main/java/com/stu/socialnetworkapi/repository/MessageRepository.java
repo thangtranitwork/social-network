@@ -19,6 +19,7 @@ public interface MessageRepository extends Neo4jRepository<Message, UUID> {
                 chat.id AS chatId,
                 message.content AS content,
                 message.sentAt AS sentAt,
+                message.isRead AS isRead,
                 sender.id AS senderId,
                 sender.username AS senderUsername,
                 sender.givenName AS senderGivenName,

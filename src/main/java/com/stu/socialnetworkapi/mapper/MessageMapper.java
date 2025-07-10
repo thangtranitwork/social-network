@@ -24,6 +24,7 @@ public class MessageMapper {
                 .sender(userMapper.toUserCommonInformationResponse(message.getSender()))
                 .deleted(message.getDeleteAt() != null)
                 .updated(message.getUpdateAt() != null)
+                .isRead(message.isRead())
                 .build();
     }
 
@@ -45,6 +46,7 @@ public class MessageMapper {
                 .endAt(projection.endAt())
                 .isAnswered(projection.isAnswered())
                 .isVideoCall(projection.isVideoCall())
+                .isRead(projection.isRead())
                 .build();
     }
 

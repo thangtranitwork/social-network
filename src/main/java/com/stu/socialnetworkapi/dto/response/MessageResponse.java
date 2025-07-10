@@ -26,4 +26,5 @@ public class MessageResponse {
     ZonedDateTime endAt;
     Boolean isAnswered;
     Boolean isVideoCall;
+    Boolean isRead;
 }

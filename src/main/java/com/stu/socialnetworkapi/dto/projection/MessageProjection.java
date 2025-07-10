@@ -25,6 +25,7 @@ public record MessageProjection(
         ZonedDateTime answerAt,
         ZonedDateTime endAt,
         boolean isAnswered,
-        boolean isVideoCall
+        boolean isVideoCall,
+        boolean isRead
 ) {
 }

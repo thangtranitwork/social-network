@@ -159,6 +159,16 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    public CommentResponse updateContent(UUID commentId, CommentRequest request) {
+        Comment comment = getCommentById(commentId);
+        String trimmed = request.content().trim();
+        validateUpdateContent(comment, trimmed);
+        comment.setContent(trimmed);
+        commentRepository.save(comment);
+        return commentMapper.toCommentResponse(comment);
+    }
+
+    @Override
     public List<CommentResponse> getComments(UUID postId, Neo4jPageable pageable) {
         UUID currentUserId = userService.getCurrentUserId();
         postService.validateViewPost(postId, currentUserId);
@@ -233,6 +243,19 @@ public class CommentServiceImpl implements CommentService {
 
         if (content != null && content.trim().length() > Comment.MAX_CONTENT_LENGTH) {
             throw new ApiException(ErrorCode.INVALID_COMMENT_CONTENT_LENGTH);
+        }
+    }
+
+    private void validateUpdateContent(Comment comment, String trimmedContent) {
+        UUID currentUserId = userService.getCurrentUserId();
+        if (!comment.getAuthor().getId().equals(currentUserId)) {
+            throw new ApiException(ErrorCode.UNAUTHORIZED);
+        }
+        if (trimmedContent == null || trimmedContent.isEmpty() || trimmedContent.length() > Comment.MAX_CONTENT_LENGTH) {
+            throw new ApiException(ErrorCode.INVALID_COMMENT_CONTENT_LENGTH);
+        }
+        if (trimmedContent.equals(comment.getContent())) {
+            throw new ApiException(ErrorCode.COMMENT_CONTENT_UNCHANGED);
         }
     }
 

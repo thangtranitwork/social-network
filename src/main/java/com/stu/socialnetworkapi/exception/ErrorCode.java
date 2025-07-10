@@ -89,6 +89,7 @@ public enum ErrorCode {
     LIKED_COMMENT(6005, "Liked comment", HttpStatus.BAD_REQUEST),
     NOT_LIKED_COMMENT(6006, "Not liked comment", HttpStatus.BAD_REQUEST),
     CAN_NOT_REPLY_REPLIED_COMMENT(6007, "Can't reply replied comment", HttpStatus.BAD_REQUEST),
+    COMMENT_CONTENT_UNCHANGED(6008, "Comment content unchanged", HttpStatus.BAD_REQUEST),
 
     CHAT_NOT_FOUND(7000, "Chat not found", HttpStatus.BAD_REQUEST),
     MESSAGE_USERNAME_REQUIRED(7001, "Username is required", HttpStatus.BAD_REQUEST),

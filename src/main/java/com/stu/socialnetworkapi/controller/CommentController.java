@@ -45,6 +45,11 @@ public class CommentController {
         return ApiResponse.success();
     }
 
+    @PatchMapping("{id}")
+    public ApiResponse<CommentResponse> updateContent(@PathVariable UUID id, @RequestBody CommentRequest request) {
+        return ApiResponse.success(commentService.updateContent(id, request));
+    }
+
     @DeleteMapping("/{commentId}")
     public ApiResponse<Void> delete(@PathVariable UUID commentId) {
         commentService.delete(commentId);

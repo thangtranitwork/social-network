@@ -19,6 +19,8 @@ public interface CommentService {
 
     void delete(UUID id);
 
+    CommentResponse updateContent(UUID commentId, CommentRequest request);
+
     List<CommentResponse> getComments(UUID postId, Neo4jPageable pageable);
 
     List<CommentResponse> getRepliedComments(UUID commentId, Neo4jPageable pageable);

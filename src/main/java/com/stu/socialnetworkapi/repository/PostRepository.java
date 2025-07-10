@@ -590,6 +590,70 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
     List<PostProjection> getPostsOrderByCreatedAtDesc(UUID userId, long skip, long limit);
 
     @Query("""
+            MATCH (author:User)-[:POSTED]->(post:Post)
+            WHERE post.deletedAt IS NULL
+            WITH post
+            ORDER BY post.created DESC
+            SKIP $skip LIMIT $limit
+
+            // Lấy thông tin bài viết gốc nếu là shared post
+            OPTIONAL MATCH (post)-[:SHARED]->(originalPost:Post)
+            OPTIONAL MATCH (originalPost)<-[:POSTED]-(originalAuthor:User)
+            OPTIONAL MATCH (originalAuthor)-[:HAS_PROFILE_PICTURE]->(originalProfilePic:File)
+            OPTIONAL MATCH (originalPost)-[:ATTACH_FILES]->(originalFile:File)
+
+            // Lấy thông tin post hiện tại
+            OPTIONAL MATCH (post)-[:ATTACH_FILES]->(file:File)
+            OPTIONAL MATCH (author)-[:HAS_PROFILE_PICTURE]->(profilePic:File)
+
+            WITH post, author, profilePic,
+                 COLLECT(DISTINCT file.id) AS files,
+                 originalPost, originalAuthor, originalProfilePic,
+                 COLLECT(DISTINCT originalFile.id) AS originalFiles,
+
+                 // Kiểm tra xem bài viết gốc có thể xem được không
+                 CASE
+                   WHEN originalPost IS NULL THEN true
+                   WHEN originalPost.deletedAt IS NOT NULL THEN false
+                   else true
+                 END AS originalPostCanView
+
+            WITH post, author, profilePic, files,
+                 originalPost, originalAuthor, originalProfilePic, originalFiles, originalPostCanView
+
+            RETURN
+                post.id AS id,
+                post.content AS content,
+                post.createdAt AS createdAt,
+                post.updatedAt AS updatedAt,
+                post.privacy AS privacy,
+                files AS files,
+                post.likeCount AS likeCount,
+                post.shareCount AS shareCount,
+                post.commentCount AS commentCount,
+                author.id AS authorId,
+                author.username AS authorUsername,
+                author.givenName AS authorGivenName,
+                author.familyName AS authorFamilyName,
+                profilePic.id AS authorProfilePictureId,
+                originalPost IS NOT NULL AS isSharedPost,
+
+                // Original post information
+                CASE WHEN originalPostCanView THEN originalPost.id ELSE null END AS originalPostId,
+                CASE WHEN originalPostCanView THEN originalPost.content ELSE null END AS originalPostContent,
+                CASE WHEN originalPostCanView THEN originalPost.createdAt ELSE null END AS originalPostCreatedAt,
+                CASE WHEN originalPostCanView THEN originalPost.updatedAt ELSE null END AS originalPostUpdatedAt,
+                CASE WHEN originalPostCanView THEN originalPost.privacy ELSE null END AS originalPostPrivacy,
+                CASE WHEN originalPostCanView THEN originalFiles ELSE [] END AS originalPostFiles,
+                CASE WHEN originalPostCanView THEN originalAuthor.id ELSE null END AS originalPostAuthorId,
+                CASE WHEN originalPostCanView THEN originalAuthor.username ELSE null END AS originalPostAuthorUsername,
+                CASE WHEN originalPostCanView THEN originalAuthor.givenName ELSE null END AS originalPostAuthorGivenName,
+                CASE WHEN originalPostCanView THEN originalAuthor.familyName ELSE null END AS originalPostAuthorFamilyName,
+                CASE WHEN originalPostCanView THEN originalProfilePic.id ELSE null END AS originalPostAuthorProfilePictureId,
+                originalPostCanView AS originalPostCanView
+        """)    List<PostProjection> getAllOrderByCreatedAtDesc(long skip, long limit);
+
+    @Query("""
             WITH datetime() AS today
             WITH today,
                  datetime({year: today.year, month: today.month, day: today.day, hour: 0, minute: 0, second: 0}) AS startOfDay,

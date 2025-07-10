@@ -42,6 +42,11 @@ public class PostController {
         return ApiResponse.success(postService.get(id));
     }
 
+    @GetMapping
+    public ApiResponse<List<PostResponse>> getPostsOfUser(Neo4jPageable pageable) {
+        return ApiResponse.success(postService.getAllPosts(pageable));
+    }
+
     @PostMapping("/post")
     public ApiResponse<PostResponse> createPost(@Valid PostRequest postRequest) {
         return ApiResponse.success(postService.post(postRequest));

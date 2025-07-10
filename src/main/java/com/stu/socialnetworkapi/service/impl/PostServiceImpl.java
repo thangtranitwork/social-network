@@ -71,6 +71,13 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    public List<PostResponse> getAllPosts(Neo4jPageable pageable) {
+        return postRepository.getAllOrderByCreatedAtDesc(pageable.getSkip(), pageable.getLimit()).stream()
+                .map(postMapper::toPostResponse)
+                .toList();
+    }
+
+    @Override
     public List<PostResponse> getSuggestedPosts(Neo4jPageable pageable) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
 

@@ -11,7 +11,7 @@ public class PostResponse extends PostCommonInformationResponse {
     int likeCount;
     int shareCount;
     int commentCount;
-    boolean liked;
+    Boolean liked;
     boolean isSharedPost;
     boolean originalPostCanView;
     PostCommonInformationResponse originalPost;

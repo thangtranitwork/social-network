@@ -7,6 +7,7 @@ import com.stu.socialnetworkapi.dto.request.SharePostRequest;
 import com.stu.socialnetworkapi.dto.response.PostResponse;
 import com.stu.socialnetworkapi.entity.Post;
 import com.stu.socialnetworkapi.enums.PostPrivacy;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 import java.util.UUID;
@@ -17,6 +18,9 @@ public interface PostService {
     PostResponse get(UUID postId);
 
     List<PostResponse> getPostsOfUser(String authorUsername, Neo4jPageable pageable);
+
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    List<PostResponse> getAllPosts(Neo4jPageable pageable);
 
     List<PostResponse> getSuggestedPosts(Neo4jPageable pageable);
 

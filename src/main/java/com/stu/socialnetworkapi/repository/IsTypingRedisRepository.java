@@ -33,7 +33,7 @@ public class IsTypingRedisRepository {
 
     public void delete(UUID userId, UUID chatId) {
         redisTemplate.delete(IS_TYPING_KEY + userId);
-        redisTemplate.opsForSet().remove(IS_TYPING_CHAT_KEY + chatId, userId);
+        redisTemplate.opsForSet().remove(IS_TYPING_CHAT_KEY + chatId, userId.toString());
     }
 
     @PostConstruct

@@ -1,6 +1,5 @@
 package com.stu.socialnetworkapi.service.impl;
 
-import com.stu.socialnetworkapi.config.WebSocketChannelPrefix;
 import com.stu.socialnetworkapi.dto.request.Neo4jPageable;
 import com.stu.socialnetworkapi.dto.response.MessageCommand;
 import com.stu.socialnetworkapi.dto.response.UserCommonInformationResponse;
@@ -11,13 +10,13 @@ import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.mapper.UserMapper;
 import com.stu.socialnetworkapi.repository.BlockRepository;
+import com.stu.socialnetworkapi.repository.InChatRedisRepository;
 import com.stu.socialnetworkapi.service.itf.BlockService;
 import com.stu.socialnetworkapi.service.itf.UserService;
 import com.stu.socialnetworkapi.util.UserCounterCalculator;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -32,6 +31,7 @@ public class BlockServiceImpl implements BlockService {
     private final UserService userService;
     private final BlockRepository blockRepository;
     private final UserCounterCalculator userCounterCalculator;
+    private final InChatRedisRepository inChatRedisRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
@@ -71,7 +71,7 @@ public class BlockServiceImpl implements BlockService {
                         .command(MessageCommand.Command.HAS_BEEN_BLOCKED)
                         .id(user.getId())
                         .build();
-                eventPublisher.publishEvent(new CommandEvent(this, command, target.getId()));
+                eventPublisher.publishEvent(new CommandEvent(this, command, inChatRedisRepository.getChatId(user.getId(), target.getId())));
             }
         }
     }
@@ -88,7 +88,7 @@ public class BlockServiceImpl implements BlockService {
                 .command(MessageCommand.Command.HAS_BEEN_UNBLOCKED)
                 .id(currentUserId)
                 .build();
-        eventPublisher.publishEvent(new CommandEvent(this, command, target.getId()));
+        eventPublisher.publishEvent(new CommandEvent(this, command, inChatRedisRepository.getChatId(currentUserId, target.getId())));
     }
 
     @Override

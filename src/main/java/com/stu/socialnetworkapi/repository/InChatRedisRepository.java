@@ -16,10 +16,11 @@ public class InChatRedisRepository {
     private final ChatRepository chatRepository;
     private static final String USER_CHATS_KEY = "user-chat:";
     private static final String SUBSCRIBED_CHAT_KEY = "subscribed-chat:";
+    private static final String CHAT_KEY = "chat:";
 
-    public void save(UUID userId, UUID chatId) {
-        String key = USER_CHATS_KEY + userId;
-        redisTemplate.opsForSet().add(key, chatId.toString());
+    public void save(UUID user1Id, UUID user2Id, UUID chatId) {
+        redisTemplate.opsForValue()
+                .set(getChatKey(user1Id, user2Id), chatId.toString());
     }
 
     public void save(UUID userId, List<UUID> chatIds) {
@@ -59,5 +60,26 @@ public class InChatRedisRepository {
     public void invalidateUserChat(UUID userId) {
         String key = USER_CHATS_KEY + userId;
         redisTemplate.delete(key);
+    }
+
+    public UUID getChatId(UUID user1Id, UUID user2Id) {
+        String chatId = redisTemplate.opsForValue().get(getChatKey(user1Id, user2Id));
+
+        if (chatId == null) {
+            chatId = redisTemplate.opsForValue().get(getChatKey(user2Id, user1Id));
+        }
+        if (chatId != null)
+            return UUID.fromString(chatId);
+
+        UUID dbChatId = chatRepository.getDirectChatIdByMemberIds(user1Id, user2Id).orElse(null);
+        if (dbChatId != null) {
+            save(user1Id, user2Id, dbChatId);
+            return UUID.fromString(dbChatId.toString());
+        }
+        return null;
+    }
+
+    private static String getChatKey(UUID user1Id, UUID user2Id) {
+        return CHAT_KEY + user1Id + "-" + user2Id;
     }
 }

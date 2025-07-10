@@ -153,8 +153,10 @@ public class PostServiceImpl implements PostService {
         }
         post.setContent("deleted");
         post.setDeletedAt(ZonedDateTime.now());
-        fileService.deleteFiles(post.getAttachedFiles());
+        List<File> files = post.getAttachedFiles();
+        post.setAttachedFiles(null);
         postRepository.save(post);
+        fileService.deleteFiles(files);
         if (isAdmin) {
             Notification notification = Notification.builder()
                     .creator(user)

@@ -21,7 +21,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
     private final RedisTemplate<String, Integer> redisTemplate;
 
-    private static final int MAX_REQUESTS = 50;        // Giới hạn
+    private static final int MAX_REQUESTS = 100;        // Giới hạn
     private static final int TIME_WINDOW_SECONDS = 60;  // Mỗi 60 giây
     private static final String RATE_LIMIT_BY_IP = "rate_limit:ip:";
 

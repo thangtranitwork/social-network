@@ -98,13 +98,10 @@ public class IsOnlineRedisRepository {
             // Xoá toàn bộ user_online_counter:* key
             redisTemplate.keys(USER_ONLINE_COUNTER_KEY + "*")
                     .forEach(redisTemplate::delete);
-
-            redisTemplate.keys(LAST_ONLINE_KEY + "*")
-                    .forEach(redisTemplate::delete);
-
             redisTemplate.delete(ONLINE_COUNT_KEY);
         } catch (Exception e) {
             log.error("Error clearing Redis online user state: {}", e.getMessage(), e);
         }
     }
+
 }

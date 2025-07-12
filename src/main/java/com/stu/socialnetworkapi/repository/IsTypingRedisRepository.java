@@ -1,6 +1,5 @@
 package com.stu.socialnetworkapi.repository;
 
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -34,19 +33,5 @@ public class IsTypingRedisRepository {
     public void delete(UUID userId, UUID chatId) {
         redisTemplate.delete(IS_TYPING_KEY + userId);
         redisTemplate.opsForSet().remove(IS_TYPING_CHAT_KEY + chatId, userId.toString());
-    }
-
-    @PostConstruct
-    public void init() {
-        try {
-            redisTemplate.keys(IS_TYPING_KEY + "*")
-                    .forEach(redisTemplate::delete);
-
-            redisTemplate.keys(IS_TYPING_CHAT_KEY + "*")
-                    .forEach(redisTemplate::delete);
-
-        } catch (Exception e) {
-            log.error("Error clearing Redis typing user state: {}", e.getMessage(), e);
-        }
     }
 }

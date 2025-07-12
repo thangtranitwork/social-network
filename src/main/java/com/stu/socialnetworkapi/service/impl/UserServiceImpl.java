@@ -160,6 +160,7 @@ public class UserServiceImpl implements UserService {
 
     private void validateGetUserProfile(UUID currentUserId, UUID targetUserId) {
         if (currentUserId != null && !currentUserId.equals(targetUserId)) {
+            if (jwtUtil.isAdmin()) return; // Admin can view everyone
             BlockStatus blockStatus = blockRepository.getBlockStatus(currentUserId, targetUserId);
             switch (blockStatus) {
                 case BLOCKED:

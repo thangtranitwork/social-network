@@ -1,7 +1,6 @@
 package com.stu.socialnetworkapi.service.impl;
 
 import com.stu.socialnetworkapi.config.WebSocketChannelPrefix;
-import com.stu.socialnetworkapi.dto.response.MessageCommand;
 import com.stu.socialnetworkapi.dto.response.MessageResponse;
 import com.stu.socialnetworkapi.entity.Call;
 import com.stu.socialnetworkapi.entity.Chat;
@@ -18,7 +17,6 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.ZonedDateTime;
-import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -111,12 +109,5 @@ public class CallServiceImpl implements CallService {
         if (!isReceiver || !inChat) {
             throw new ApiException(ErrorCode.UNAUTHORIZED);
         }
-    }
-
-    private void sendMessageCommand(MessageCommand command, Set<String> targetUsernames) {
-        targetUsernames.forEach(targetUsername -> {
-            User user = userService.getUser(targetUsername);
-            messagingTemplate.convertAndSend(WebSocketChannelPrefix.MESSAGE_CHANNEL_PREFIX + "/" + user.getId(), command);
-        });
     }
 }

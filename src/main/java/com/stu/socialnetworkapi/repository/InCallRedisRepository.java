@@ -25,8 +25,8 @@ public class InCallRedisRepository {
     private static final String CALL_UUID_KEY = "call_uuid:";
 
     public void call(String caller, String callee, String callId, UUID callerId, UUID calleeId) {
-        redisTemplate.opsForValue().set(INCALL_KEY + caller, callee);
-        redisTemplate.opsForValue().set(INCALL_KEY + callee, caller);
+        redisTemplate.opsForValue().set(INCALL_KEY + caller, callId);
+        redisTemplate.opsForValue().set(INCALL_KEY + callee, callId);
         redisTemplate.opsForSet().add(CALL_KEY + callId, callee, caller);
         redisTemplate.opsForSet().add(CALL_UUID_KEY + calleeId, callerId.toString(), calleeId.toString());
     }

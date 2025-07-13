@@ -4,6 +4,7 @@ import com.stu.socialnetworkapi.dto.request.StringeeCallEvent;
 import com.stu.socialnetworkapi.dto.response.AuthenticationResponse;
 import com.stu.socialnetworkapi.dto.response.StringeeResponse;
 import com.stu.socialnetworkapi.dto.response.StringeeUser;
+import com.stu.socialnetworkapi.entity.File;
 import com.stu.socialnetworkapi.entity.User;
 import com.stu.socialnetworkapi.enums.BlockStatus;
 import com.stu.socialnetworkapi.repository.InCallRedisRepository;
@@ -78,6 +79,8 @@ public class StringeeServiceImpl implements StringeeService {
         connectAction.setMaxConnectTime(maxConnectTime);
         connectAction.setPeerToPeerCall(peerToPeerCall);
 
+        connectAction.setCustomData(File.getPath(caller.getFullName()));
+
         sccoList.add(connectAction);
         return sccoList;
     }
@@ -109,7 +112,7 @@ public class StringeeServiceImpl implements StringeeService {
                     break;
                 case "ended":
                     System.out.println("🔚 Cuộc gọi kết thúc - Call ID: " + callId);
-                    callService.end(callId, callerUsername, calleeUsername);
+                    callService.end(callId);
                     break;
                 case "failed":
                     System.out.println("❌ Cuộc gọi thất bại - Call ID: " + callId);

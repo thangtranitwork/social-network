@@ -172,7 +172,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
         inChatRedisRepository.subscribe(userUUID, chatUUID);
         MessageCommand command = MessageCommand.builder()
                 .command(MessageCommand.Command.READING)
-                .id(userUUID)
+                .id(String.valueOf(userUUID))
                 .build();
         eventPublisher.publishEvent(new CommandEvent(this, command, chatUUID));
         return isMember;

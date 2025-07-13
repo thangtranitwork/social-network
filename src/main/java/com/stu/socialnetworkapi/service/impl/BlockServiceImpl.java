@@ -69,7 +69,7 @@ public class BlockServiceImpl implements BlockService {
                 userCounterCalculator.calculateUserCounter(user.getId());
                 MessageCommand command = MessageCommand.builder()
                         .command(MessageCommand.Command.HAS_BEEN_BLOCKED)
-                        .id(user.getId())
+                        .id(String.valueOf(user.getId()))
                         .build();
                 eventPublisher.publishEvent(new CommandEvent(this, command, inChatRedisRepository.getChatId(user.getId(), target.getId())));
             }
@@ -86,7 +86,7 @@ public class BlockServiceImpl implements BlockService {
         userCounterCalculator.calculateUserCounter(currentUserId);
         MessageCommand command = MessageCommand.builder()
                 .command(MessageCommand.Command.HAS_BEEN_UNBLOCKED)
-                .id(currentUserId)
+                .id(String.valueOf(currentUserId))
                 .build();
         eventPublisher.publishEvent(new CommandEvent(this, command, inChatRedisRepository.getChatId(currentUserId, target.getId())));
     }

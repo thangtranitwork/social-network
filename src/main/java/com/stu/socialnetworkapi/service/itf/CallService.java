@@ -1,5 +1,7 @@
 package com.stu.socialnetworkapi.service.itf;
 
+import java.util.UUID;
+
 public interface CallService {
     void init(String callee);
 
@@ -9,5 +11,7 @@ public interface CallService {
 
     void reject(String callId);
 
-    void end(String callId, String callerUsername, String calleeUsername);
+    void end(String callId);
+
+    void end(UUID userId);
 }

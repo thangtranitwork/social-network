@@ -130,7 +130,7 @@ public class MessageServiceImpl implements MessageService {
         message.setUpdateAt(ZonedDateTime.now());
         messageRepository.save(message);
         MessageCommand command = MessageCommand.builder()
-                .id(message.getId())
+                .id(String.valueOf(message.getId()))
                 .command(MessageCommand.Command.EDIT)
                 .message(content)
                 .build();
@@ -155,7 +155,7 @@ public class MessageServiceImpl implements MessageService {
             fileService.deleteFile(message.getAttachedFile());
         }
         MessageCommand command = MessageCommand.builder()
-                .id(messageId)
+                .id(String.valueOf(messageId))
                 .command(MessageCommand.Command.DELETE)
                 .build();
         sendMessageCommand(chat.getId(), command);
@@ -165,7 +165,7 @@ public class MessageServiceImpl implements MessageService {
     public void typing(UserTypingRequest request) {
         MessageCommand command = MessageCommand.builder()
                 .command(request.isTyping() ? MessageCommand.Command.TYPING : MessageCommand.Command.STOP_TYPING)
-                .id(request.userId())
+                .id(String.valueOf(request.userId()))
                 .build();
         if (request.isTyping())
             isTypingRedisRepository.save(request.userId(), request.chatId());

@@ -4,13 +4,11 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
 import lombok.Data;
 
-import java.util.UUID;
-
 @Data
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class MessageCommand {
-    UUID id;
+    String id;
     Command command;
     String message;
 
@@ -21,7 +19,8 @@ public class MessageCommand {
         STOP_TYPING,
         HAS_BEEN_BLOCKED,
         HAS_BEEN_UNBLOCKED,
-        READING
+        READING,
+        END_CALL
     }
 }
 

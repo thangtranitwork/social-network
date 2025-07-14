@@ -16,7 +16,6 @@ import java.util.UUID;
 @Repository
 @RequiredArgsConstructor
 public class InCallRedisRepository {
-    private final UserRepository userRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final RedisTemplate<String, String> redisTemplate;
     private static final String INCALL_KEY = "incall:";
@@ -28,7 +27,7 @@ public class InCallRedisRepository {
         redisTemplate.opsForValue().set(INCALL_KEY + caller, callId);
         redisTemplate.opsForValue().set(INCALL_KEY + callee, callId);
         redisTemplate.opsForSet().add(CALL_KEY + callId, callee, caller);
-        redisTemplate.opsForSet().add(CALL_UUID_KEY + calleeId, callerId.toString(), calleeId.toString());
+        redisTemplate.opsForSet().add(CALL_UUID_KEY + callId, callerId.toString(), calleeId.toString());
     }
 
     public void prepare(String caller, String callee) {
@@ -44,32 +43,43 @@ public class InCallRedisRepository {
     }
 
     public Set<String> getMembers(String callId) {
-        return redisTemplate.opsForSet().members(INCALL_KEY + callId);
+        return redisTemplate.opsForSet().members(CALL_KEY + callId);
     }
 
     public void endCall(String callId) {
-        Set<String> members = getMembers(callId);
-        Set<String> memberUuids = redisTemplate.opsForSet().members(CALL_KEY + callId);
+        try {
+            String[] userArray = getMembers(callId).toArray(new String[0]);
+            String[] userIdArray = redisTemplate.opsForSet().members(CALL_UUID_KEY + callId).toArray(new String[0]);
 
-        String user1 = members.iterator().next();
-        String user2 = members.iterator().next();
-        String userId1 = memberUuids.iterator().next();
-        String userId2 = memberUuids.iterator().next();
+            if (userArray.length < 2 || userIdArray.length < 2) {
+                log.warn("Not enough members to end call");
+                return;
+            }
 
-        redisTemplate.delete(INCALL_KEY + user1);
-        redisTemplate.delete(INCALL_KEY + user2);
-        redisTemplate.delete(PREPARED_FOR_CALL_KEY + user1 + ":" + user2);
-        redisTemplate.delete(PREPARED_FOR_CALL_KEY + user2 + ":" + user1);
-        redisTemplate.delete(CALL_KEY + callId);
-        redisTemplate.delete(CALL_UUID_KEY + callId);
-        MessageCommand command = MessageCommand.builder()
-                .id(callId)
-                .command(MessageCommand.Command.END_CALL)
-                .build();
+            String user1 = userArray[0];
+            String user2 = userArray[1];
+            String userId1 = userIdArray[0];
+            String userId2 = userIdArray[1];
 
-        messagingTemplate.convertAndSend(WebSocketChannelPrefix.MESSAGE_CHANNEL_PREFIX + "/" + userId1, command);
-        messagingTemplate.convertAndSend(WebSocketChannelPrefix.MESSAGE_CHANNEL_PREFIX + "/" + userId2, command);
+            log.debug("userId1: {}", userId1);
+            log.debug("userId2: {}", userId2);
 
+            redisTemplate.delete(INCALL_KEY + user1);
+            redisTemplate.delete(INCALL_KEY + user2);
+            redisTemplate.delete(PREPARED_FOR_CALL_KEY + user1 + ":" + user2);
+            redisTemplate.delete(PREPARED_FOR_CALL_KEY + user2 + ":" + user1);
+            redisTemplate.delete(CALL_KEY + callId);
+            redisTemplate.delete(CALL_UUID_KEY + callId);
+            MessageCommand command = MessageCommand.builder()
+                    .id(callId)
+                    .command(MessageCommand.Command.END_CALL)
+                    .build();
+
+            messagingTemplate.convertAndSend(WebSocketChannelPrefix.MESSAGE_CHANNEL_PREFIX + "/" + userId1, command);
+            messagingTemplate.convertAndSend(WebSocketChannelPrefix.MESSAGE_CHANNEL_PREFIX + "/" + userId2, command);
+        } catch (Exception e) {
+            log.error("Error in endCall", e);
+        }
     }
 
     public void endCallByMemberUsername(String username) {

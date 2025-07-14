@@ -8,6 +8,7 @@ import com.stu.socialnetworkapi.entity.User;
 import com.stu.socialnetworkapi.enums.MessageType;
 import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
+import com.stu.socialnetworkapi.exception.WebSocketException;
 import com.stu.socialnetworkapi.mapper.CallMapper;
 import com.stu.socialnetworkapi.repository.CallRepository;
 import com.stu.socialnetworkapi.repository.InCallRedisRepository;
@@ -43,29 +44,33 @@ public class CallServiceImpl implements CallService {
 
     @Override
     public void start(String callId, String callerUsername, String calleeUsername, boolean isVideoCall) {
-        boolean anyInCall = inCallRedisRepository.isInCall(callerUsername) || inCallRedisRepository.isInCall(calleeUsername);
-        boolean preparedForCall = inCallRedisRepository.isPreparedForCall(callerUsername, calleeUsername);
-        if (anyInCall || !preparedForCall) {
-            throw new ApiException(ErrorCode.NOT_READY_FOR_CALL);
+        try {
+            boolean anyInCall = inCallRedisRepository.isInCall(callerUsername) || inCallRedisRepository.isInCall(calleeUsername);
+            boolean preparedForCall = inCallRedisRepository.isPreparedForCall(callerUsername, calleeUsername);
+            if (anyInCall || !preparedForCall) {
+                throw new WebSocketException(ErrorCode.NOT_READY_FOR_CALL);
+            }
+
+            User caller = userService.getUser(callerUsername);
+            User callee = userService.getUser(calleeUsername);
+
+            Chat chat = chatService.getOrCreateDirectChat(caller, callee);
+            Call call = Call.builder()
+                    .chat(chat)
+                    .sender(caller)
+                    .callId(callId)
+                    .type(MessageType.CALL)
+                    .isVideoCall(isVideoCall)
+                    .callAt(ZonedDateTime.now())
+                    .build();
+            callRepository.save(call);
+            MessageResponse response = callMapper.toMessageResponse(call);
+            messagingTemplate.convertAndSend(WebSocketChannelPrefix.CHAT_CHANNEL_PREFIX + chat.getId(), response);
+            messagingTemplate.convertAndSend(WebSocketChannelPrefix.MESSAGE_CHANNEL_PREFIX + callee.getId(), response);
+            inCallRedisRepository.call(callerUsername, calleeUsername, callId, caller.getId(), callee.getId());
+        } catch (ApiException e) {
+            throw new WebSocketException(e.getErrorCode());
         }
-
-        User caller = userService.getUser(callerUsername);
-        User callee = userService.getUser(calleeUsername);
-
-        Chat chat = chatService.getOrCreateDirectChat(caller, callee);
-        Call call = Call.builder()
-                .chat(chat)
-                .sender(caller)
-                .callId(callId)
-                .type(MessageType.CALL)
-                .isVideoCall(isVideoCall)
-                .callAt(ZonedDateTime.now())
-                .build();
-        callRepository.save(call);
-        MessageResponse response = callMapper.toMessageResponse(call);
-        messagingTemplate.convertAndSend(WebSocketChannelPrefix.CHAT_CHANNEL_PREFIX + chat.getId(), response);
-        messagingTemplate.convertAndSend(WebSocketChannelPrefix.MESSAGE_CHANNEL_PREFIX + callee.getId(), response);
-        inCallRedisRepository.call(callerUsername, calleeUsername, callId, caller.getId(), caller.getId());
     }
 
     @Override
@@ -89,7 +94,7 @@ public class CallServiceImpl implements CallService {
     @Override
     public void end(String callId) {
         Call endCall = callRepository.findByCallId(callId)
-                .orElseThrow(() -> new ApiException(ErrorCode.MESSAGE_NOT_FOUND));
+                .orElseThrow(() -> new WebSocketException(ErrorCode.CALL_NOT_FOUND));
         endCall.setEndAt(ZonedDateTime.now());
         callRepository.save(endCall);
         inCallRedisRepository.endCall(callId);

@@ -79,7 +79,7 @@ public class StringeeServiceImpl implements StringeeService {
         connectAction.setMaxConnectTime(maxConnectTime);
         connectAction.setPeerToPeerCall(peerToPeerCall);
 
-        connectAction.setCustomData(File.getPath(caller.getFullName()));
+        connectAction.setCustomData(File.getPath(caller.getProfilePicture()));
 
         sccoList.add(connectAction);
         return sccoList;

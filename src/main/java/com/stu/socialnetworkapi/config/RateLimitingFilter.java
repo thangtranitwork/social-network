@@ -31,7 +31,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return request.getRequestURI().startsWith("/v1/files") || request.getRequestURI().startsWith("/ws");
+        return request.getRequestURI().startsWith("/v1/files")
+                || request.getRequestURI().startsWith("/ws")
+                || request.getRequestURI().startsWith("/v1/stringee");
     }
 
     @Override
@@ -40,6 +42,11 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
 
         String clientIp = getClientIP(request);
+        if (clientIp != null && clientIp.startsWith("0:0:0:0:0:0:0:")) {
+            // Skip localhost
+            filterChain.doFilter(request, response);
+            return;
+        }
         String redisKey = RATE_LIMIT_BY_IP + clientIp;
 
         Integer currentCount = redisTemplate.opsForValue().get(redisKey);

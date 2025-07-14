@@ -68,7 +68,7 @@ public interface ChatRepository extends Neo4jRepository<Chat, UUID> {
                 latestMessage.id AS latestMessageId,
                 latestMessage.content AS latestMessageContent,
                 latestMessageFile.id AS latestMessageFileId,
-                latestMessage.sentAt AS latestMessageSentAt,
+                COALESCE(latestMessage.sentAt, chat.createdAt) AS latestMessageSentAt,
                 latestMessage.deleteAt IS NOT NULL AS latestMessageDeleted,
                 latestMessage.type AS latestMessageType,
                 latestMessage.callId AS latestMessageCallId,
@@ -96,7 +96,7 @@ public interface ChatRepository extends Neo4jRepository<Chat, UUID> {
                     ELSE 'NORMAL'
                 END AS blockStatus
             
-            ORDER BY latestMessage.sentAt DESC
+            ORDER BY latestMessageSentAt DESC
             """)
     List<ChatProjection> getChatListOrderByLatestMessageSentTimeDesc(UUID userId);
 

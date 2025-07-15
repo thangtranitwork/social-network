@@ -8,7 +8,7 @@ import com.stu.socialnetworkapi.entity.Notification;
 import com.stu.socialnetworkapi.entity.User;
 import com.stu.socialnetworkapi.enums.NotificationAction;
 import com.stu.socialnetworkapi.mapper.NotificationMapper;
-import com.stu.socialnetworkapi.repository.NotificationRepository;
+import com.stu.socialnetworkapi.repository.neo4j.NotificationRepository;
 import com.stu.socialnetworkapi.service.itf.NotificationService;
 import com.stu.socialnetworkapi.service.itf.UserService;
 import lombok.RequiredArgsConstructor;

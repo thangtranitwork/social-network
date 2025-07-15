@@ -10,8 +10,8 @@ import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.exception.WebSocketException;
 import com.stu.socialnetworkapi.mapper.CallMapper;
-import com.stu.socialnetworkapi.repository.CallRepository;
-import com.stu.socialnetworkapi.repository.InCallRedisRepository;
+import com.stu.socialnetworkapi.repository.neo4j.CallRepository;
+import com.stu.socialnetworkapi.repository.redis.InCallRepository;
 import com.stu.socialnetworkapi.service.itf.CallService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -28,25 +28,25 @@ public class CallServiceImpl implements CallService {
     private final ChatServiceImpl chatService;
     private final CallRepository callRepository;
     private final SimpMessagingTemplate messagingTemplate;
-    private final InCallRedisRepository inCallRedisRepository;
+    private final InCallRepository inCallRepository;
 
     @Override
     public void init(String callee) {
         String caller = userService.getCurrentUsernameRequiredAuthentication();
-        if (inCallRedisRepository.isInCall(caller)) {
+        if (inCallRepository.isInCall(caller)) {
             throw new ApiException(ErrorCode.ALREADY_IN_CALL);
         }
-        if (inCallRedisRepository.isInCall(callee)) {
+        if (inCallRepository.isInCall(callee)) {
             throw new ApiException(ErrorCode.TARGET_ALREADY_IN_IN_CALL);
         }
-        inCallRedisRepository.prepare(caller, callee);
+        inCallRepository.prepare(caller, callee);
     }
 
     @Override
     public void start(String callId, String callerUsername, String calleeUsername, boolean isVideoCall) {
         try {
-            boolean anyInCall = inCallRedisRepository.isInCall(callerUsername) || inCallRedisRepository.isInCall(calleeUsername);
-            boolean preparedForCall = inCallRedisRepository.isPreparedForCall(callerUsername, calleeUsername);
+            boolean anyInCall = inCallRepository.isInCall(callerUsername) || inCallRepository.isInCall(calleeUsername);
+            boolean preparedForCall = inCallRepository.isPreparedForCall(callerUsername, calleeUsername);
             if (anyInCall || !preparedForCall) {
                 throw new WebSocketException(ErrorCode.NOT_READY_FOR_CALL);
             }
@@ -67,7 +67,7 @@ public class CallServiceImpl implements CallService {
             MessageResponse response = callMapper.toMessageResponse(call);
             messagingTemplate.convertAndSend(WebSocketChannelPrefix.CHAT_CHANNEL_PREFIX + chat.getId(), response);
             messagingTemplate.convertAndSend(WebSocketChannelPrefix.MESSAGE_CHANNEL_PREFIX + callee.getId(), response);
-            inCallRedisRepository.call(callerUsername, calleeUsername, callId, caller.getId(), callee.getId());
+            inCallRepository.call(callerUsername, calleeUsername, callId, caller.getId(), callee.getId());
         } catch (ApiException e) {
             throw new WebSocketException(e.getErrorCode());
         }
@@ -97,13 +97,13 @@ public class CallServiceImpl implements CallService {
                 .orElseThrow(() -> new WebSocketException(ErrorCode.CALL_NOT_FOUND));
         endCall.setEndAt(ZonedDateTime.now());
         callRepository.save(endCall);
-        inCallRedisRepository.endCall(callId);
+        inCallRepository.endCall(callId);
     }
 
     @Override
     public void end(UUID userId) {
         User user = userService.getUser(userId);
-        inCallRedisRepository.endCallByMemberUsername(user.getUsername());
+        inCallRepository.endCallByMemberUsername(user.getUsername());
     }
 
     private void validateIsReceiver(Call call) {

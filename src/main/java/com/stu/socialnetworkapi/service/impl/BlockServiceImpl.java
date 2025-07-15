@@ -9,8 +9,8 @@ import com.stu.socialnetworkapi.event.CommandEvent;
 import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.mapper.UserMapper;
-import com.stu.socialnetworkapi.repository.BlockRepository;
-import com.stu.socialnetworkapi.repository.InChatRedisRepository;
+import com.stu.socialnetworkapi.repository.neo4j.BlockRepository;
+import com.stu.socialnetworkapi.repository.redis.InChatRepository;
 import com.stu.socialnetworkapi.service.itf.BlockService;
 import com.stu.socialnetworkapi.service.itf.UserService;
 import com.stu.socialnetworkapi.util.UserCounterCalculator;
@@ -31,7 +31,7 @@ public class BlockServiceImpl implements BlockService {
     private final UserService userService;
     private final BlockRepository blockRepository;
     private final UserCounterCalculator userCounterCalculator;
-    private final InChatRedisRepository inChatRedisRepository;
+    private final InChatRepository inChatRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
@@ -71,7 +71,7 @@ public class BlockServiceImpl implements BlockService {
                         .command(MessageCommand.Command.HAS_BEEN_BLOCKED)
                         .id(String.valueOf(user.getId()))
                         .build();
-                eventPublisher.publishEvent(new CommandEvent(this, command, inChatRedisRepository.getChatId(user.getId(), target.getId())));
+                eventPublisher.publishEvent(new CommandEvent(this, command, inChatRepository.getChatId(user.getId(), target.getId())));
             }
         }
     }
@@ -88,7 +88,7 @@ public class BlockServiceImpl implements BlockService {
                 .command(MessageCommand.Command.HAS_BEEN_UNBLOCKED)
                 .id(String.valueOf(currentUserId))
                 .build();
-        eventPublisher.publishEvent(new CommandEvent(this, command, inChatRedisRepository.getChatId(currentUserId, target.getId())));
+        eventPublisher.publishEvent(new CommandEvent(this, command, inChatRepository.getChatId(currentUserId, target.getId())));
     }
 
     @Override

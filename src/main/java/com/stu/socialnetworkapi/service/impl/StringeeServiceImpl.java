@@ -7,7 +7,7 @@ import com.stu.socialnetworkapi.dto.response.StringeeUser;
 import com.stu.socialnetworkapi.entity.File;
 import com.stu.socialnetworkapi.entity.User;
 import com.stu.socialnetworkapi.enums.BlockStatus;
-import com.stu.socialnetworkapi.repository.InCallRedisRepository;
+import com.stu.socialnetworkapi.repository.redis.InCallRepository;
 import com.stu.socialnetworkapi.service.itf.BlockService;
 import com.stu.socialnetworkapi.service.itf.CallService;
 import com.stu.socialnetworkapi.service.itf.StringeeService;
@@ -31,7 +31,7 @@ public class StringeeServiceImpl implements StringeeService {
     private final UserService userService;
     private final BlockService blockService;
     private final StringeeTokenUtil stringeeTokenUtil;
-    private final InCallRedisRepository inCallRedisRepository;
+    private final InCallRepository inCallRepository;
 
     private static final Map<String, String> success = Map.of("status", "success");
 
@@ -45,7 +45,7 @@ public class StringeeServiceImpl implements StringeeService {
         List<StringeeResponse> sccoList = new ArrayList<>();
         User caller = userService.getUser(fromid);
         User callee = userService.getUser(toid);
-        if (inCallRedisRepository.isInCall(toid) || !BlockStatus.NORMAL.equals(blockService.getBlockStatus(caller.getId(), callee.getId()))) {
+        if (inCallRepository.isInCall(toid) || !BlockStatus.NORMAL.equals(blockService.getBlockStatus(caller.getId(), callee.getId()))) {
             return sccoList;
         }
 

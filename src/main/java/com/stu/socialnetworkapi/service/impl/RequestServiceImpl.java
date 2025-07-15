@@ -9,7 +9,7 @@ import com.stu.socialnetworkapi.enums.ObjectType;
 import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.mapper.UserMapper;
-import com.stu.socialnetworkapi.repository.RequestRepository;
+import com.stu.socialnetworkapi.repository.neo4j.RequestRepository;
 import com.stu.socialnetworkapi.service.itf.ChatService;
 import com.stu.socialnetworkapi.service.itf.NotificationService;
 import com.stu.socialnetworkapi.service.itf.RequestService;

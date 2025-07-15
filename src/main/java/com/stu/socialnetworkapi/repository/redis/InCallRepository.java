@@ -1,4 +1,4 @@
-package com.stu.socialnetworkapi.repository;
+package com.stu.socialnetworkapi.repository.redis;
 
 import com.stu.socialnetworkapi.config.WebSocketChannelPrefix;
 import com.stu.socialnetworkapi.dto.response.MessageCommand;
@@ -15,7 +15,7 @@ import java.util.UUID;
 @Slf4j
 @Repository
 @RequiredArgsConstructor
-public class InCallRedisRepository {
+public class InCallRepository {
     private final SimpMessagingTemplate messagingTemplate;
     private final RedisTemplate<String, String> redisTemplate;
     private static final String INCALL_KEY = "incall:";

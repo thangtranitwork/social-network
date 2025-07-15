@@ -1,7 +1,7 @@
 package com.stu.socialnetworkapi.util;
 
 import com.stu.socialnetworkapi.entity.Notification;
-import com.stu.socialnetworkapi.repository.NotificationRepository;
+import com.stu.socialnetworkapi.repository.neo4j.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;

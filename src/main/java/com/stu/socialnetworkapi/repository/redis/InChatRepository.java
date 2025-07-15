@@ -1,5 +1,6 @@
-package com.stu.socialnetworkapi.repository;
+package com.stu.socialnetworkapi.repository.redis;
 
+import com.stu.socialnetworkapi.repository.neo4j.ChatRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -11,7 +12,7 @@ import java.util.UUID;
 @Slf4j
 @Repository
 @RequiredArgsConstructor
-public class InChatRedisRepository {
+public class InChatRepository {
     private final RedisTemplate<String, String> redisTemplate;
     private final ChatRepository chatRepository;
     private static final String USER_CHATS_KEY = "user-chat:";

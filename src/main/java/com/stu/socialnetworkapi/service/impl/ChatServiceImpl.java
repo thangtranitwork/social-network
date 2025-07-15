@@ -6,9 +6,9 @@ import com.stu.socialnetworkapi.entity.User;
 import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.mapper.ChatMapper;
-import com.stu.socialnetworkapi.repository.ChatRepository;
-import com.stu.socialnetworkapi.repository.InChatRedisRepository;
-import com.stu.socialnetworkapi.repository.TargetChatIdRedisRepository;
+import com.stu.socialnetworkapi.repository.neo4j.ChatRepository;
+import com.stu.socialnetworkapi.repository.redis.InChatRepository;
+import com.stu.socialnetworkapi.repository.redis.TargetChatIdRepository;
 import com.stu.socialnetworkapi.service.itf.BlockService;
 import com.stu.socialnetworkapi.service.itf.ChatService;
 import com.stu.socialnetworkapi.service.itf.UserService;
@@ -28,8 +28,8 @@ public class ChatServiceImpl implements ChatService {
     private final UserService userService;
     private final BlockService blockService;
     private final ChatRepository chatRepository;
-    private final InChatRedisRepository inChatRedisRepository;
-    private final TargetChatIdRedisRepository targetChatIdRedisRepository;
+    private final InChatRepository inChatRepository;
+    private final TargetChatIdRepository targetChatIdRepository;
 
     @Override
     public void createChatIfNotExist(User user1, User user2) {
@@ -38,8 +38,8 @@ public class ChatServiceImpl implements ChatService {
             chatRepository.save(Chat.builder()
                     .members(List.of(user1, user2))
                     .build());
-            inChatRedisRepository.invalidateUserChat(user1.getId());
-            inChatRedisRepository.invalidateUserChat(user2.getId());
+            inChatRepository.invalidateUserChat(user1.getId());
+            inChatRepository.invalidateUserChat(user2.getId());
         }
     }
 
@@ -66,10 +66,10 @@ public class ChatServiceImpl implements ChatService {
                 .members(members)
                 .build();
         chatRepository.save(newChat);
-        inChatRedisRepository.invalidateUserChat(sender.getId());
-        inChatRedisRepository.invalidateUserChat(receiver.getId());
-        targetChatIdRedisRepository.invalidate(sender.getId());
-        targetChatIdRedisRepository.invalidate(receiver.getId());
+        inChatRepository.invalidateUserChat(sender.getId());
+        inChatRepository.invalidateUserChat(receiver.getId());
+        targetChatIdRepository.invalidate(sender.getId());
+        targetChatIdRepository.invalidate(receiver.getId());
         return newChat;
     }
 
@@ -91,6 +91,6 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     public boolean isMemberOfChat(UUID userId, UUID chatId) {
-        return inChatRedisRepository.isInChat(userId, chatId);
+        return inChatRepository.isInChat(userId, chatId);
     }
 }

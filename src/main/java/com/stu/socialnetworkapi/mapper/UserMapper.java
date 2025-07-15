@@ -7,17 +7,17 @@ import com.stu.socialnetworkapi.dto.response.UserCommonInformationResponse;
 import com.stu.socialnetworkapi.dto.response.UserProfileResponse;
 import com.stu.socialnetworkapi.entity.File;
 import com.stu.socialnetworkapi.entity.User;
-import com.stu.socialnetworkapi.repository.IsOnlineRedisRepository;
+import com.stu.socialnetworkapi.repository.redis.IsOnlineRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
 public class UserMapper {
-    private final IsOnlineRedisRepository isOnlineRedisRepository;
+    private final IsOnlineRepository isOnlineRepository;
 
     public UserProfileResponse toUserProfileResponse(final UserProfileProjection projection) {
-        OnlineResponse online = isOnlineRedisRepository.getLastSeen(projection.userId());
+        OnlineResponse online = isOnlineRepository.getLastSeen(projection.userId());
         return UserProfileResponse.builder()
                 .id(projection.userId())
                 .givenName(projection.givenName())
@@ -41,7 +41,7 @@ public class UserMapper {
         if (user == null) {
             return null;
         }
-        OnlineResponse online = isOnlineRedisRepository.getLastSeen(user.getId());
+        OnlineResponse online = isOnlineRepository.getLastSeen(user.getId());
         String profilePictureUrl = user.getProfilePicture() != null
                 ? File.getPath(user.getProfilePicture().getId())
                 : null;
@@ -57,7 +57,7 @@ public class UserMapper {
     }
 
     public UserCommonInformationResponse toUserCommonInformationResponse(final UserProjection projection) {
-        OnlineResponse online = isOnlineRedisRepository.getLastSeen(projection.userId());
+        OnlineResponse online = isOnlineRepository.getLastSeen(projection.userId());
         return UserCommonInformationResponse.builder()
                 .id(projection.userId())
                 .givenName(projection.givenName())
@@ -72,7 +72,7 @@ public class UserMapper {
     }
 
     public UserCommonInformationResponse toUserCommonInformationResponse(final NotificationProjection projection) {
-        OnlineResponse online = isOnlineRedisRepository.getLastSeen(projection.userId());
+        OnlineResponse online = isOnlineRepository.getLastSeen(projection.userId());
         return UserCommonInformationResponse.builder()
                 .id(projection.userId())
                 .givenName(projection.givenName())
@@ -88,7 +88,7 @@ public class UserMapper {
         if (projection == null || projection.latestMessageSenderId() == null) {
             return null;
         }
-        OnlineResponse online = isOnlineRedisRepository.getLastSeen(projection.latestMessageSenderId());
+        OnlineResponse online = isOnlineRepository.getLastSeen(projection.latestMessageSenderId());
         return UserCommonInformationResponse.builder()
                 .id(projection.latestMessageSenderId())
                 .givenName(projection.latestMessageSenderGivenName())
@@ -104,7 +104,7 @@ public class UserMapper {
         if (projection == null || projection.senderId() == null) {
             return null;
         }
-        OnlineResponse online = isOnlineRedisRepository.getLastSeen(projection.senderId());
+        OnlineResponse online = isOnlineRepository.getLastSeen(projection.senderId());
         return UserCommonInformationResponse.builder()
                 .id(projection.senderId())
                 .givenName(projection.senderGivenName())
@@ -120,7 +120,7 @@ public class UserMapper {
         if (projection == null || projection.targetId() == null) {
             return null;
         }
-        OnlineResponse online = isOnlineRedisRepository.getLastSeen(projection.targetId());
+        OnlineResponse online = isOnlineRepository.getLastSeen(projection.targetId());
         return UserCommonInformationResponse.builder()
                 .id(projection.targetId())
                 .givenName(projection.targetGivenName())
@@ -134,7 +134,7 @@ public class UserMapper {
     }
 
     public UserCommonInformationResponse toPostAuthorCommonInformationResponse(final PostProjection projection) {
-        OnlineResponse online = isOnlineRedisRepository.getLastSeen(projection.authorId());
+        OnlineResponse online = isOnlineRepository.getLastSeen(projection.authorId());
         return UserCommonInformationResponse.builder()
                 .id(projection.authorId())
                 .givenName(projection.authorGivenName())
@@ -148,7 +148,7 @@ public class UserMapper {
     }
 
     public UserCommonInformationResponse toCommentAuthorCommonInformationResponse(final CommentProjection projection) {
-        OnlineResponse online = isOnlineRedisRepository.getLastSeen(projection.authorId());
+        OnlineResponse online = isOnlineRepository.getLastSeen(projection.authorId());
         return UserCommonInformationResponse.builder()
                 .id(projection.authorId())
                 .givenName(projection.authorGivenName())
@@ -161,7 +161,7 @@ public class UserMapper {
     }
 
     public UserCommonInformationResponse toOriginalPostAuthorCommonInformationResponse(final PostProjection projection) {
-        OnlineResponse online = isOnlineRedisRepository.getLastSeen(projection.originalPostId());
+        OnlineResponse online = isOnlineRepository.getLastSeen(projection.originalPostId());
         return UserCommonInformationResponse.builder()
                 .id(projection.originalPostAuthorId())
                 .givenName(projection.originalPostAuthorGivenName())
@@ -174,7 +174,7 @@ public class UserMapper {
     }
 
     public AdminUserViewResponse toAdminUserViewResponse(final AdminUserViewProjection projection) {
-        OnlineResponse online = isOnlineRedisRepository.getLastSeen(projection.userId());
+        OnlineResponse online = isOnlineRepository.getLastSeen(projection.userId());
         return AdminUserViewResponse.builder()
                 .id(projection.userId())
                 .givenName(projection.givenName())

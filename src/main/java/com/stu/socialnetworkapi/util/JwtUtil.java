@@ -3,7 +3,7 @@ package com.stu.socialnetworkapi.util;
 import com.stu.socialnetworkapi.enums.AccountRole;
 import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
-import com.stu.socialnetworkapi.repository.TokenRedisRepository;
+import com.stu.socialnetworkapi.repository.redis.TokenRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -36,7 +36,7 @@ public class JwtUtil {
     @Value("${jwt.access-token.key}")
     private String secret;
 
-    private final TokenRedisRepository tokenRedisRepository;
+    private final TokenRepository tokenRepository;
     private static final String SCOPE_CLAIM_KEY = "scope";
     private static final String USERNAME_CLAIM_KEY = "username";
     private static final String REFRESH_TOKEN_COOKIE_NAME = "token";
@@ -68,7 +68,7 @@ public class JwtUtil {
         String refreshToken = UUID.randomUUID().toString();
         Duration ttl = Duration.ofDays(refreshTokenValidityDays);
 
-        tokenRedisRepository.save(userId, refreshToken, role.name(), username, ttl);
+        tokenRepository.save(userId, refreshToken, role.name(), username, ttl);
 
         Cookie cookie = new Cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken);
         cookie.setHttpOnly(true);
@@ -83,7 +83,7 @@ public class JwtUtil {
      * Xóa refresh token trong Redis + cookie.
      */
     public void revokeRefreshToken(String token, HttpServletResponse response) {
-        tokenRedisRepository.delete(token);
+        tokenRepository.delete(token);
         Cookie cookie = new Cookie(REFRESH_TOKEN_COOKIE_NAME, null);
         cookie.setHttpOnly(true);
         cookie.setPath("/");
@@ -99,14 +99,14 @@ public class JwtUtil {
             throw new ApiException(ErrorCode.REFRESH_TOKEN_REQUIRED);
         }
 
-        UUID userId = tokenRedisRepository.findUserIdByToken(refreshToken)
+        UUID userId = tokenRepository.findUserIdByToken(refreshToken)
                 .map(UUID::fromString)
                 .orElseThrow(() -> new ApiException(ErrorCode.INVALID_OR_EXPIRED_REFRESH_TOKEN));
 
         AccountRole role = AccountRole.valueOf(
-                tokenRedisRepository.getRole(userId)
+                tokenRepository.getRole(userId)
                         .orElseThrow(() -> new ApiException(ErrorCode.INVALID_OR_EXPIRED_REFRESH_TOKEN)));
-        String username = tokenRedisRepository.getUsername(userId)
+        String username = tokenRepository.getUsername(userId)
                 .orElseThrow(() -> new ApiException(ErrorCode.INVALID_OR_EXPIRED_REFRESH_TOKEN));
         return generateAccessToken(userId, username, role);
     }

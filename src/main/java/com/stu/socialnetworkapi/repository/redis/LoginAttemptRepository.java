@@ -1,4 +1,4 @@
-package com.stu.socialnetworkapi.repository;
+package com.stu.socialnetworkapi.repository.redis;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;

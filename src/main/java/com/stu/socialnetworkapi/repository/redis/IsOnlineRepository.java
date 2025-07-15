@@ -1,4 +1,4 @@
-package com.stu.socialnetworkapi.repository;
+package com.stu.socialnetworkapi.repository.redis;
 
 import com.stu.socialnetworkapi.dto.response.OnlineResponse;
 import com.stu.socialnetworkapi.event.UserOnlineEvent;
@@ -16,7 +16,7 @@ import java.util.UUID;
 @Slf4j
 @Repository
 @RequiredArgsConstructor
-public class IsOnlineRedisRepository {
+public class IsOnlineRepository {
     private final ApplicationEventPublisher eventPublisher;
     private final RedisTemplate<String, String> redisTemplate;
     private static final String ONLINE_COUNT_KEY = "online_user_count";

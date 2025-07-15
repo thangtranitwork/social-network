@@ -6,9 +6,9 @@ import com.stu.socialnetworkapi.event.CommandEvent;
 import com.stu.socialnetworkapi.event.TypingEvent;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.exception.WebSocketException;
-import com.stu.socialnetworkapi.repository.InChatRedisRepository;
-import com.stu.socialnetworkapi.repository.IsOnlineRedisRepository;
-import com.stu.socialnetworkapi.repository.IsTypingRedisRepository;
+import com.stu.socialnetworkapi.repository.redis.InChatRepository;
+import com.stu.socialnetworkapi.repository.redis.IsOnlineRepository;
+import com.stu.socialnetworkapi.repository.redis.IsTypingRepository;
 import com.stu.socialnetworkapi.service.itf.ChatService;
 import com.stu.socialnetworkapi.util.JwtUtil;
 import lombok.NonNull;
@@ -31,9 +31,9 @@ import java.util.*;
 public class WebSocketAuthInterceptor implements ChannelInterceptor {
     private final JwtUtil jwtUtil;
     private final ChatService chatService;
-    private final IsOnlineRedisRepository isOnlineRedisRepository;
-    private final IsTypingRedisRepository isTypingRedisRepository;
-    private final InChatRedisRepository inChatRedisRepository;
+    private final IsOnlineRepository isOnlineRepository;
+    private final IsTypingRepository isTypingRepository;
+    private final InChatRepository inChatRepository;
     private final ApplicationEventPublisher eventPublisher;
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
@@ -66,7 +66,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             attributes.put(ROLE_KEY, role);
             accessor.setUser(userId::toString);
             log.debug("User {} connecting", userId);
-            isOnlineRedisRepository.onUserConnected(UUID.fromString(userId.toString()));
+            isOnlineRepository.onUserConnected(UUID.fromString(userId.toString()));
         }
         //Xác thực khi SUBSCRIBE
         else {
@@ -80,7 +80,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
                 attributes.put("subscription:" + subcriptionId, destination);
             } else if (StompCommand.DISCONNECT.equals(command)) {
                 UUID userId = UUID.fromString(attributes.get(USER_ID_KEY).toString());
-                isOnlineRedisRepository.onUserDisconnected(userId);
+                isOnlineRepository.onUserDisconnected(userId);
             } else if (StompCommand.UNSUBSCRIBE.equals(command)) {
                 UUID userId = UUID.fromString(attributes.get(USER_ID_KEY).toString());
                 String subscriptionId = accessor.getSubscriptionId();
@@ -93,7 +93,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
                 } else if (destination != null && destination.startsWith(WebSocketChannelPrefix.CHAT_CHANNEL_PREFIX)) {
                     String chatId = destination.substring(WebSocketChannelPrefix.CHAT_CHANNEL_PREFIX.length() + 1);
                     UUID chatUUID = UUID.fromString(chatId);
-                    inChatRedisRepository.unsubscribe(userId, chatUUID);
+                    inChatRepository.unsubscribe(userId, chatUUID);
                 }
 
                 log.debug("User {} unsubscribed from channel {} (subscriptionId={})", userId, destination, subscriptionId);
@@ -161,7 +161,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
         UUID userUUID = UUID.fromString(userId);
         boolean isMember = chatService.isMemberOfChat(userUUID, chatUUID);
         if (isMember) {
-            Set<String> typingUsers = isTypingRedisRepository.getTypingUsersInChat(chatUUID);
+            Set<String> typingUsers = isTypingRepository.getTypingUsersInChat(chatUUID);
             if (!typingUsers.isEmpty()) {
                 for (String typingUser : typingUsers) {
                     UserTypingRequest request = new UserTypingRequest(chatUUID, UUID.fromString(typingUser), true);
@@ -169,7 +169,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
                 }
             }
         }
-        inChatRedisRepository.subscribe(userUUID, chatUUID);
+        inChatRepository.subscribe(userUUID, chatUUID);
         MessageCommand command = MessageCommand.builder()
                 .command(MessageCommand.Command.READING)
                 .id(String.valueOf(userUUID))

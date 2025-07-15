@@ -1,6 +1,6 @@
 package com.stu.socialnetworkapi.util;
 
-import com.stu.socialnetworkapi.repository.UserRepository;
+import com.stu.socialnetworkapi.repository.neo4j.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;

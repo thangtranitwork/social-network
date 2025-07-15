@@ -1,4 +1,4 @@
-package com.stu.socialnetworkapi.repository;
+package com.stu.socialnetworkapi.repository.neo4j;
 
 import com.stu.socialnetworkapi.dto.projection.CountDataProjection;
 import com.stu.socialnetworkapi.dto.projection.PostProjection;

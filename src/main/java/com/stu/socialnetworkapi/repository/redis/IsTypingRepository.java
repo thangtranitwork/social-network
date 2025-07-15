@@ -1,4 +1,4 @@
-package com.stu.socialnetworkapi.repository;
+package com.stu.socialnetworkapi.repository.redis;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,7 +11,7 @@ import java.util.UUID;
 @Slf4j
 @Repository
 @RequiredArgsConstructor
-public class IsTypingRedisRepository {
+public class IsTypingRepository {
     private final RedisTemplate<String, String> redisTemplate;
     private static final String IS_TYPING_KEY = "is_typing:";
     private static final String IS_TYPING_CHAT_KEY = "is_typing_chat:";

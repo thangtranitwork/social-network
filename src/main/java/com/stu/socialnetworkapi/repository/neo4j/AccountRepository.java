@@ -1,4 +1,4 @@
-package com.stu.socialnetworkapi.repository;
+package com.stu.socialnetworkapi.repository.neo4j;
 
 import com.stu.socialnetworkapi.entity.Account;
 import com.stu.socialnetworkapi.enums.AccountRole;

@@ -1,4 +1,4 @@
-package com.stu.socialnetworkapi.repository;
+package com.stu.socialnetworkapi.repository.neo4j;
 
 import com.stu.socialnetworkapi.dto.projection.MessageProjection;
 import com.stu.socialnetworkapi.entity.Message;

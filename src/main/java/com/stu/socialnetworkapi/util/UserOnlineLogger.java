@@ -1,7 +1,7 @@
 package com.stu.socialnetworkapi.util;
 
 import com.stu.socialnetworkapi.entity.sqlite.OnlineUserLog;
-import com.stu.socialnetworkapi.repository.IsOnlineRedisRepository;
+import com.stu.socialnetworkapi.repository.redis.IsOnlineRepository;
 import com.stu.socialnetworkapi.repository.sqlite.OnlineUserLogRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,13 +16,13 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 @Slf4j
 public class UserOnlineLogger {
-    private final IsOnlineRedisRepository isOnlineRedisRepository;
+    private final IsOnlineRepository isOnlineRepository;
     private final OnlineUserLogRepository onlineUserLogRepository;
 
     @Scheduled(cron = "0 * * * * *")
     @Transactional("sqliteTransactionManager")
     public void logUserOnline() {
-        int count = isOnlineRedisRepository.countOnlineUsers();
+        int count = isOnlineRepository.countOnlineUsers();
         LocalDateTime now = LocalDateTime.now();
         onlineUserLogRepository.save(OnlineUserLog.builder()
                 .timestamp(now)

@@ -12,9 +12,9 @@ import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.exception.WebSocketException;
 import com.stu.socialnetworkapi.mapper.MessageMapper;
-import com.stu.socialnetworkapi.repository.InChatRedisRepository;
-import com.stu.socialnetworkapi.repository.IsTypingRedisRepository;
-import com.stu.socialnetworkapi.repository.MessageRepository;
+import com.stu.socialnetworkapi.repository.redis.InChatRepository;
+import com.stu.socialnetworkapi.repository.redis.IsTypingRepository;
+import com.stu.socialnetworkapi.repository.neo4j.MessageRepository;
 import com.stu.socialnetworkapi.service.itf.ChatService;
 import com.stu.socialnetworkapi.service.itf.FileService;
 import com.stu.socialnetworkapi.service.itf.MessageService;
@@ -38,8 +38,8 @@ public class MessageServiceImpl implements MessageService {
     private final MessageMapper messageMapper;
     private final MessageRepository messageRepository;
     private final SimpMessagingTemplate messagingTemplate;
-    private final InChatRedisRepository inChatRedisRepository;
-    private final IsTypingRedisRepository isTypingRedisRepository;
+    private final InChatRepository inChatRepository;
+    private final IsTypingRepository isTypingRepository;
 
     @Override
     public MessageResponse sendMessage(TextMessageRequest request) {
@@ -55,7 +55,7 @@ public class MessageServiceImpl implements MessageService {
                 .chat(chat)
                 .content(content)
                 .sender(sender)
-                .isRead(inChatRedisRepository.isSubscribed(receiver.getId(), chat.getId()))
+                .isRead(inChatRepository.isSubscribed(receiver.getId(), chat.getId()))
                 .build();
 
         messageRepository.save(message);
@@ -78,7 +78,7 @@ public class MessageServiceImpl implements MessageService {
                 .chat(chat)
                 .content(content)
                 .sender(sender)
-                .isRead(inChatRedisRepository.isSubscribed(receiver.getId(), chat.getId()))
+                .isRead(inChatRepository.isSubscribed(receiver.getId(), chat.getId()))
                 .build();
 
         messageRepository.save(message);
@@ -97,7 +97,7 @@ public class MessageServiceImpl implements MessageService {
                 .chat(chat)
                 .sender(sender)
                 .attachedFile(file)
-                .isRead(inChatRedisRepository.isSubscribed(receiver.getId(), chat.getId()))
+                .isRead(inChatRepository.isSubscribed(receiver.getId(), chat.getId()))
                 .build();
         messageRepository.save(message);
         MessageResponse response = messageMapper.toMessageResponse(message);
@@ -108,7 +108,7 @@ public class MessageServiceImpl implements MessageService {
     @Override
     public List<MessageResponse> getHistory(UUID chatId, Neo4jPageable pageable) {
         UUID userId = userService.getCurrentUserIdRequiredAuthentication();
-        if (!inChatRedisRepository.isInChat(userId, chatId)) {
+        if (!inChatRepository.isInChat(userId, chatId)) {
             throw new ApiException(ErrorCode.UNAUTHORIZED);
         }
         List<MessageResponse> messages = messageRepository.findAllByChatIdOrderBySentAtDesc(chatId, pageable.getSkip(), pageable.getLimit()).stream()
@@ -168,8 +168,8 @@ public class MessageServiceImpl implements MessageService {
                 .id(String.valueOf(request.userId()))
                 .build();
         if (request.isTyping())
-            isTypingRedisRepository.save(request.userId(), request.chatId());
-        else isTypingRedisRepository.delete(request.userId(), request.chatId());
+            isTypingRepository.save(request.userId(), request.chatId());
+        else isTypingRepository.delete(request.userId(), request.chatId());
         sendMessageCommand(request.chatId(), command);
     }
 

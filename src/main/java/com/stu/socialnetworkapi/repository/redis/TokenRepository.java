@@ -1,4 +1,4 @@
-package com.stu.socialnetworkapi.repository;
+package com.stu.socialnetworkapi.repository.redis;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -10,7 +10,7 @@ import java.util.UUID;
 
 @Repository
 @RequiredArgsConstructor
-public class TokenRedisRepository {
+public class TokenRepository {
     private final RedisTemplate<String, String> redisTemplate;
     private static final String REFRESH_TOKEN_KEY = "refresh_token:";
     private static final String REFRESH_TOKEN_REVERSE_KEY = "refresh_token_reverse:";

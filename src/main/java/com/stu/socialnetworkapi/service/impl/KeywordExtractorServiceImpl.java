@@ -3,7 +3,7 @@ package com.stu.socialnetworkapi.service.impl;
 import com.stu.socialnetworkapi.entity.Keyword;
 import com.stu.socialnetworkapi.entity.Post;
 import com.stu.socialnetworkapi.enums.Language;
-import com.stu.socialnetworkapi.repository.PostRepository;
+import com.stu.socialnetworkapi.repository.neo4j.PostRepository;
 import com.stu.socialnetworkapi.service.itf.KeywordExtractorService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;

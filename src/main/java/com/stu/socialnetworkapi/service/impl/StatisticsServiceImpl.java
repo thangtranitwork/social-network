@@ -5,9 +5,9 @@ import com.stu.socialnetworkapi.dto.response.PostStatisticsResponse;
 import com.stu.socialnetworkapi.dto.response.UserStatisticsResponse;
 import com.stu.socialnetworkapi.entity.Post;
 import com.stu.socialnetworkapi.mapper.PostMapper;
-import com.stu.socialnetworkapi.repository.IsOnlineRedisRepository;
-import com.stu.socialnetworkapi.repository.PostRepository;
-import com.stu.socialnetworkapi.repository.UserRepository;
+import com.stu.socialnetworkapi.repository.redis.IsOnlineRepository;
+import com.stu.socialnetworkapi.repository.neo4j.PostRepository;
+import com.stu.socialnetworkapi.repository.neo4j.UserRepository;
 import com.stu.socialnetworkapi.service.itf.StatisticsService;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +24,7 @@ public class StatisticsServiceImpl implements StatisticsService {
     private final PostMapper postMapper;
     private final UserRepository userRepository;
     private final PostRepository postRepository;
-    private final IsOnlineRedisRepository isOnlineRedisRepository;
+    private final IsOnlineRepository isOnlineRepository;
     private static final Integer DEFAULT_VALUE = null;
 
     @Override
@@ -41,7 +41,7 @@ public class StatisticsServiceImpl implements StatisticsService {
         int todayDayOfMonth = now.getDayOfMonth();
         int thisYear = now.getYear();
         UserStatisticsResponse response = userRepository.getCommonUserStatistics(startOfWeek);
-        response.setOnlineUsersNow(isOnlineRedisRepository.countOnlineUsers());
+        response.setOnlineUsersNow(isOnlineRepository.countOnlineUsers());
 
         Map<DayOfWeek, Integer> thisWeekStats = new EnumMap<>(DayOfWeek.class);
         Arrays.stream(DayOfWeek.values())

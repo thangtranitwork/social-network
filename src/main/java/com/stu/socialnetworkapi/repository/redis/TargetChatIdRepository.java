@@ -1,5 +1,6 @@
-package com.stu.socialnetworkapi.repository;
+package com.stu.socialnetworkapi.repository.redis;
 
+import com.stu.socialnetworkapi.repository.neo4j.ChatRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
@@ -10,13 +11,13 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-public class TargetChatIdRedisRepository {
+public class TargetChatIdRepository {
 
     private final ChatRepository chatRepository;
     private final RedisTemplate<String, List<String>> redisTemplate;
 
     // Lombok @RequiredArgsConstructor không xử lý @Qualifier
-    public TargetChatIdRedisRepository(
+    public TargetChatIdRepository(
             @Qualifier("uuidListRedisTemplate")
             RedisTemplate<String, List<String>> redisTemplate,
             ChatRepository chatRepository) {

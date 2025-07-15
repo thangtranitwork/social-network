@@ -16,7 +16,7 @@ import com.stu.socialnetworkapi.repository.KeywordRepository;
 import com.stu.socialnetworkapi.repository.PostRepository;
 import com.stu.socialnetworkapi.service.itf.*;
 import com.stu.socialnetworkapi.util.JwtUtil;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;

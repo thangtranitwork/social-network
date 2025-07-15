@@ -33,7 +33,8 @@ services:
 #      dockerfile: Dockerfile
 #    container_name: api
 #    volumes:
-#      - ./upload:/app/upload
+#      - ./upload:/app/
+#      - ./data:/app/data
 #    env_file:
 #      - .env
 #    ports:

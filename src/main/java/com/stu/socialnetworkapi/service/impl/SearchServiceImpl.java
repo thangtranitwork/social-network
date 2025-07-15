@@ -8,7 +8,7 @@ import com.stu.socialnetworkapi.repository.PostRepository;
 import com.stu.socialnetworkapi.repository.UserRepository;
 import com.stu.socialnetworkapi.service.itf.SearchService;
 import com.stu.socialnetworkapi.service.itf.UserService;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

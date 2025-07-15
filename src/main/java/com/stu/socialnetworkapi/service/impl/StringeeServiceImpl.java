@@ -14,7 +14,7 @@ import com.stu.socialnetworkapi.service.itf.StringeeService;
 import com.stu.socialnetworkapi.service.itf.UserService;
 import com.stu.socialnetworkapi.util.JwtUtil;
 import com.stu.socialnetworkapi.util.StringeeTokenUtil;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

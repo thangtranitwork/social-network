@@ -12,9 +12,9 @@ import com.stu.socialnetworkapi.repository.TargetChatIdRedisRepository;
 import com.stu.socialnetworkapi.service.itf.BlockService;
 import com.stu.socialnetworkapi.service.itf.ChatService;
 import com.stu.socialnetworkapi.service.itf.UserService;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;

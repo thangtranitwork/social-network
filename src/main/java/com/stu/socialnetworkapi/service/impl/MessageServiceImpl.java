@@ -19,7 +19,7 @@ import com.stu.socialnetworkapi.service.itf.ChatService;
 import com.stu.socialnetworkapi.service.itf.FileService;
 import com.stu.socialnetworkapi.service.itf.MessageService;
 import com.stu.socialnetworkapi.service.itf.UserService;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;

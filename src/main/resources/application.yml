@@ -17,6 +17,13 @@ spring:
       timeout: 60000
       repositories:
         enabled: true
+  datasource:
+    url: jdbc:sqlite:./data/online_users.db
+  jpa:
+    database-platform: org.hibernate.community.dialect.SQLiteDialect
+    show-sql: true
+    hibernate:
+      ddl-auto: update
   mail:
     port: 587
     username: ${MAIL}

@@ -5,6 +5,7 @@ import com.stu.socialnetworkapi.dto.response.AdminUserViewResponse;
 import com.stu.socialnetworkapi.dto.response.ApiResponse;
 import com.stu.socialnetworkapi.dto.response.UserProfileResponse;
 import com.stu.socialnetworkapi.entity.User;
+import com.stu.socialnetworkapi.entity.sqlite.OnlineUserLog;
 import com.stu.socialnetworkapi.service.itf.UserService;
 import com.stu.socialnetworkapi.validation.annotation.Age;
 import com.stu.socialnetworkapi.validation.annotation.ImageFile;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -35,6 +37,21 @@ public class UserController {
     @GetMapping
     public ApiResponse<List<AdminUserViewResponse>> getAll(Neo4jPageable pageable) {
         return ApiResponse.success(userService.getUsers(pageable));
+    }
+
+    @GetMapping("/online-logs")
+    public ApiResponse<List<OnlineUserLog>> getOnlineLogs(
+            @RequestParam(name = "from", required = false) LocalDateTime from,
+            @RequestParam(name = "to", required = false) LocalDateTime to
+    ) {
+        if (from == null && to == null) {
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime startOfDay = now.withHour(0).withMinute(0).withSecond(0);
+            LocalDateTime endOfDay = now.withHour(23).withMinute(59).withSecond(59);
+            from = startOfDay;
+            to = endOfDay;
+        }
+        return ApiResponse.success(userService.getOnlineUserLogs(from, to));
     }
 
     @PatchMapping("/update-bio")

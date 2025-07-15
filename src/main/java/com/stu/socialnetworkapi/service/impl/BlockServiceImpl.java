@@ -14,7 +14,7 @@ import com.stu.socialnetworkapi.repository.InChatRedisRepository;
 import com.stu.socialnetworkapi.service.itf.BlockService;
 import com.stu.socialnetworkapi.service.itf.UserService;
 import com.stu.socialnetworkapi.util.UserCounterCalculator;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;

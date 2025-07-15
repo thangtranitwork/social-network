@@ -15,7 +15,7 @@ import com.stu.socialnetworkapi.service.itf.NotificationService;
 import com.stu.socialnetworkapi.service.itf.RequestService;
 import com.stu.socialnetworkapi.service.itf.UserService;
 import com.stu.socialnetworkapi.util.UserCounterCalculator;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

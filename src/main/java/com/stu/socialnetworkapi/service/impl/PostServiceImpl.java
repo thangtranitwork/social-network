@@ -22,9 +22,10 @@ import com.stu.socialnetworkapi.repository.KeywordRepository;
 import com.stu.socialnetworkapi.repository.PostRepository;
 import com.stu.socialnetworkapi.service.itf.*;
 import com.stu.socialnetworkapi.util.JwtUtil;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -71,6 +72,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     public List<PostResponse> getAllPosts(Neo4jPageable pageable) {
         return postRepository.getAllOrderByCreatedAtDesc(pageable.getSkip(), pageable.getLimit()).stream()
                 .map(postMapper::toPostResponse)
@@ -137,6 +139,7 @@ public class PostServiceImpl implements PostService {
         originalPost.setShareCount(originalPost.getShareCount() + 1);
         postRepository.saveAll(List.of(post, originalPost));
         keywordRepository.interact(originalPost.getId(), currentUserId, 5);
+        eventPublisher.publishEvent(new PostCreatedEvent(post.getId()));
         sendNotificationWhenSharePost(author, originalPost, post);
 
         return postMapper.toPostResponse(post);

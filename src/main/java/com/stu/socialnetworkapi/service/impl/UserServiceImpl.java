@@ -6,12 +6,14 @@ import com.stu.socialnetworkapi.dto.response.AdminUserViewResponse;
 import com.stu.socialnetworkapi.dto.response.UserProfileResponse;
 import com.stu.socialnetworkapi.entity.File;
 import com.stu.socialnetworkapi.entity.User;
+import com.stu.socialnetworkapi.entity.sqlite.OnlineUserLog;
 import com.stu.socialnetworkapi.enums.BlockStatus;
 import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.mapper.UserMapper;
 import com.stu.socialnetworkapi.repository.BlockRepository;
 import com.stu.socialnetworkapi.repository.UserRepository;
+import com.stu.socialnetworkapi.repository.sqlite.OnlineUserLogRepository;
 import com.stu.socialnetworkapi.service.itf.FileService;
 import com.stu.socialnetworkapi.service.itf.UserService;
 import com.stu.socialnetworkapi.util.JwtUtil;
@@ -21,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -32,6 +35,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final FileService fileService;
     private final BlockRepository blockRepository;
+    private final OnlineUserLogRepository onlineUserLogRepository;
 
     @Override
     public User getCurrentUserRequiredAuthentication() {
@@ -156,6 +160,12 @@ public class UserServiceImpl implements UserService {
                 .stream()
                 .map(userMapper::toAdminUserViewResponse)
                 .toList();
+    }
+
+    @Override
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    public List<OnlineUserLog> getOnlineUserLogs(LocalDateTime from, LocalDateTime to) {
+        return onlineUserLogRepository.findByTimestampBetween(from, to);
     }
 
     private void validateGetUserProfile(UUID currentUserId, UUID targetUserId) {

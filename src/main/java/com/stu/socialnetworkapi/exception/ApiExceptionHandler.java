@@ -10,9 +10,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
@@ -28,6 +30,18 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ApiExceptionHandler {
     private final SimpMessagingTemplate messagingTemplate;
+
+    @ExceptionHandler(AsyncRequestNotUsableException.class)
+    public ResponseEntity<Void> handleAsyncRequestNotUsable(AsyncRequestNotUsableException ex) {
+        log.warn("⚠️ Client aborted request: {}", ex.getMessage());
+        return ResponseEntity.noContent().build();
+    }
+
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAuthorizationDeniedException(AuthorizationDeniedException ex) {
+        return ApiResponse.error(ErrorCode.UNAUTHORIZED)
+                .toResponseEntity(ErrorCode.UNAUTHORIZED.getHttpStatus());
+    }
 
     @MessageExceptionHandler(WebSocketException.class)
     public void handleWebSocketException(WebSocketException exception, Principal principal) {

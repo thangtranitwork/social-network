@@ -44,6 +44,8 @@ public class FriendServiceImpl implements FriendService {
         friendRepository.deleteByUuid(uuid);
         userRepository.recalculateUserCounters(currentUserId);
         userRepository.recalculateUserCounters(target.getId());
+        relationshipCacheRepository.invalidateFriend(currentUserId.toString());
+        relationshipCacheRepository.invalidateFriend(target.getUsername());
     }
 
     @Override

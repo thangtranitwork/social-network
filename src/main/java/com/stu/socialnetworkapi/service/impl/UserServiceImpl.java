@@ -159,7 +159,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void validateUserExists(String username) {
-        if (userRepository.existsByUsername(username))
+        if (!userRepository.existsByUsername(username))
             throw new ApiException(ErrorCode.USER_NOT_FOUND);
     }
 

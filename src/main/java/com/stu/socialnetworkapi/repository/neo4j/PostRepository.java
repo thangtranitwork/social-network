@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Repository
@@ -322,7 +323,7 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
                          COLLECT(DISTINCT file.id) AS files,
                          COLLECT(DISTINCT originalFile.id) AS originalFiles,
                          COALESCE(SUM(inter.score), 0) AS keywordScore,
-
+            
                          // Kiểm tra xem bài viết gốc có thể xem được không
                          CASE
                              WHEN originalPost IS NULL THEN true
@@ -496,163 +497,160 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
     List<PostProjection> getFriendPostsOnly(UUID userId, long skip, long limit);
 
     @Query("""
-            // Match user trước
-            MATCH (u:User {id: $userId})
-            MATCH (author:User)-[:POSTED]->(post:Post)
-            WHERE post.deletedAt IS NULL
-              AND NOT (u)-[:BLOCK]-(author)
-
-            // Kiểm tra privacy với friendship riêng biệt
-            OPTIONAL MATCH (u)-[friendship:FRIEND]->(author)
-            WHERE (
-                post.privacy = 'PUBLIC' OR
-                (post.privacy = 'FRIEND' AND friendship IS NOT NULL)
-            )
-
-            // Lấy thông tin bài viết gốc nếu là shared post
-            OPTIONAL MATCH (post)-[:SHARED]->(originalPost:Post)
-            OPTIONAL MATCH (originalPost)<-[:POSTED]-(originalAuthor:User)
-            OPTIONAL MATCH (originalAuthor)-[:HAS_PROFILE_PICTURE]->(originalProfilePic:File)
-            OPTIONAL MATCH (originalPost)-[:ATTACH_FILES]->(originalFile:File)
-
-            // Kiểm tra block relationship giữa viewer và original author
-            OPTIONAL MATCH (u)-[block:BLOCK]-(originalAuthor)
-
-            // Kiểm tra friendship với original author
-            OPTIONAL MATCH (u)-[originalFriendship:FRIEND]->(originalAuthor)
-
-            // Lấy thông tin post hiện tại
-            OPTIONAL MATCH (post)-[:ATTACH_FILES]->(file:File)
-            OPTIONAL MATCH (author)-[:HAS_PROFILE_PICTURE]->(profilePic:File)
-            OPTIONAL MATCH (u)-[liked:LIKED]->(post)
-
-            WITH post, author, u, liked, profilePic, friendship,
-                 COLLECT(DISTINCT file.id) AS files,
-                 originalPost, originalAuthor, originalProfilePic,
-                 COLLECT(DISTINCT originalFile.id) AS originalFiles,
-                 block, originalFriendship,
-
-                 // Kiểm tra xem bài viết gốc có thể xem được không
-                 CASE
-                   WHEN originalPost IS NULL THEN true
-                   WHEN originalPost.deletedAt IS NOT NULL THEN false
-                   WHEN block IS NOT NULL THEN false
-                   WHEN originalPost.privacy = 'PUBLIC' THEN true
-                   WHEN originalPost.privacy = 'FRIEND' AND
-                        ($userId = originalAuthor.id OR originalFriendship IS NOT NULL) THEN true
-                   WHEN originalPost.privacy = 'PRIVATE' AND $userId = originalAuthor.id THEN true
-                   ELSE false
-                 END AS originalPostCanView
-
-            ORDER BY post.createdAt DESC
-            SKIP $skip
-            LIMIT $limit
-
-            WITH post, author, u, liked, profilePic, friendship, files,
-                 originalPost, originalAuthor, originalProfilePic, originalFiles, originalPostCanView
-
-            MERGE (u)-[loaded:LOADED]->(post)
-            ON CREATE SET loaded.times = 1
-            ON MATCH SET loaded.times = loaded.times + 1
-
-            RETURN
-                post.id AS id,
-                post.content AS content,
-                post.createdAt AS createdAt,
-                post.updatedAt AS updatedAt,
-                post.privacy AS privacy,
-                files AS files,
-                post.likeCount AS likeCount,
-                post.shareCount AS shareCount,
-                post.commentCount AS commentCount,
-                liked IS NOT NULL AS liked,
-                author.id AS authorId,
-                author.username AS authorUsername,
-                author.givenName AS authorGivenName,
-                author.familyName AS authorFamilyName,
-                profilePic.id AS authorProfilePictureId,
-                friendship IS NOT NULL AS isFriend,
-                originalPost IS NOT NULL AS isSharedPost,
-
-                // Original post information
-                CASE WHEN originalPostCanView THEN originalPost.id ELSE null END AS originalPostId,
-                CASE WHEN originalPostCanView THEN originalPost.content ELSE null END AS originalPostContent,
-                CASE WHEN originalPostCanView THEN originalPost.createdAt ELSE null END AS originalPostCreatedAt,
-                CASE WHEN originalPostCanView THEN originalPost.updatedAt ELSE null END AS originalPostUpdatedAt,
-                CASE WHEN originalPostCanView THEN originalPost.privacy ELSE null END AS originalPostPrivacy,
-                CASE WHEN originalPostCanView THEN originalFiles ELSE [] END AS originalPostFiles,
-                CASE WHEN originalPostCanView THEN originalAuthor.id ELSE null END AS originalPostAuthorId,
-                CASE WHEN originalPostCanView THEN originalAuthor.username ELSE null END AS originalPostAuthorUsername,
-                CASE WHEN originalPostCanView THEN originalAuthor.givenName ELSE null END AS originalPostAuthorGivenName,
-                CASE WHEN originalPostCanView THEN originalAuthor.familyName ELSE null END AS originalPostAuthorFamilyName,
-                CASE WHEN originalPostCanView THEN originalProfilePic.id ELSE null END AS originalPostAuthorProfilePictureId,
-                originalPostCanView AS originalPostCanView
-        """)
+                // Match user trước
+                MATCH (u:User {id: $userId})
+                MATCH (author:User)-[:POSTED]->(post:Post)
+                WHERE post.deletedAt IS NULL
+                  AND NOT (u)-[:BLOCK]-(author)
+            
+                // Kiểm tra privacy với friendship riêng biệt
+                OPTIONAL MATCH (u)-[friendship:FRIEND]->(author)
+                WHERE (
+                    post.privacy = 'PUBLIC' OR
+                    (post.privacy = 'FRIEND' AND friendship IS NOT NULL)
+                )
+            
+                // Lấy thông tin bài viết gốc nếu là shared post
+                OPTIONAL MATCH (post)-[:SHARED]->(originalPost:Post)
+                OPTIONAL MATCH (originalPost)<-[:POSTED]-(originalAuthor:User)
+                OPTIONAL MATCH (originalAuthor)-[:HAS_PROFILE_PICTURE]->(originalProfilePic:File)
+                OPTIONAL MATCH (originalPost)-[:ATTACH_FILES]->(originalFile:File)
+            
+                // Kiểm tra block relationship giữa viewer và original author
+                OPTIONAL MATCH (u)-[block:BLOCK]-(originalAuthor)
+            
+                // Kiểm tra friendship với original author
+                OPTIONAL MATCH (u)-[originalFriendship:FRIEND]->(originalAuthor)
+            
+                // Lấy thông tin post hiện tại
+                OPTIONAL MATCH (post)-[:ATTACH_FILES]->(file:File)
+                OPTIONAL MATCH (author)-[:HAS_PROFILE_PICTURE]->(profilePic:File)
+                OPTIONAL MATCH (u)-[liked:LIKED]->(post)
+            
+                WITH post, author, u, liked, profilePic, friendship,
+                     COLLECT(DISTINCT file.id) AS files,
+                     originalPost, originalAuthor, originalProfilePic,
+                     COLLECT(DISTINCT originalFile.id) AS originalFiles,
+                     block, originalFriendship,
+            
+                     // Kiểm tra xem bài viết gốc có thể xem được không
+                     CASE
+                       WHEN originalPost IS NULL THEN true
+                       WHEN originalPost.deletedAt IS NOT NULL THEN false
+                       WHEN block IS NOT NULL THEN false
+                       WHEN originalPost.privacy = 'PUBLIC' THEN true
+                       WHEN originalPost.privacy = 'FRIEND' AND
+                            ($userId = originalAuthor.id OR originalFriendship IS NOT NULL) THEN true
+                       WHEN originalPost.privacy = 'PRIVATE' AND $userId = originalAuthor.id THEN true
+                       ELSE false
+                     END AS originalPostCanView
+            
+                ORDER BY post.createdAt DESC
+                SKIP $skip
+                LIMIT $limit
+            
+                WITH post, author, u, liked, profilePic, friendship, files,
+                     originalPost, originalAuthor, originalProfilePic, originalFiles, originalPostCanView
+            
+                RETURN
+                    post.id AS id,
+                    post.content AS content,
+                    post.createdAt AS createdAt,
+                    post.updatedAt AS updatedAt,
+                    post.privacy AS privacy,
+                    files AS files,
+                    post.likeCount AS likeCount,
+                    post.shareCount AS shareCount,
+                    post.commentCount AS commentCount,
+                    liked IS NOT NULL AS liked,
+                    author.id AS authorId,
+                    author.username AS authorUsername,
+                    author.givenName AS authorGivenName,
+                    author.familyName AS authorFamilyName,
+                    profilePic.id AS authorProfilePictureId,
+                    friendship IS NOT NULL AS isFriend,
+                    originalPost IS NOT NULL AS isSharedPost,
+            
+                    // Original post information
+                    CASE WHEN originalPostCanView THEN originalPost.id ELSE null END AS originalPostId,
+                    CASE WHEN originalPostCanView THEN originalPost.content ELSE null END AS originalPostContent,
+                    CASE WHEN originalPostCanView THEN originalPost.createdAt ELSE null END AS originalPostCreatedAt,
+                    CASE WHEN originalPostCanView THEN originalPost.updatedAt ELSE null END AS originalPostUpdatedAt,
+                    CASE WHEN originalPostCanView THEN originalPost.privacy ELSE null END AS originalPostPrivacy,
+                    CASE WHEN originalPostCanView THEN originalFiles ELSE [] END AS originalPostFiles,
+                    CASE WHEN originalPostCanView THEN originalAuthor.id ELSE null END AS originalPostAuthorId,
+                    CASE WHEN originalPostCanView THEN originalAuthor.username ELSE null END AS originalPostAuthorUsername,
+                    CASE WHEN originalPostCanView THEN originalAuthor.givenName ELSE null END AS originalPostAuthorGivenName,
+                    CASE WHEN originalPostCanView THEN originalAuthor.familyName ELSE null END AS originalPostAuthorFamilyName,
+                    CASE WHEN originalPostCanView THEN originalProfilePic.id ELSE null END AS originalPostAuthorProfilePictureId,
+                    originalPostCanView AS originalPostCanView
+            """)
     List<PostProjection> getPostsOrderByCreatedAtDesc(UUID userId, long skip, long limit);
 
     @Query("""
-            MATCH (author:User)-[:POSTED]->(post:Post)
-            WHERE post.deletedAt IS NULL
-            WITH post
-            ORDER BY post.created DESC
-            SKIP $skip LIMIT $limit
-
-            // Lấy thông tin bài viết gốc nếu là shared post
-            OPTIONAL MATCH (post)-[:SHARED]->(originalPost:Post)
-            OPTIONAL MATCH (originalPost)<-[:POSTED]-(originalAuthor:User)
-            OPTIONAL MATCH (originalAuthor)-[:HAS_PROFILE_PICTURE]->(originalProfilePic:File)
-            OPTIONAL MATCH (originalPost)-[:ATTACH_FILES]->(originalFile:File)
-
-            // Lấy thông tin post hiện tại
-            OPTIONAL MATCH (post)-[:ATTACH_FILES]->(file:File)
-            OPTIONAL MATCH (author)-[:HAS_PROFILE_PICTURE]->(profilePic:File)
-
-            WITH post, author, profilePic,
-                 COLLECT(DISTINCT file.id) AS files,
-                 originalPost, originalAuthor, originalProfilePic,
-                 COLLECT(DISTINCT originalFile.id) AS originalFiles,
-
-                 // Kiểm tra xem bài viết gốc có thể xem được không
-                 CASE
-                   WHEN originalPost IS NULL THEN true
-                   WHEN originalPost.deletedAt IS NOT NULL THEN false
-                   else true
-                 END AS originalPostCanView
-
-            WITH post, author, profilePic, files,
-                 originalPost, originalAuthor, originalProfilePic, originalFiles, originalPostCanView
-
-            RETURN
-                post.id AS id,
-                post.content AS content,
-                post.createdAt AS createdAt,
-                post.updatedAt AS updatedAt,
-                post.privacy AS privacy,
-                files AS files,
-                post.likeCount AS likeCount,
-                post.shareCount AS shareCount,
-                post.commentCount AS commentCount,
-                author.id AS authorId,
-                author.username AS authorUsername,
-                author.givenName AS authorGivenName,
-                author.familyName AS authorFamilyName,
-                profilePic.id AS authorProfilePictureId,
-                originalPost IS NOT NULL AS isSharedPost,
-
-                // Original post information
-                CASE WHEN originalPostCanView THEN originalPost.id ELSE null END AS originalPostId,
-                CASE WHEN originalPostCanView THEN originalPost.content ELSE null END AS originalPostContent,
-                CASE WHEN originalPostCanView THEN originalPost.createdAt ELSE null END AS originalPostCreatedAt,
-                CASE WHEN originalPostCanView THEN originalPost.updatedAt ELSE null END AS originalPostUpdatedAt,
-                CASE WHEN originalPostCanView THEN originalPost.privacy ELSE null END AS originalPostPrivacy,
-                CASE WHEN originalPostCanView THEN originalFiles ELSE [] END AS originalPostFiles,
-                CASE WHEN originalPostCanView THEN originalAuthor.id ELSE null END AS originalPostAuthorId,
-                CASE WHEN originalPostCanView THEN originalAuthor.username ELSE null END AS originalPostAuthorUsername,
-                CASE WHEN originalPostCanView THEN originalAuthor.givenName ELSE null END AS originalPostAuthorGivenName,
-                CASE WHEN originalPostCanView THEN originalAuthor.familyName ELSE null END AS originalPostAuthorFamilyName,
-                CASE WHEN originalPostCanView THEN originalProfilePic.id ELSE null END AS originalPostAuthorProfilePictureId,
-                originalPostCanView AS originalPostCanView
-        """)    List<PostProjection> getAllOrderByCreatedAtDesc(long skip, long limit);
+                MATCH (author:User)-[:POSTED]->(post:Post)
+                WHERE post.deletedAt IS NULL
+                WITH post, author
+                ORDER BY post.createdAt DESC
+                SKIP $skip LIMIT $limit
+            
+                // Lấy thông tin bài viết gốc nếu là shared post
+                OPTIONAL MATCH (post)-[:SHARED]->(originalPost:Post)
+                OPTIONAL MATCH (originalPost)<-[:POSTED]-(originalAuthor:User)
+                OPTIONAL MATCH (originalAuthor)-[:HAS_PROFILE_PICTURE]->(originalProfilePic:File)
+                OPTIONAL MATCH (originalPost)-[:ATTACH_FILES]->(originalFile:File)
+            
+                // Lấy thông tin post hiện tại
+                OPTIONAL MATCH (post)-[:ATTACH_FILES]->(file:File)
+                OPTIONAL MATCH (author)-[:HAS_PROFILE_PICTURE]->(profilePic:File)
+            
+                WITH post, author, profilePic,
+                     COLLECT(DISTINCT file.id) AS files,
+                     originalPost, originalAuthor, originalProfilePic,
+                     COLLECT(DISTINCT originalFile.id) AS originalFiles,
+            
+                     // Kiểm tra xem bài viết gốc có thể xem được không
+                     CASE
+                       WHEN originalPost IS NULL THEN false
+                       WHEN originalPost.deletedAt IS NOT NULL THEN false
+                       else true
+                     END AS originalPostCanView
+            
+                WITH post, author, profilePic, files,
+                     originalPost, originalAuthor, originalProfilePic, originalFiles, originalPostCanView
+            
+                RETURN
+                    post.id AS id,
+                    post.content AS content,
+                    post.createdAt AS createdAt,
+                    post.updatedAt AS updatedAt,
+                    post.privacy AS privacy,
+                    files AS files,
+                    post.likeCount AS likeCount,
+                    post.shareCount AS shareCount,
+                    post.commentCount AS commentCount,
+                    author.id AS authorId,
+                    author.username AS authorUsername,
+                    author.givenName AS authorGivenName,
+                    author.familyName AS authorFamilyName,
+                    profilePic.id AS authorProfilePictureId,
+                    originalPost IS NOT NULL AS isSharedPost,
+            
+                    // Original post information
+                    CASE WHEN originalPostCanView THEN originalPost.id ELSE null END AS originalPostId,
+                    CASE WHEN originalPostCanView THEN originalPost.content ELSE null END AS originalPostContent,
+                    CASE WHEN originalPostCanView THEN originalPost.createdAt ELSE null END AS originalPostCreatedAt,
+                    CASE WHEN originalPostCanView THEN originalPost.updatedAt ELSE null END AS originalPostUpdatedAt,
+                    CASE WHEN originalPostCanView THEN originalPost.privacy ELSE null END AS originalPostPrivacy,
+                    CASE WHEN originalPostCanView THEN originalFiles ELSE [] END AS originalPostFiles,
+                    CASE WHEN originalPostCanView THEN originalAuthor.id ELSE null END AS originalPostAuthorId,
+                    CASE WHEN originalPostCanView THEN originalAuthor.username ELSE null END AS originalPostAuthorUsername,
+                    CASE WHEN originalPostCanView THEN originalAuthor.givenName ELSE null END AS originalPostAuthorGivenName,
+                    CASE WHEN originalPostCanView THEN originalAuthor.familyName ELSE null END AS originalPostAuthorFamilyName,
+                    CASE WHEN originalPostCanView THEN originalProfilePic.id ELSE null END AS originalPostAuthorProfilePictureId,
+                    originalPostCanView AS originalPostCanView
+            """)
+    List<PostProjection> getAllOrderByCreatedAtDesc(long skip, long limit);
 
     @Query("""
             WITH datetime() AS today
@@ -745,4 +743,13 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
             ORDER BY key ASC
             """)
     List<CountDataProjection> getAllTimeYearlyStatistics();
+
+    @Query("""
+            UNWIND $postIds AS postId
+            MATCH (u:User {id: $userId}), (post:Post {id: postId})  // Đảm bảo tìm đúng user và post
+            MERGE (u)-[loaded:LOADED]->(post)
+                ON CREATE SET loaded.times = 1
+                ON MATCH SET loaded.times = loaded.times + 1
+            """)
+    void increaseLoaded(Set<UUID> postIds, UUID userId);
 }

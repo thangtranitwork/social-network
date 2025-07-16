@@ -11,10 +11,10 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @RequiredArgsConstructor
 public class PostCreatedEventListener {
     private final KeywordExtractorService keywordExtractorService;
+
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handlePostCreated(PostCreatedEvent event) {
         keywordExtractorService.extract(event.getPostId());
     }
-
 }

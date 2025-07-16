@@ -10,10 +10,12 @@ import com.stu.socialnetworkapi.entity.File;
 import com.stu.socialnetworkapi.entity.Notification;
 import com.stu.socialnetworkapi.entity.Post;
 import com.stu.socialnetworkapi.entity.User;
+import com.stu.socialnetworkapi.enums.GetType;
 import com.stu.socialnetworkapi.enums.NotificationAction;
 import com.stu.socialnetworkapi.enums.ObjectType;
 import com.stu.socialnetworkapi.enums.PostPrivacy;
 import com.stu.socialnetworkapi.event.PostCreatedEvent;
+import com.stu.socialnetworkapi.event.PostsLoadedEvent;
 import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.mapper.PostMapper;
@@ -22,11 +24,11 @@ import com.stu.socialnetworkapi.repository.neo4j.KeywordRepository;
 import com.stu.socialnetworkapi.repository.neo4j.PostRepository;
 import com.stu.socialnetworkapi.service.itf.*;
 import com.stu.socialnetworkapi.util.JwtUtil;
-import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.ZonedDateTime;
@@ -56,7 +58,7 @@ public class PostServiceImpl implements PostService {
                 .orElseThrow(() -> new ApiException(ErrorCode.POST_NOT_FOUND));
 
         validateViewPost(projection, currentUserId);
-        if(currentUserId != null) keywordRepository.interact(postId, currentUserId, 1);
+        if (currentUserId != null) keywordRepository.interact(postId, currentUserId, 1);
         return postMapper.toPostResponse(projection);
     }
 
@@ -90,12 +92,17 @@ public class PostServiceImpl implements PostService {
             case TIME ->
                     postRepository.getPostsOrderByCreatedAtDesc(currentUserId, pageable.getSkip(), pageable.getLimit());
         };
-
-        return projections.stream()
+        List<PostResponse> responses = projections.stream()
                 .map(postMapper::toPostResponse)
                 .toList();
-    }
 
+        if (GetType.RELEVANT.equals(pageable.getType())) {
+            Set<UUID> postIds = projections.stream().map(PostProjection::id)
+                    .collect(Collectors.toSet());
+            eventPublisher.publishEvent(new PostsLoadedEvent(postIds, currentUserId));
+        }
+        return responses;
+    }
 
     @Override
     public PostResponse post(PostRequest request) {

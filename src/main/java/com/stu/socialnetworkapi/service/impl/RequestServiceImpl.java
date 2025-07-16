@@ -1,6 +1,5 @@
 package com.stu.socialnetworkapi.service.impl;
 
-import com.stu.socialnetworkapi.dto.request.Neo4jPageable;
 import com.stu.socialnetworkapi.dto.response.UserCommonInformationResponse;
 import com.stu.socialnetworkapi.entity.Notification;
 import com.stu.socialnetworkapi.entity.User;
@@ -8,16 +7,16 @@ import com.stu.socialnetworkapi.enums.NotificationAction;
 import com.stu.socialnetworkapi.enums.ObjectType;
 import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
-import com.stu.socialnetworkapi.mapper.UserMapper;
 import com.stu.socialnetworkapi.repository.neo4j.RequestRepository;
+import com.stu.socialnetworkapi.repository.redis.RelationshipCacheRepository;
 import com.stu.socialnetworkapi.service.itf.ChatService;
 import com.stu.socialnetworkapi.service.itf.NotificationService;
 import com.stu.socialnetworkapi.service.itf.RequestService;
 import com.stu.socialnetworkapi.service.itf.UserService;
 import com.stu.socialnetworkapi.util.UserCounterCalculator;
-import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -26,12 +25,12 @@ import java.util.UUID;
 @Transactional
 @RequiredArgsConstructor
 public class RequestServiceImpl implements RequestService {
-    private final UserMapper userMapper;
     private final UserService userService;
     private final ChatService chatService;
     private final RequestRepository requestRepository;
     private final NotificationService notificationService;
     private final UserCounterCalculator userCounterCalculator;
+    private final RelationshipCacheRepository relationshipCacheRepository;
 
     @Override
     public void sendAddFriendRequest(String username) {
@@ -49,23 +48,23 @@ public class RequestServiceImpl implements RequestService {
                 .targetType(ObjectType.REQUEST)
                 .build();
         userCounterCalculator.calculateUsersCounter(List.of(requester.getId(), target.getId()));
+        relationshipCacheRepository.invalidateRequestSent(requester.getUsername());
+        relationshipCacheRepository.invalidateRequestReceived(target.getUsername());
+        relationshipCacheRepository.removeIfInSuggestion(requester.getUsername(), target.getUsername());
+        relationshipCacheRepository.removeIfInSuggestion(target.getUsername(), requester.getUsername());
         notificationService.send(notification);
     }
 
     @Override
-    public List<UserCommonInformationResponse> getSentRequests(Neo4jPageable pageable) {
-        UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
-        return requestRepository.getSentRequest(currentUserId, pageable.getSkip(), pageable.getLimit()).stream()
-                .map(userMapper::toUserCommonInformationResponse)
-                .toList();
+    public List<UserCommonInformationResponse> getSentRequests() {
+        String username = userService.getCurrentUsernameRequiredAuthentication();
+        return relationshipCacheRepository.getRequestSent(username);
     }
 
     @Override
-    public List<UserCommonInformationResponse> getReceivedRequests(Neo4jPageable pageable) {
-        UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
-        return requestRepository.getReceivedRequest(currentUserId, pageable.getSkip(), pageable.getLimit()).stream()
-                .map(userMapper::toUserCommonInformationResponse)
-                .toList();
+    public List<UserCommonInformationResponse> getReceivedRequests() {
+        String username = userService.getCurrentUsernameRequiredAuthentication();
+        return relationshipCacheRepository.getRequestReceived(username);
     }
 
     @Override
@@ -90,6 +89,10 @@ public class RequestServiceImpl implements RequestService {
         userCounterCalculator.calculateUsersCounter(List.of(currentUser.getId(), target.getId()));
 
         chatService.createChatIfNotExist(currentUser, target);
+        relationshipCacheRepository.invalidateRequestSent(currentUser.getUsername());
+        relationshipCacheRepository.invalidateRequestReceived(target.getUsername());
+        relationshipCacheRepository.invalidateFriend(currentUser.getUsername());
+        relationshipCacheRepository.invalidateFriend(target.getUsername());
         Notification notification = Notification.builder()
                 .action(NotificationAction.BE_FRIEND)
                 .targetId(target.getId())

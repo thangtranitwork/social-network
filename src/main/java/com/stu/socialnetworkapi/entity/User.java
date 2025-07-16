@@ -54,6 +54,7 @@ public class User {
 
     // Constant section
     public static final int MAX_FRIEND_COUNT = 100;
+    public static final int MAX_SUGGESTED_FRIEND_COUNT = 100;
     public static final int MAX_BLOCK_COUNT = 100;
     public static final int MAX_SENT_REQUEST_COUNT = 100;
     public static final int MAX_RECEIVED_REQUEST_COUNT = 100;

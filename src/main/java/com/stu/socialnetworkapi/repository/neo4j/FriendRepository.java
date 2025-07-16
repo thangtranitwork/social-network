@@ -8,22 +8,17 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Repository
 public interface FriendRepository extends Neo4jRepository<Friend, Long> {
     @Query("""
-             MATCH (user:User {id: $userId})-[friend:FRIEND]->(target:User)
-             OPTIONAL MATCH (target)-[:HAS_PROFILE_PICTURE]->(profile: File)
-             RETURN friend.createdAt AS createdAt,
-                    target.id AS userId,
-                    target.givenName AS givenName,
-                    target.familyName AS familyName,
-                    target.username AS username,
-                    profile.id AS profilePictureId
-            SKIP $skip LIMIT $limit
+             MATCH (user:User {username: $username})-[friend:FRIEND]->(target:User)
+             RETURN target.username
+             LIMIT $limit
             """)
-    List<UserProjection> getFriends(UUID userId, long skip, long limit);
+    Set<String> getFriendUsernames(String username, long limit);
 
     @Query("""
             MATCH (:User {id: $userId})-[friend:FRIEND]->(:User {id: $targetId})
@@ -55,28 +50,24 @@ public interface FriendRepository extends Neo4jRepository<Friend, Long> {
      * - Đã từng chat với nhau nhưng chưa kết bạn: 30 điểm
      */
     @Query("""
-            MATCH (currentUser:User {id: $userId})
+            MATCH (currentUser:User {username: $username})
             MATCH (target:User)
-            WHERE target.id <> $userId
-              AND NOT EXISTS((currentUser)-[:FRIEND|BLOCK|REQUEST]-(target))
+            WHERE target.id <> currentUser.id
+              AND NOT (currentUser)-[:FRIEND|BLOCK|REQUEST]-(target)
             
             // Bạn chung
             OPTIONAL MATCH (currentUser)-[:FRIEND]->(mutual:User)-[:FRIEND]->(target)
-            WHERE mutual.id <> target.id
             
             // Lượt xem profile
             OPTIONAL MATCH (currentUser)-[viewOut:VIEW_PROFILE]->(target)
             OPTIONAL MATCH (target)-[viewIn:VIEW_PROFILE]->(currentUser)
             
-            // Ảnh đại diện
-            OPTIONAL MATCH (target)-[:HAS_PROFILE_PICTURE]->(pic:File)
-            
             // Cùng chat (chưa kết bạn)
             OPTIONAL MATCH (currentUser)-[:IS_MEMBER_OF]->(chat)<-[:IS_MEMBER_OF]-(target)
             
-            OPTIONAL MATCH path = (currentUser)-[*2..2]-(target)
+            OPTIONAL MATCH path = (currentUser)-[]->(:Post|Comment)<-[]-(target)
             
-            WITH currentUser, target, pic, chat,
+            WITH currentUser, target, chat,
                  COUNT(DISTINCT mutual) AS mutualFriendsCount,
                  COALESCE(viewOut.times, 0) AS viewOutTimes,
                  COALESCE(viewIn.times, 0) AS viewInTimes,
@@ -84,7 +75,7 @@ public interface FriendRepository extends Neo4jRepository<Friend, Long> {
             
                  currentUser.birthdate.year - target.birthdate.year AS ageDiff
             
-            WITH target, pic, mutualFriendsCount, viewOutTimes, viewInTimes, ageDiff, numPaths, chat,
+            WITH target, mutualFriendsCount, viewOutTimes, viewInTimes, ageDiff, numPaths, chat,
                  mutualFriendsCount * 5
                  + viewOutTimes * 2
                  + viewInTimes
@@ -93,19 +84,11 @@ public interface FriendRepository extends Neo4jRepository<Friend, Long> {
                  + numPaths * 2 AS score
             
             RETURN
-                target.id AS userId,
-                target.username AS username,
-                target.givenName AS givenName,
-                target.familyName AS familyName,
-                CASE WHEN pic IS NOT NULL THEN pic.id ELSE NULL END AS profilePictureId,
-                mutualFriendsCount AS mutualFriendsCount,
-                false AS isFriend,
-                score
-            
+                target.username AS username
             ORDER BY score DESC
-            SKIP $skip LIMIT $limit
+            LIMIT $limit
             """)
-    List<UserProjection> getSuggestedFriends(UUID userId, long skip, long limit);
+    Set<String> getSuggestedFriendUsernames(String username, long limit);
 
 
     @Query("""
@@ -135,7 +118,7 @@ public interface FriendRepository extends Neo4jRepository<Friend, Long> {
                 true AS isFriend,
                 mutualFriendsCount AS mutualFriendsCount
             ORDER BY mutualFriendsCount DESC, mutualFriend.username
-            SKIP $skip LIMIT $limit
+            LIMIT $limit
             """)
-    List<UserProjection> getMutualFriends(UUID userId, UUID targetId, long skip, long limit);
+    List<UserProjection> getMutualFriends(UUID userId, UUID targetId, long limit);
 }

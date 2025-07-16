@@ -17,4 +17,13 @@ public interface KeywordRepository extends Neo4jRepository<Keyword, String> {
                 ON MATCH SET i.score = i.score + $weight
             """)
     void interact(UUID postId, UUID userId, int weight);
+
+    @Query("""
+                MATCH (user:User {username: $username})
+                MATCH (post:Post {id: $postId})-[:HAS_KEYWORDS]->(keyword:Keyword)
+                MERGE (user)-[i:INTERACT_WITH]->(keyword)
+                ON CREATE SET i.score = $weight
+                ON MATCH SET i.score = i.score + $weight
+            """)
+    void interact(UUID postId, String username, int weight);
 }

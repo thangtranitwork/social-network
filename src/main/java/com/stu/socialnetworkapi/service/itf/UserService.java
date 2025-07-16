@@ -26,6 +26,8 @@ public interface UserService {
 
     UUID getCurrentUserIdRequiredAuthentication();
 
+    String getCurrentUserUsername();
+
     String getCurrentUsernameRequiredAuthentication();
 
     UserProfileResponse getUserProfile(String username);
@@ -39,6 +41,8 @@ public interface UserService {
     void updateBio(String bio);
 
     String updateProfilePicture(MultipartFile file);
+
+    void validateUserExists(String username);
 
     @PreAuthorize("hasAnyAuthority('ADMIN')")
     List<AdminUserViewResponse> getUsers(Neo4jPageable pageable);

@@ -1,6 +1,5 @@
 package com.stu.socialnetworkapi.controller;
 
-import com.stu.socialnetworkapi.dto.request.Neo4jPageable;
 import com.stu.socialnetworkapi.dto.response.ApiResponse;
 import com.stu.socialnetworkapi.dto.response.UserCommonInformationResponse;
 import com.stu.socialnetworkapi.service.itf.RequestService;
@@ -17,13 +16,13 @@ public class RequestController {
     private final RequestService requestService;
 
     @GetMapping("/sent-requests")
-    public ApiResponse<List<UserCommonInformationResponse>> getSentRequest(Neo4jPageable pageable) {
-        return ApiResponse.success(requestService.getSentRequests(pageable));
+    public ApiResponse<List<UserCommonInformationResponse>> getSentRequest() {
+        return ApiResponse.success(requestService.getSentRequests());
     }
 
     @GetMapping("/received-requests")
-    public ApiResponse<List<UserCommonInformationResponse>> getReceivedRequest(Neo4jPageable pageable) {
-        return ApiResponse.success(requestService.getReceivedRequests(pageable));
+    public ApiResponse<List<UserCommonInformationResponse>> getReceivedRequest() {
+        return ApiResponse.success(requestService.getReceivedRequests());
     }
 
     @PostMapping("/send/{username}")

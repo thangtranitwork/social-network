@@ -38,7 +38,7 @@ public interface PostService {
 
     void unlike(UUID postId);
 
-    void validateViewPost(UUID postId, UUID userId);
+    void validateViewPost(UUID postId, String viewerUsername);
 
     List<String> getFilesInPostsOfUser(String username, Neo4jPageable pageable);
 }

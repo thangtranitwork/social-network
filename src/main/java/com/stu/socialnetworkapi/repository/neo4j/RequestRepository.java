@@ -1,42 +1,29 @@
 package com.stu.socialnetworkapi.repository.neo4j;
 
-import com.stu.socialnetworkapi.dto.projection.UserProjection;
 import com.stu.socialnetworkapi.entity.relationship.Request;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Repository
 public interface RequestRepository extends Neo4jRepository<Request, Long> {
     @Query("""
-             MATCH (sender:User {id: $userId})-[r:REQUEST]->(target:User)
-             OPTIONAL MATCH (target)-[:HAS_PROFILE_PICTURE]->(profile: File)
-             RETURN r.sentAt AS sentAt,
-                    target.id AS userId,
-                    target.givenName AS givenName,
-                    target.familyName AS familyName,
-                    target.username AS username,
-                    profile.id AS profilePictureId
-            SKIP $skip LIMIT $limit
+            MATCH (sender:User {username: $username})-[r:REQUEST]->(target:User)
+            RETURN target.username AS username
+            LIMIT $limit
             """)
-    List<UserProjection> getSentRequest(UUID userId, long skip, long limit);
+    Set<String> getSentRequestUsernames(String username, long limit);
 
     @Query("""
-             MATCH (sender:User)-[r:REQUEST]->(target:User {id: $userId})
-             OPTIONAL MATCH (sender)-[:HAS_PROFILE_PICTURE]->(profile: File)
-             RETURN r.sentAt AS sentAt,
-                    sender.id AS userId,
-                    sender.givenName AS givenName,
-                    sender.familyName AS familyName,
-                    sender.username AS username,
-                    profile.id AS profilePictureId
-            SKIP $skip LIMIT $limit
+            MATCH (sender:User {username: $username})<-[r:REQUEST]-(target:User)
+            RETURN target.username AS username
+            LIMIT $limit
             """)
-    List<UserProjection> getReceivedRequest(UUID userId, long skip, long limit);
+    Set<String> getReceivedRequestUsernames(String username, long limit);
 
     @Query("""
                 MATCH (a:User {id: $senderId})

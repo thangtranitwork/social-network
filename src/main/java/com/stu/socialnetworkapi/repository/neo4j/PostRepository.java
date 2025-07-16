@@ -21,7 +21,7 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
                 MATCH (author:User)-[:POSTED]->(post)
                 OPTIONAL MATCH (author)-[:HAS_PROFILE_PICTURE]->(profilePic:File)
                 OPTIONAL MATCH (post)-[:ATTACH_FILES]->(file:File)
-                OPTIONAL MATCH (viewer:User {id: $viewerId})
+                OPTIONAL MATCH (viewer:User {username: $username})
                 OPTIONAL MATCH (viewer)-[friendship:FRIEND]->(author)
                 OPTIONAL MATCH (viewer)-[liked:LIKED]->(post)
             
@@ -37,12 +37,12 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
                      COLLECT(DISTINCT originalFile.id) AS originalFiles,
             
                      CASE
-                       WHEN originalPost IS NULL THEN true
+                       WHEN originalPost IS NULL THEN false
                        WHEN originalPost.deletedAt IS NOT NULL THEN false
                        WHEN originalPost.privacy = 'PUBLIC' THEN true
                        WHEN originalPost.privacy = 'FRIEND' AND
-                            ($viewerId = originalAuthor.id OR originalFriendship IS NOT NULL) THEN true
-                       WHEN originalPost.privacy = 'PRIVATE' AND $viewerId = originalAuthor.id THEN true
+                            (viewer.username = originalAuthor.id OR originalFriendship IS NOT NULL) THEN true
+                       WHEN originalPost.privacy = 'PRIVATE' AND viewer.username = originalAuthor.id THEN true
                        ELSE false
                      END AS originalPostCanView
             
@@ -77,11 +77,11 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
                        CASE WHEN originalPostCanView THEN originalProfilePic.id ELSE null END AS originalPostAuthorProfilePictureId,
                        originalPostCanView AS originalPostCanView
             """)
-    Optional<PostProjection> findPostProjectionById(UUID id, UUID viewerId);
+    Optional<PostProjection> findPostProjectionById(UUID id, String viewerUsername);
 
     @Query("""
             // Match users và posts trước
-            MATCH (author:User {id: $authorId}), (viewer:User {id: $viewerId})
+            MATCH (author:User {username: $authorUsername}), (viewer:User {username: $viewerUsername})
             MATCH (author)-[:POSTED]->(post:Post)
             WHERE post.deletedAt IS NULL
             
@@ -89,10 +89,10 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
             OPTIONAL MATCH (viewer)-[friendship:FRIEND]->(author)
             
             // Kiểm tra privacy
-            WHERE (post.privacy = 'PUBLIC'
-                OR (post.privacy = 'FRIEND' AND
-                   ($viewerId = $authorId OR friendship IS NOT NULL))
-                OR (post.privacy = 'PRIVATE' AND $viewerId = $authorId)
+            WHERE (
+                $viewerUsername = $authorUsername
+                OR post.privacy = 'PUBLIC'
+                OR (post.privacy = 'FRIEND' AND friendship IS NOT NULL)
             )
             
             // Lấy thông tin bài viết gốc nếu là shared post
@@ -122,8 +122,8 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
                    WHEN block IS NOT NULL THEN false  // Có block relationship
                    WHEN originalPost.privacy = 'PUBLIC' THEN true
                    WHEN originalPost.privacy = 'FRIEND' AND
-                        ($viewerId = originalAuthor.id OR originalFriendship IS NOT NULL) THEN true
-                   WHEN originalPost.privacy = 'PRIVATE' AND $viewerId = originalAuthor.id THEN true
+                        ($viewerUsername = originalAuthor.id OR originalFriendship IS NOT NULL) THEN true
+                   WHEN originalPost.privacy = 'PRIVATE' AND $viewerUsername = originalAuthor.id THEN true
                    ELSE false
                  END AS originalPostCanView
             
@@ -162,7 +162,7 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
                    ORDER BY post.createdAt DESC
                    SKIP $skip LIMIT $limit
             """)
-    List<PostProjection> findAllByAuthorId(UUID authorId, UUID viewerId, long skip, long limit);
+    List<PostProjection> findAllByAuthorUsername(String authorUsername, String viewerUsername, long skip, long limit);
 
     @Query("""
             MATCH (p:Post {id: $postId})<-[like:LIKED]-(u:User {id: $likerId})

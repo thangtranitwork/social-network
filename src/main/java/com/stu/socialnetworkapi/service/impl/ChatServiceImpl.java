@@ -50,7 +50,7 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     public Chat getOrCreateDirectChat(User sender, User receiver) {
-        blockService.validateBlock(sender.getId(), receiver.getId());
+        blockService.validateBlock(sender.getUsername(), receiver.getUsername());
 
         UUID existingChatId = chatRepository.getDirectChatIdByMemberIds(sender.getId(), receiver.getId())
                 .orElse(null);

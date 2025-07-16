@@ -21,7 +21,7 @@ public interface CommentRepository extends Neo4jRepository<Comment, UUID> {
             MATCH (p:Post {id: $postId})-[:HAS_COMMENT]->(c:Comment)
             WHERE c.originalComment IS NULL
             MATCH (c)<-[:COMMENTED]-(author:User)
-            MATCH (viewer:User {id: $viewerId})
+            MATCH (viewer:User {username: $username})
             MATCH (p)<-[:POSTED]-(postAuthor:User)
             
             // Filter out blocked users (both directions)
@@ -58,18 +58,18 @@ public interface CommentRepository extends Neo4jRepository<Comment, UUID> {
                 author.givenName AS authorGivenName,
                 author.familyName AS authorFamilyName,
                 profilePic.id AS authorProfilePictureId,
-                CASE WHEN $viewerId = author.id THEN null ELSE isFriend END AS isFriend
+                CASE WHEN $username = author.id THEN null ELSE isFriend END AS isFriend
             ORDER BY relationshipDistance ASC, c.createdAt DESC
             SKIP $skip
             LIMIT $limit
             """)
-    List<CommentProjection> getSuggestedComments(UUID postId, UUID viewerId, long skip, long limit);
+    List<CommentProjection> getSuggestedComments(UUID postId, String username, long skip, long limit);
 
     @Query("""
                 MATCH (p:Post {id: $postId})-[:HAS_COMMENT]->(c:Comment)
                 WHERE c.originalComment IS NULL
                 MATCH (c)<-[:COMMENTED]-(author:User)
-                MATCH (viewer:User {id: $viewerId})
+                MATCH (viewer:User {username: $username})
             
                 // Filter out blocked users (both directions)
                 WHERE NOT (viewer)-[:BLOCKED]-(author)
@@ -96,18 +96,18 @@ public interface CommentRepository extends Neo4jRepository<Comment, UUID> {
                     author.givenName AS authorGivenName,
                     author.familyName AS authorFamilyName,
                     profilePic.id AS authorProfilePictureId,
-                    CASE WHEN $viewerId = author.id THEN null ELSE isFriend END AS isFriend
+                    CASE WHEN $username = author.username THEN null ELSE isFriend END AS isFriend
                 ORDER BY c.createdAt DESC
                 SKIP $skip
                 LIMIT $limit
             """)
-    List<CommentProjection> getCommentsOrderByCreatedAtDesc(UUID postId, UUID viewerId, long skip, long limit);
+    List<CommentProjection> getCommentsOrderByCreatedAtDesc(UUID postId, String username, long skip, long limit);
 
     @Query("""
                 MATCH (p:Post {id: $postId})-[:HAS_COMMENT]->(c:Comment)
                 WHERE c.originalComment IS NULL
                 MATCH (c)<-[:COMMENTED]-(author:User)
-                MATCH (viewer:User {id: $viewerId})
+                MATCH (viewer:User {username: $username})
             
                 WHERE (viewer)-[:FRIEND]-(author)
             
@@ -137,7 +137,7 @@ public interface CommentRepository extends Neo4jRepository<Comment, UUID> {
                 SKIP $skip
                 LIMIT $limit
             """)
-    List<CommentProjection> getFriendComments(UUID postId, UUID viewerId, long skip, long limit);
+    List<CommentProjection> getFriendComments(UUID postId, String username, long skip, long limit);
 
 
     @Query("""

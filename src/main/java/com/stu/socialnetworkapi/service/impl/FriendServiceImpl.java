@@ -1,6 +1,5 @@
 package com.stu.socialnetworkapi.service.impl;
 
-import com.stu.socialnetworkapi.dto.request.Neo4jPageable;
 import com.stu.socialnetworkapi.dto.response.UserCommonInformationResponse;
 import com.stu.socialnetworkapi.entity.User;
 import com.stu.socialnetworkapi.exception.ApiException;
@@ -8,6 +7,7 @@ import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.mapper.UserMapper;
 import com.stu.socialnetworkapi.repository.neo4j.FriendRepository;
 import com.stu.socialnetworkapi.repository.neo4j.UserRepository;
+import com.stu.socialnetworkapi.repository.redis.RelationshipCacheRepository;
 import com.stu.socialnetworkapi.service.itf.BlockService;
 import com.stu.socialnetworkapi.service.itf.FriendService;
 import com.stu.socialnetworkapi.service.itf.UserService;
@@ -25,15 +25,14 @@ public class FriendServiceImpl implements FriendService {
     private final BlockService blockService;
     private final UserRepository userRepository;
     private final FriendRepository friendRepository;
+    private final RelationshipCacheRepository relationshipCacheRepository;
 
     @Override
-    public List<UserCommonInformationResponse> getFriends(String username, Neo4jPageable pageable) {
-        UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
+    public List<UserCommonInformationResponse> getFriends(String username) {
+        String currentUsername = userService.getCurrentUsernameRequiredAuthentication();
         User target = userService.getUser(username);
-        blockService.validateBlock(currentUserId, target.getId());
-        return friendRepository.getFriends(target.getId(), pageable.getSkip(), pageable.getLimit()).stream()
-                .map(userMapper::toUserCommonInformationResponse)
-                .toList();
+        blockService.validateBlock(currentUsername, target.getUsername());
+        return relationshipCacheRepository.getFriend(username);
     }
 
     @Override
@@ -48,23 +47,21 @@ public class FriendServiceImpl implements FriendService {
     }
 
     @Override
-    public boolean isFriend(UUID user1, UUID user2) {
-        return friendRepository.isFriend(user1, user2);
+    public boolean isFriend(String user1, String user2) {
+        return relationshipCacheRepository.isFriend(user1, user2);
     }
 
     @Override
-    public List<UserCommonInformationResponse> getSuggestedFriends(Neo4jPageable pageable) {
-        UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
-        return friendRepository.getSuggestedFriends(currentUserId, pageable.getSkip(), pageable.getLimit()).stream()
-                .map(userMapper::toUserCommonInformationResponse)
-                .toList();
+    public List<UserCommonInformationResponse> getSuggestedFriends() {
+        String username = userService.getCurrentUsernameRequiredAuthentication();
+        return relationshipCacheRepository.getSuggestedFriends(username);
     }
 
     @Override
-    public List<UserCommonInformationResponse> getMutualFriends(String username, Neo4jPageable pageable) {
+    public List<UserCommonInformationResponse> getMutualFriends(String username) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
         UUID targetUserId = userService.getUser(username).getId();
-        return friendRepository.getMutualFriends(currentUserId, targetUserId, pageable.getSkip(), pageable.getLimit()).stream()
+        return friendRepository.getMutualFriends(currentUserId, targetUserId, User.MAX_FRIEND_COUNT).stream()
                 .map(userMapper::toUserCommonInformationResponse)
                 .toList();
     }

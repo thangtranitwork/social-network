@@ -1,6 +1,5 @@
 package com.stu.socialnetworkapi.controller;
 
-import com.stu.socialnetworkapi.dto.request.Neo4jPageable;
 import com.stu.socialnetworkapi.dto.response.ApiResponse;
 import com.stu.socialnetworkapi.dto.response.UserCommonInformationResponse;
 import com.stu.socialnetworkapi.service.itf.FriendService;
@@ -17,18 +16,18 @@ public class FriendController {
     private final FriendService friendService;
 
     @GetMapping("/{username}")
-    public ApiResponse<List<UserCommonInformationResponse>> getFriends(@PathVariable @Username String username, Neo4jPageable pageable) {
-        return ApiResponse.success(friendService.getFriends(username, pageable));
+    public ApiResponse<List<UserCommonInformationResponse>> getFriends(@PathVariable @Username String username) {
+        return ApiResponse.success(friendService.getFriends(username));
     }
 
     @GetMapping("/suggested")
-    public ApiResponse<List<UserCommonInformationResponse>> getSuggestedFriends(Neo4jPageable pageable) {
-        return ApiResponse.success(friendService.getSuggestedFriends(pageable));
+    public ApiResponse<List<UserCommonInformationResponse>> getSuggestedFriends() {
+        return ApiResponse.success(friendService.getSuggestedFriends());
     }
 
     @GetMapping("/mutual-friends/{username}")
-    public ApiResponse<List<UserCommonInformationResponse>> getMutualFriends(@PathVariable @Username String username, Neo4jPageable pageable) {
-        return ApiResponse.success(friendService.getMutualFriends(username, pageable));
+    public ApiResponse<List<UserCommonInformationResponse>> getMutualFriends(@PathVariable @Username String username) {
+        return ApiResponse.success(friendService.getMutualFriends(username));
     }
 
     @DeleteMapping("/{username}")

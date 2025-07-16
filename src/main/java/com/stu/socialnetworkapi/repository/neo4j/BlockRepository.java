@@ -1,14 +1,13 @@
 package com.stu.socialnetworkapi.repository.neo4j;
 
-import com.stu.socialnetworkapi.dto.projection.UserProjection;
 import com.stu.socialnetworkapi.entity.relationship.Block;
 import com.stu.socialnetworkapi.enums.BlockStatus;
 import org.springframework.data.neo4j.repository.Neo4jRepository;
 import org.springframework.data.neo4j.repository.query.Query;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Repository
@@ -52,14 +51,9 @@ public interface BlockRepository extends Neo4jRepository<Block, Long> {
     void deleteByUuid(UUID uuid);
 
     @Query("""
-            MATCH (blocker:User {id: $userId})-[block:BLOCK]->(target:User)
-            OPTIONAL MATCH (target)-[:HAS_PROFILE_PICTURE]->(profile: File)
-            RETURN target.id AS userId,
-                   target.givenName AS givenName,
-                   target.familyName AS familyName,
-                   target.username AS username,
-                   profile.id AS profilePictureId
-            SKIP $skip LIMIT $limit
+            MATCH (blocker:User {username: $username})-[block:BLOCK]->(target:User)
+            RETURN target.username AS userId
+            LIMIT $limit
             """)
-    List<UserProjection> getBlockedUsers(UUID userId, long skip, long limit);
+    Set<String> getBlockedUserUsernames(String username, long limit);
 }

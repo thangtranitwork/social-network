@@ -72,6 +72,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public String getCurrentUserUsername() {
+        return jwtUtil.getUsername();
+    }
+
+    @Override
     public String getCurrentUsernameRequiredAuthentication() {
         return jwtUtil.getUsernameRequiredAuthentication();
     }
@@ -150,6 +155,12 @@ public class UserServiceImpl implements UserService {
         user.setProfilePicture(newPicture);
         userRepository.save(user);
         return File.getPath(newPicture);
+    }
+
+    @Override
+    public void validateUserExists(String username) {
+        if (userRepository.existsByUsername(username))
+            throw new ApiException(ErrorCode.USER_NOT_FOUND);
     }
 
     @Override

@@ -16,9 +16,9 @@ import com.stu.socialnetworkapi.repository.neo4j.KeywordRepository;
 import com.stu.socialnetworkapi.repository.neo4j.PostRepository;
 import com.stu.socialnetworkapi.service.itf.*;
 import com.stu.socialnetworkapi.util.JwtUtil;
-import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -44,7 +44,7 @@ public class CommentServiceImpl implements CommentService {
     public CommentResponse comment(CommentRequest request) {
         User author = userService.getCurrentUserRequiredAuthentication();
         validateCommentContent(request.content(), request.file());
-        postService.validateViewPost(request.postId(), author.getId());
+        postService.validateViewPost(request.postId(), author.getUsername());
         Post post = postService.getPostById(request.postId());
         File attachment = request.file() != null
                 ? fileService.upload(request.file())
@@ -71,8 +71,8 @@ public class CommentServiceImpl implements CommentService {
         if (originalComment.isRepliedComment())
             throw new ApiException(ErrorCode.CAN_NOT_REPLY_REPLIED_COMMENT);
         Post post = originalComment.getPost();
-        postService.validateViewPost(post.getId(), author.getId());
-        blockService.validateBlock(post.getId(), author.getId());
+        postService.validateViewPost(post.getId(), author.getUsername());
+        blockService.validateBlock(post.getAuthor().getUsername(), author.getUsername());
         File attachment = request.file() != null
                 ? fileService.upload(request.file())
                 : null;
@@ -170,15 +170,15 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public List<CommentResponse> getComments(UUID postId, Neo4jPageable pageable) {
-        UUID currentUserId = userService.getCurrentUserId();
-        postService.validateViewPost(postId, currentUserId);
+        String currentUsername = userService.getCurrentUsernameRequiredAuthentication();
+        postService.validateViewPost(postId, currentUsername);
         List<CommentProjection> projections = (switch (pageable.getType()) {
             case RELEVANT ->
-                    commentRepository.getSuggestedComments(postId, currentUserId, pageable.getSkip(), pageable.getLimit());
+                    commentRepository.getSuggestedComments(postId, currentUsername, pageable.getSkip(), pageable.getLimit());
             case FRIEND_ONLY ->
-                    commentRepository.getFriendComments(postId, currentUserId, pageable.getSkip(), pageable.getLimit());
+                    commentRepository.getFriendComments(postId, currentUsername, pageable.getSkip(), pageable.getLimit());
             case TIME ->
-                    commentRepository.getCommentsOrderByCreatedAtDesc(postId, currentUserId, pageable.getSkip(), pageable.getLimit());
+                    commentRepository.getCommentsOrderByCreatedAtDesc(postId, currentUsername, pageable.getSkip(), pageable.getLimit());
         });
         return projections.stream()
                 .map(commentMapper::toCommentResponse)

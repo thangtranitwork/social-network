@@ -13,6 +13,7 @@ import org.springframework.stereotype.Repository;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Repository
@@ -21,6 +22,18 @@ public interface UserRepository extends Neo4jRepository<User, UUID> {
 
     @Query("MATCH (u:User {username: $username}) RETURN u.id")
     Optional<UUID> getUserIdByUsername(String username);
+
+    @Query("""
+                     UNWIND $usernames AS username
+                     MATCH (target:User {username: username})
+                     OPTIONAL MATCH (target)-[:HAS_PROFILE_PICTURE]->(profile: File)
+                     RETURN target.id AS userId,
+                            target.givenName AS givenName,
+                            target.familyName AS familyName,
+                            target.username AS username
+            """)
+    List<UserProjection> getUsersByUsername(Set<String> usernames);
+
 
     @Query("""
             MATCH (user:User {username: $username})

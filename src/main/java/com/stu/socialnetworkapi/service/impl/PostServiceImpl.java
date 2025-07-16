@@ -22,11 +22,11 @@ import com.stu.socialnetworkapi.repository.neo4j.KeywordRepository;
 import com.stu.socialnetworkapi.repository.neo4j.PostRepository;
 import com.stu.socialnetworkapi.service.itf.*;
 import com.stu.socialnetworkapi.util.JwtUtil;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.ZonedDateTime;
@@ -51,22 +51,22 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public PostResponse get(UUID postId) {
-        String currentUsername = userService.getCurrentUserUsername();
-        PostProjection projection = postRepository.findPostProjectionById(postId, currentUsername)
+        UUID currentUserId = userService.getCurrentUserId();
+        PostProjection projection = postRepository.findPostProjectionById(postId, currentUserId)
                 .orElseThrow(() -> new ApiException(ErrorCode.POST_NOT_FOUND));
 
-        validateViewPost(projection, currentUsername);
-        if (currentUsername != null) keywordRepository.interact(postId, currentUsername, 1);
+        validateViewPost(projection, currentUserId);
+        if(currentUserId != null) keywordRepository.interact(postId, currentUserId, 1);
         return postMapper.toPostResponse(projection);
     }
 
     @Override
     public List<PostResponse> getPostsOfUser(String authorUsername, Neo4jPageable pageable) {
-        String currentUsername = userService.getCurrentUsernameRequiredAuthentication();
-        userService.validateUserExists(authorUsername);
-        blockService.validateBlock(currentUsername, authorUsername);
+        UUID currentUserId = userService.getCurrentUserId();
+        UUID targetId = userService.getUserId(authorUsername);
+        blockService.validateBlock(targetId, currentUserId);
         return postRepository
-                .findAllByAuthorUsername(authorUsername, currentUsername, pageable.getSkip(), pageable.getLimit()).stream()
+                .findAllByAuthorId(targetId, currentUserId, pageable.getSkip(), pageable.getLimit()).stream()
                 .map(postMapper::toPostResponse)
                 .toList();
     }
@@ -125,8 +125,10 @@ public class PostServiceImpl implements PostService {
 
         User author = userService.getCurrentUserRequiredAuthentication();
         Post originalPost = getPostById(request.originalPostId());
+        UUID currentUserId = author.getId();
+        UUID originalPostAuthorId = originalPost.getAuthor().getId();
         PostPrivacy originalPostPrivacy = originalPost.getPrivacy();
-        validateSharePost(content, author.getUsername(), originalPost.getAuthor().getUsername(), originalPostPrivacy);
+        validateSharePost(content, currentUserId, originalPostAuthorId, originalPostPrivacy);
         Post post = Post.builder()
                 .author(author)
                 .content(content.trim())
@@ -136,7 +138,7 @@ public class PostServiceImpl implements PostService {
 
         originalPost.setShareCount(originalPost.getShareCount() + 1);
         postRepository.saveAll(List.of(post, originalPost));
-        keywordRepository.interact(originalPost.getId(), author.getId(), 5);
+        keywordRepository.interact(originalPost.getId(), currentUserId, 5);
         eventPublisher.publishEvent(new PostCreatedEvent(post.getId()));
         sendNotificationWhenSharePost(author, originalPost, post);
 
@@ -204,7 +206,7 @@ public class PostServiceImpl implements PostService {
         User user = userService.getCurrentUserRequiredAuthentication();
         Post post = getPostById(postId);
 
-        blockService.validateBlock(user.getUsername(), post.getAuthor().getUsername());
+        blockService.validateBlock(user.getId(), post.getAuthor().getId());
         if (postRepository.isLiked(post.getId(), user.getId())) {
             throw new ApiException(ErrorCode.LIKED_POST);
         }
@@ -220,7 +222,7 @@ public class PostServiceImpl implements PostService {
         User user = userService.getCurrentUserRequiredAuthentication();
         Post post = getPostById(postId);
 
-        blockService.validateBlock(user.getUsername(), post.getAuthor().getUsername());
+        blockService.validateBlock(user.getId(), post.getAuthor().getId());
         if (!postRepository.isLiked(post.getId(), user.getId())) {
             throw new ApiException(ErrorCode.NOT_LIKED_POST);
         }
@@ -230,9 +232,9 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public void validateViewPost(UUID postId, String viewerUsername) {
+    public void validateViewPost(UUID postId, UUID viewerId) {
         Post post = getPostById(postId);
-        validateViewPost(post, viewerUsername);
+        validateViewPost(post, viewerId);
     }
 
     @Override
@@ -247,10 +249,11 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public List<String> getFilesInPostsOfUser(String username, Neo4jPageable pageable) {
-        String currentUsername = userService.getCurrentUsernameRequiredAuthentication();
-        userService.validateUserExists(username);
-        blockService.validateBlock(currentUsername, username);
-        return fileRepository.findFileInPostByUsername(username, currentUsername, pageable.getSkip(), pageable.getLimit())
+        UUID currentUserId = userService.getCurrentUserId();
+        User target = userService.getUser(username);
+        blockService.validateBlock(currentUserId, target.getId());
+        List<PostPrivacy> privacies = getVisiblePrivacies(currentUserId, target.getId());
+        return fileRepository.findFileInPostByUserIdAndPrivacyIsIn(target.getId(), privacies, pageable.getSkip(), pageable.getLimit())
                 .stream().map(File::getPath)
                 .toList();
     }
@@ -276,22 +279,23 @@ public class PostServiceImpl implements PostService {
         else validateUpdateContentNormalPost(post, request);
     }
 
-    private void validateViewPost(Post post, String viewerUsername) {
+    private void validateViewPost(Post post, UUID viewerId) {
         PostPrivacy privacy = post.getPrivacy();
-        String authorUsername = post.getAuthor().getUsername();
-        boolean isAuthenticated = viewerUsername != null;
-        boolean isAuthor = isAuthenticated && viewerUsername.equals(authorUsername);
+        UUID authorId = post.getAuthor().getId();
+
+        boolean isAuthenticated = viewerId != null;
+        boolean isAuthor = isAuthenticated && viewerId.equals(authorId);
 
         if (isAuthor) {
             return;
         }
         if (PostPrivacy.PUBLIC.equals(privacy)) {
-            if (isAuthenticated) blockService.validateBlock(viewerUsername, authorUsername);
+            if (isAuthenticated) blockService.validateBlock(viewerId, authorId);
             return;
         }
         // Friend can not be blocked
         if (PostPrivacy.FRIEND.equals(privacy)) {
-            if (!isAuthenticated || !friendService.isFriend(viewerUsername, authorUsername)) {
+            if (!isAuthenticated || !friendService.isFriend(viewerId, authorId)) {
                 throw new ApiException(ErrorCode.UNAUTHORIZED);
             }
             return;
@@ -300,17 +304,17 @@ public class PostServiceImpl implements PostService {
         throw new ApiException(ErrorCode.UNAUTHORIZED);
     }
 
-    private void validateViewPost(PostProjection projection, String viewerUsername) {
+    private void validateViewPost(PostProjection projection, UUID viewerId) {
         PostPrivacy privacy = projection.privacy();
 
-        boolean isAuthenticated = viewerUsername != null;
-        boolean isAuthor = isAuthenticated && viewerUsername.equals(projection.authorUsername());
+        boolean isAuthenticated = viewerId != null;
+        boolean isAuthor = isAuthenticated && viewerId.equals(projection.authorId());
 
         if (isAuthor) {
             return;
         }
         if (PostPrivacy.PUBLIC.equals(privacy)) {
-            if (isAuthenticated) blockService.validateBlock(viewerUsername, projection.authorUsername());
+            if (isAuthenticated) blockService.validateBlock(viewerId, projection.authorId());
             return;
         }
         // Friend can not be blocked
@@ -324,14 +328,14 @@ public class PostServiceImpl implements PostService {
         throw new ApiException(ErrorCode.UNAUTHORIZED);
     }
 
-    private void validateSharePost(String content, String currentUserUsername, String originalPostAuthorUsername, PostPrivacy originalPostPrivacy) {
+    private void validateSharePost(String content, UUID currentUserId, UUID originalPostAuthorId, PostPrivacy originalPostPrivacy) {
         if (content != null && content.length() > Post.MAX_CONTENT_LENGTH) {
             throw new ApiException(ErrorCode.INVALID_POST_CONTENT_LENGTH);
         }
         if (!PostPrivacy.PUBLIC.equals(originalPostPrivacy)) {
             throw new ApiException(ErrorCode.ONLY_PUBLIC_POST_CAN_BE_SHARED);
         }
-        blockService.validateBlock(currentUserUsername, originalPostAuthorUsername);
+        blockService.validateBlock(currentUserId, originalPostAuthorId);
     }
 
 
@@ -464,5 +468,28 @@ public class PostServiceImpl implements PostService {
                 .action(NotificationAction.LIKE_POST)
                 .build();
         notificationService.send(notification);
+    }
+
+    private List<PostPrivacy> getVisiblePrivacies(UUID currentUserId, UUID targetId) {
+        boolean isAuthenticated = currentUserId != null;
+        boolean isAuthor = isAuthenticated && currentUserId.equals(targetId);
+
+        if (isAuthenticated) {
+            blockService.validateBlock(currentUserId, targetId);
+        }
+
+        List<PostPrivacy> visiblePrivacies;
+
+        if (isAuthor) {
+            // Tác giả có thể xem mọi bài viết của mình
+            visiblePrivacies = List.of(PostPrivacy.PUBLIC, PostPrivacy.FRIEND, PostPrivacy.PRIVATE);
+        } else if (isAuthenticated && friendService.isFriend(currentUserId, targetId)) {
+            // Nếu là bạn bè ⇒ được xem bài public + friend
+            visiblePrivacies = List.of(PostPrivacy.PUBLIC, PostPrivacy.FRIEND);
+        } else {
+            // Người lạ ⇒ chỉ được xem bài public
+            visiblePrivacies = List.of(PostPrivacy.PUBLIC);
+        }
+        return visiblePrivacies;
     }
 }

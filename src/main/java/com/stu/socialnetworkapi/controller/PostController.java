@@ -24,6 +24,7 @@ public class PostController {
 
     @GetMapping("/newsfeed")
     public ApiResponse<List<PostResponse>> getPosts(Neo4jPageable pageable) {
+        System.out.println("getPosts");
         return ApiResponse.success(postService.getSuggestedPosts(pageable));
     }
 

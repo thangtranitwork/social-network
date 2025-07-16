@@ -61,9 +61,6 @@ public class InCallRepository {
             String userId1 = userIdArray[0];
             String userId2 = userIdArray[1];
 
-            log.debug("userId1: {}", userId1);
-            log.debug("userId2: {}", userId2);
-
             redisTemplate.delete(INCALL_KEY + user1);
             redisTemplate.delete(INCALL_KEY + user2);
             redisTemplate.delete(PREPARED_FOR_CALL_KEY + user1 + ":" + user2);

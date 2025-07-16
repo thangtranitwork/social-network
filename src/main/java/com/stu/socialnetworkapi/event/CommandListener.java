@@ -18,11 +18,9 @@ public class CommandListener {
     @EventListener
     public void handleCommandEvent(CommandEvent event) {
         if (event.getChatId() == null) {
-            log.debug("Chat id is null. Skipping command event...");
             return;
         }
         String destination = WebSocketChannelPrefix.CHAT_CHANNEL_PREFIX + "/" + event.getChatId();
-        log.debug("Sent to {} the command: {}", destination, event.getCommand());
         messagingTemplate.convertAndSend(destination, event.getCommand());
 
     }

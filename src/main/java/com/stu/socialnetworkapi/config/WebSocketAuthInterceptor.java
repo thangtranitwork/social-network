@@ -13,7 +13,6 @@ import com.stu.socialnetworkapi.service.itf.ChatService;
 import com.stu.socialnetworkapi.util.JwtUtil;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -25,7 +24,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.*;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class WebSocketAuthInterceptor implements ChannelInterceptor {
@@ -65,7 +63,6 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             attributes.put(USER_ID_KEY, userId);
             attributes.put(ROLE_KEY, role);
             accessor.setUser(userId::toString);
-            log.debug("User {} connecting", userId);
             isOnlineRepository.onUserConnected(UUID.fromString(userId.toString()));
         }
         //Xác thực khi SUBSCRIBE
@@ -73,7 +70,6 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             String subcriptionId = accessor.getSubscriptionId();
             if (StompCommand.SUBSCRIBE.equals(command)) {
                 String destination = accessor.getDestination();
-                log.debug("User {} subscribed to channel {}", attributes.get(USER_ID_KEY), destination);
                 if (!authorizeSubscription(accessor)) {
                     throw new WebSocketException(ErrorCode.UNAUTHORIZED);
                 }
@@ -96,7 +92,6 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
                     inChatRepository.unsubscribe(userId, chatUUID);
                 }
 
-                log.debug("User {} unsubscribed from channel {} (subscriptionId={})", userId, destination, subscriptionId);
                 attributes.remove("subscription:" + subscriptionId);
             }
 

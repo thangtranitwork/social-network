@@ -37,15 +37,17 @@ public class FriendServiceImpl implements FriendService {
 
     @Override
     public void unfriend(String username) {
-        UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
-        User target = userService.getUser(username);
-        UUID uuid = friendRepository.getFriendId(currentUserId, target.getId())
+        String currentUsername = userService.getCurrentUsernameRequiredAuthentication();
+        userService.validateUserExists(username);
+
+        UUID uuid = friendRepository.getFriendId(currentUsername, username)
                 .orElseThrow(() -> new ApiException(ErrorCode.FRIEND_NOT_FOUND));
         friendRepository.deleteByUuid(uuid);
-        userRepository.recalculateUserCounters(currentUserId);
-        userRepository.recalculateUserCounters(target.getId());
-        relationshipCacheRepository.invalidateFriend(userService.getCurrentUserUsername());
-        relationshipCacheRepository.invalidateFriend(target.getUsername());
+
+        userRepository.recalculateUserCounters(currentUsername);
+        userRepository.recalculateUserCounters(username);
+        relationshipCacheRepository.invalidateFriend(currentUsername);
+        relationshipCacheRepository.invalidateFriend(username);
     }
 
     @Override
@@ -61,9 +63,9 @@ public class FriendServiceImpl implements FriendService {
 
     @Override
     public List<UserCommonInformationResponse> getMutualFriends(String username) {
-        UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
-        UUID targetUserId = userService.getUser(username).getId();
-        return friendRepository.getMutualFriends(currentUserId, targetUserId, User.MAX_FRIEND_COUNT).stream()
+        String currentUsername = userService.getCurrentUsernameRequiredAuthentication();
+        userService.validateUserExists(username);
+        return friendRepository.getMutualFriends(currentUsername, username, User.MAX_FRIEND_COUNT).stream()
                 .map(userMapper::toUserCommonInformationResponse)
                 .toList();
     }

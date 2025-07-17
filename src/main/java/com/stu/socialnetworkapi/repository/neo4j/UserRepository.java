@@ -244,6 +244,33 @@ public interface UserRepository extends Neo4jRepository<User, UUID> {
     void recalculateUserCounters(UUID userId);
 
     @Query("""
+            MATCH (user:User {username: $username})
+            
+            // Đếm số lượng bạn bè
+            OPTIONAL MATCH (user)-[friendRel:FRIEND]->(:User)
+            WITH user, count(friendRel) AS friendCount
+            
+            // Đếm số lượng request đã gửi
+            OPTIONAL MATCH (user)-[sentReq:REQUEST]->(:User)
+            WITH user, friendCount, count(sentReq) AS requestSentCount
+            
+            // Đếm số lượng request đã nhận
+            OPTIONAL MATCH (user)<-[receivedReq:REQUEST]-(:User)
+            WITH user, friendCount, requestSentCount, count(receivedReq) AS requestReceivedCount
+            
+            // Đếm số lượng user đã block
+            OPTIONAL MATCH (user)-[blockRel:BLOCK]->(:User)
+            WITH user, friendCount, requestSentCount, requestReceivedCount, count(blockRel) AS blockCount
+            
+            // Cập nhật tất cả các giá trị
+            SET user.friendCount = friendCount,
+                user.requestSentCount = requestSentCount,
+                user.requestReceivedCount = requestReceivedCount,
+                user.blockCount = blockCount
+            """)
+    void recalculateUserCounters(String username);
+
+    @Query("""
                 MATCH (user:User)
                 WITH user
                 ORDER BY user.createdAt DESC

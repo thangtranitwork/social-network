@@ -22,4 +22,14 @@ public class UserCounterCalculator {
     public void calculateUsersCounter(List<UUID> userIds) {
         userIds.forEach(userRepository::recalculateUserCounters);
     }
+
+    @Async
+    public void calculateUserCounterUsername(String username) {
+        userRepository.recalculateUserCounters(username);
+    }
+
+    @Async
+    public void calculateUsersCounterByUsername(List<String> usernames) {
+        usernames.forEach(userRepository::recalculateUserCounters);
+    }
 }

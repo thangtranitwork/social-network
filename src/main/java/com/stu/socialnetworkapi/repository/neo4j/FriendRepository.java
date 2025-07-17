@@ -21,10 +21,10 @@ public interface FriendRepository extends Neo4jRepository<Friend, Long> {
     Set<String> getFriendUsernames(String username, long limit);
 
     @Query("""
-            MATCH (:User {id: $userId})-[friend:FRIEND]->(:User {id: $targetId})
+            MATCH (:User {username: $username})-[friend:FRIEND]->(:User {username: $targetUsername})
             RETURN friend.uuid
             """)
-    Optional<UUID> getFriendId(UUID userId, UUID targetId);
+    Optional<UUID> getFriendId(String username, String targetUsername);
 
     @Query("""
                 MATCH (u:User)-[r:FRIEND {uuid: $uuid}]->(t:User)
@@ -93,7 +93,7 @@ public interface FriendRepository extends Neo4jRepository<Friend, Long> {
 
     @Query("""
             // Match both users
-            MATCH (user1:User {id: $userId}), (user2:User {id: $targetId})
+            MATCH (user1:User {username: $username}), (user2:User {username: $username})
             
             // Find mutual friends (users who are friends with both user1 and user2)
             MATCH (user1)-[:FRIEND]->(mutualFriend:User)<-[:FRIEND]-(user2)
@@ -120,5 +120,5 @@ public interface FriendRepository extends Neo4jRepository<Friend, Long> {
             ORDER BY mutualFriendsCount DESC, mutualFriend.username
             LIMIT $limit
             """)
-    List<UserProjection> getMutualFriends(UUID userId, UUID targetId, long limit);
+    List<UserProjection> getMutualFriends(String username, String targetUsername, long limit);
 }

@@ -41,11 +41,6 @@ public class BlockServiceImpl implements BlockService {
     }
 
     @Override
-    public BlockStatus getBlockStatus(UUID userId, UUID targetId) {
-        return blockRepository.getBlockStatus(userId, targetId);
-    }
-
-    @Override
     public BlockStatus getBlockStatus(String username, String targetUsername) {
         if (relationshipCacheRepository.isBlocked(username, targetUsername))
             return BlockStatus.BLOCKED;
@@ -57,29 +52,32 @@ public class BlockServiceImpl implements BlockService {
 
     @Override
     public void block(String username) {
-        User user = userService.getCurrentUserRequiredAuthentication();
-        User target = userService.getUser(username);
-        if (user.getUsername().equals(username)) {
+        User currentUser = userService.getCurrentUserRequiredAuthentication();
+        String currentUsername = currentUser.getUsername();
+
+        User targetUser = userService.getUser(username);
+
+        if (currentUsername.equals(username)) {
             throw new ApiException(ErrorCode.CAN_NOT_BLOCK_YOURSELF);
         }
 
-        BlockStatus blockStatus = getBlockStatus(user.getUsername(), username);
+        BlockStatus blockStatus = getBlockStatus(currentUsername, username);
         switch (blockStatus) {
             case BLOCKED -> throw new ApiException(ErrorCode.HAS_BLOCKED);
             case HAS_BEEN_BLOCKED -> throw new ApiException(ErrorCode.HAS_BEEN_BLOCKED);
             case NORMAL -> {
-                if (user.getBlockCount() + 1 > User.MAX_BLOCK_COUNT)
+                if (currentUser.getBlockCount() + 1 > User.MAX_BLOCK_COUNT)
                     throw new ApiException(ErrorCode.BLOCK_LIMIT_REACHED);
 
-                blockRepository.blockUser(user.getId(), target.getId());
-                userCounterCalculator.calculateUserCounter(user.getId());
-                relationshipCacheRepository.invalidateBlock(user.getUsername());
+                blockRepository.blockUser(currentUsername, username);
+                userCounterCalculator.calculateUserCounterUsername(currentUsername);
+                relationshipCacheRepository.invalidateBlock(currentUsername);
 
                 MessageCommand command = MessageCommand.builder()
                         .command(MessageCommand.Command.HAS_BEEN_BLOCKED)
-                        .id(String.valueOf(user.getId()))
+                        .id(currentUser.getId().toString())
                         .build();
-                eventPublisher.publishEvent(new CommandEvent(this, command, inChatRepository.getChatId(user.getId(), target.getId())));
+                eventPublisher.publishEvent(new CommandEvent(command, inChatRepository.getChatId(currentUser.getId(), targetUser.getId())));
             }
         }
     }
@@ -97,7 +95,7 @@ public class BlockServiceImpl implements BlockService {
                 .command(MessageCommand.Command.HAS_BEEN_UNBLOCKED)
                 .id(String.valueOf(currentUserId))
                 .build();
-        eventPublisher.publishEvent(new CommandEvent(this, command, inChatRepository.getChatId(currentUserId, target.getId())));
+        eventPublisher.publishEvent(new CommandEvent(command, inChatRepository.getChatId(currentUserId, target.getId())));
     }
 
     @Override

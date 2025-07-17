@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class KeywordExtractorServiceImpl implements KeywordExtractorService {
-    private static final HashMap<Language, Set<String>> STOPWORDS = new HashMap<>();
+    private static final Map<Language, Set<String>> STOPWORDS = new EnumMap<>(Language.class);
     private static final List<Language> SUPPORTED_LANGUAGES = Language.getLanguages();
     private static final int NUMBER_OF_KEYWORDS = 5;
     private static final int MIN_LENGTH_TO_PROCESS = 200;

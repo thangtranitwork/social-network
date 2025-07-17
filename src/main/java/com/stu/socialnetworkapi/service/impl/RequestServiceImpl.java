@@ -40,6 +40,12 @@ public class RequestServiceImpl implements RequestService {
         validateSendAddFriendRequest(requester, target);
         requestRepository.create(requester.getId(), target.getId());
 
+        userCounterCalculator.calculateUsersCounter(List.of(requester.getId(), target.getId()));
+        relationshipCacheRepository.invalidateRequestSent(requester.getUsername());
+        relationshipCacheRepository.invalidateRequestReceived(target.getUsername());
+        relationshipCacheRepository.removeIfInSuggestion(requester.getUsername(), target.getUsername());
+        relationshipCacheRepository.removeIfInSuggestion(target.getUsername(), requester.getUsername());
+
         Notification notification = Notification.builder()
                 .creator(requester)
                 .receiver(target)
@@ -47,11 +53,6 @@ public class RequestServiceImpl implements RequestService {
                 .targetId(target.getId())
                 .targetType(ObjectType.REQUEST)
                 .build();
-        userCounterCalculator.calculateUsersCounter(List.of(requester.getId(), target.getId()));
-        relationshipCacheRepository.invalidateRequestSent(requester.getUsername());
-        relationshipCacheRepository.invalidateRequestReceived(target.getUsername());
-        relationshipCacheRepository.removeIfInSuggestion(requester.getUsername(), target.getUsername());
-        relationshipCacheRepository.removeIfInSuggestion(target.getUsername(), requester.getUsername());
         notificationService.send(notification);
     }
 
@@ -69,13 +70,18 @@ public class RequestServiceImpl implements RequestService {
 
     @Override
     public void deleteRequest(String username) {
-        UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
-        User target = userService.getUser(username);
-        UUID uuid = requestRepository.getRequestUUID(target.getId(), currentUserId)
+        String currentUsername = userService.getCurrentUsernameRequiredAuthentication();
+        userService.validateUserExists(username);
+        UUID uuid = requestRepository.getRequestUUID(currentUsername, username)
                 .orElseThrow(() -> new ApiException(ErrorCode.REQUEST_NOT_FOUND));
 
         requestRepository.deleteByUuid(uuid);
-        userCounterCalculator.calculateUsersCounter(List.of(currentUserId, target.getId()));
+        userCounterCalculator.calculateUsersCounterByUsername(List.of(currentUsername, username));
+
+        relationshipCacheRepository.getRequestSent(username);
+        relationshipCacheRepository.getRequestReceived(username);
+        relationshipCacheRepository.invalidateRequestSent(currentUsername);
+        relationshipCacheRepository.invalidateRequestReceived(currentUsername);
     }
 
     @Override

@@ -6,7 +6,7 @@ import org.springframework.context.ApplicationEvent;
 
 @Getter
 public class TypingEvent extends ApplicationEvent {
-    private final UserTypingRequest request;
+    private transient final UserTypingRequest request;
 
     public TypingEvent(Object source, UserTypingRequest request) {
         super(source);

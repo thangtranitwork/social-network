@@ -2,18 +2,15 @@ package com.stu.socialnetworkapi.util;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 
+@Slf4j
 @Component
 public class StringeeTokenUtil {
-
-    private static final Logger logger = LoggerFactory.getLogger(StringeeTokenUtil.class);
-
     private static final int DEFAULT_EXPIRE_IN_SECONDS = 2592000;
 
     @Value("${stringee.api.sid}")
@@ -24,7 +21,6 @@ public class StringeeTokenUtil {
 
     public String createAccessToken(String username) {
         try {
-
             long currentTime = System.currentTimeMillis() / 1000;
 
             String token = Jwts.builder()
@@ -40,12 +36,12 @@ public class StringeeTokenUtil {
                     .signWith(Keys.hmacShaKeyFor(apiKeySecret.getBytes(StandardCharsets.UTF_8)), Jwts.SIG.HS256)
                     .compact();
 
-            logger.info("Access token created successfully for user: {}", username);
+            log.debug("Access token created successfully for user: {}", username);
             return token;
 
         } catch (Exception ex) {
-            logger.error("Error creating access token for user: {}", username, ex);
-            throw new RuntimeException("Failed to create Stringee access token", ex);
+            log.error("Error creating access token for user: {}", username, ex);
+            return null;
         }
     }
 }

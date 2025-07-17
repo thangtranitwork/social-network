@@ -8,6 +8,7 @@ import com.stu.socialnetworkapi.entity.File;
 import com.stu.socialnetworkapi.entity.User;
 import com.stu.socialnetworkapi.entity.sqlite.OnlineUserLog;
 import com.stu.socialnetworkapi.enums.BlockStatus;
+import com.stu.socialnetworkapi.event.UpdateUsernameEvent;
 import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.mapper.UserMapper;
@@ -18,6 +19,7 @@ import com.stu.socialnetworkapi.service.itf.FileService;
 import com.stu.socialnetworkapi.service.itf.UserService;
 import com.stu.socialnetworkapi.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -32,9 +34,10 @@ import java.util.UUID;
 public class UserServiceImpl implements UserService {
     private final JwtUtil jwtUtil;
     private final UserMapper userMapper;
-    private final UserRepository userRepository;
     private final FileService fileService;
+    private final UserRepository userRepository;
     private final BlockRepository blockRepository;
+    private final ApplicationEventPublisher eventPublisher;
     private final OnlineUserLogRepository onlineUserLogRepository;
 
     @Override
@@ -97,10 +100,12 @@ public class UserServiceImpl implements UserService {
         User user = getCurrentUserRequiredAuthentication();
         if (user.getNextChangeUsernameDate().isAfter(LocalDate.now()))
             throw new ApiException(ErrorCode.LESS_THAN_30_DAYS_SINCE_LAST_NAME_CHANGE);
+        String oldUsername = jwtUtil.getUsername();
         user.setUsername(username);
         LocalDate nextChangeUsernameDate = LocalDate.now().plusDays(User.CHANGE_USERNAME_COOLDOWN_DAY);
         user.setNextChangeUsernameDate(nextChangeUsernameDate);
         userRepository.save(user);
+        eventPublisher.publishEvent(new UpdateUsernameEvent(oldUsername, username));
         return nextChangeUsernameDate;
     }
 

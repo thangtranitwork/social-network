@@ -17,11 +17,11 @@ public class CommandListener {
     @Async
     @EventListener
     public void handleCommandEvent(CommandEvent event) {
-        if (event.getChatId() == null) {
+        if (event.chatId() == null) {
             return;
         }
-        String destination = WebSocketChannelPrefix.CHAT_CHANNEL_PREFIX + "/" + event.getChatId();
-        messagingTemplate.convertAndSend(destination, event.getCommand());
+        String destination = WebSocketChannelPrefix.CHAT_CHANNEL_PREFIX + "/" + event.chatId();
+        messagingTemplate.convertAndSend(destination, event.command());
 
     }
 }

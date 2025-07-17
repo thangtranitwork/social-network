@@ -28,7 +28,6 @@ public class NotificationController {
 
     @PatchMapping("mark-as-read")
     public ApiResponse<Void> markAsRead(Neo4jPageable pageable) {
-        System.out.println(pageable);
         notificationService.markLatestNotificationsAsRead(pageable.getLimit());
         return ApiResponse.success();
     }

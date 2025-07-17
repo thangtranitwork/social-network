@@ -39,14 +39,13 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
     private static final String ROLE_KEY = "role";
     private static final String USER_ID_JWT_KEY = "sub";
     private static final String ROLE_JWT_KEY = "scope";
+    private static final String SUBSCRIPTION_KEY = "subscription:";
 
     @Override
     public Message<?> preSend(@NonNull Message<?> message, @NonNull MessageChannel channel) {
         StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
 
-        if (accessor == null) {
-            return message;
-        }
+        if (accessor == null) throw new WebSocketException(ErrorCode.UNAUTHORIZED);
         String token = accessor.getFirstNativeHeader(AUTHORIZATION_HEADER);
         if (token != null && token.startsWith(BEARER_PREFIX)) {
             token = token.substring(7);
@@ -56,47 +55,53 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
                 .orElse(new HashMap<>());
 
         if (StompCommand.CONNECT.equals(command)) {
-            // Xác thực token và lưu thông tin user vào session
-            Map<String, Object> claims = jwtUtil.validateToken(token);
-            Object userId = claims.get(USER_ID_JWT_KEY);
-            Object role = claims.get(ROLE_JWT_KEY);
-            attributes.put(USER_ID_KEY, userId);
-            attributes.put(ROLE_KEY, role);
-            accessor.setUser(userId::toString);
-            isOnlineRepository.onUserConnected(UUID.fromString(userId.toString()));
-        }
-        //Xác thực khi SUBSCRIBE
-        else {
+            handleConnect(token, attributes, accessor);
+        } else {
             String subcriptionId = accessor.getSubscriptionId();
             if (StompCommand.SUBSCRIBE.equals(command)) {
                 String destination = accessor.getDestination();
                 if (!authorizeSubscription(accessor)) {
                     throw new WebSocketException(ErrorCode.UNAUTHORIZED);
                 }
-                attributes.put("subscription:" + subcriptionId, destination);
+                attributes.put(SUBSCRIPTION_KEY + subcriptionId, destination);
             } else if (StompCommand.DISCONNECT.equals(command)) {
                 UUID userId = UUID.fromString(attributes.get(USER_ID_KEY).toString());
                 isOnlineRepository.onUserDisconnected(userId);
             } else if (StompCommand.UNSUBSCRIBE.equals(command)) {
-                UUID userId = UUID.fromString(attributes.get(USER_ID_KEY).toString());
-                String subscriptionId = accessor.getSubscriptionId();
-                String destination = (String) attributes.get("subscription:" + subscriptionId);
-                if (destination != null && destination.startsWith(WebSocketChannelPrefix.TYPING_CHANNEL_PREFIX)) {
-                    String chatId = destination.substring(WebSocketChannelPrefix.TYPING_CHANNEL_PREFIX.length() + 1);
-                    UUID chatUUID = UUID.fromString(chatId);
-                    UserTypingRequest request = new UserTypingRequest(chatUUID, userId, false);
-                    eventPublisher.publishEvent(new TypingEvent(this, request));
-                } else if (destination != null && destination.startsWith(WebSocketChannelPrefix.CHAT_CHANNEL_PREFIX)) {
-                    String chatId = destination.substring(WebSocketChannelPrefix.CHAT_CHANNEL_PREFIX.length() + 1);
-                    UUID chatUUID = UUID.fromString(chatId);
-                    inChatRepository.unsubscribe(userId, chatUUID);
-                }
-
-                attributes.remove("subscription:" + subscriptionId);
+                handleUnsubscribe(attributes, accessor);
             }
 
         }
         return message;
+    }
+
+    private void handleConnect(String token, Map<String, Object> attributes, StompHeaderAccessor accessor) {
+        // Xác thực token và lưu thông tin user vào session
+        Map<String, Object> claims = jwtUtil.validateToken(token);
+        Object userId = claims.get(USER_ID_JWT_KEY);
+        Object role = claims.get(ROLE_JWT_KEY);
+        attributes.put(USER_ID_KEY, userId);
+        attributes.put(ROLE_KEY, role);
+        accessor.setUser(userId::toString);
+        isOnlineRepository.onUserConnected(UUID.fromString(userId.toString()));
+    }
+
+    private void handleUnsubscribe(Map<String, Object> attributes, StompHeaderAccessor accessor) {
+        UUID userId = UUID.fromString(attributes.get(USER_ID_KEY).toString());
+        String subscriptionId = accessor.getSubscriptionId();
+        String destination = (String) attributes.get(SUBSCRIPTION_KEY + subscriptionId);
+        if (destination != null && destination.startsWith(WebSocketChannelPrefix.TYPING_CHANNEL_PREFIX)) {
+            String chatId = destination.substring(WebSocketChannelPrefix.TYPING_CHANNEL_PREFIX.length() + 1);
+            UUID chatUUID = UUID.fromString(chatId);
+            UserTypingRequest request = new UserTypingRequest(chatUUID, userId, false);
+            eventPublisher.publishEvent(new TypingEvent(this, request));
+        } else if (destination != null && destination.startsWith(WebSocketChannelPrefix.CHAT_CHANNEL_PREFIX)) {
+            String chatId = destination.substring(WebSocketChannelPrefix.CHAT_CHANNEL_PREFIX.length() + 1);
+            UUID chatUUID = UUID.fromString(chatId);
+            inChatRepository.unsubscribe(userId, chatUUID);
+        }
+
+        attributes.remove(SUBSCRIPTION_KEY + subscriptionId);
     }
 
     private boolean authorizeSubscription(StompHeaderAccessor accessor) {
@@ -169,7 +174,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
                 .command(MessageCommand.Command.READING)
                 .id(String.valueOf(userUUID))
                 .build();
-        eventPublisher.publishEvent(new CommandEvent(this, command, chatUUID));
+        eventPublisher.publishEvent(new CommandEvent(command, chatUUID));
         return isMember;
     }
 

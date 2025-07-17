@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Component
@@ -133,6 +134,51 @@ public class RelationshipCacheRepository {
 
         return Boolean.TRUE.equals(redisTemplate.opsForSet().isMember(key, targetUsername))
                 || Boolean.TRUE.equals(redisTemplate.opsForSet().isMember(reverseKey, username));
+    }
+
+    public void updateUsername(String oldUsername, String newUsername) {
+        Set<String> friends = Optional.ofNullable(redisTemplate.opsForSet().members(FRIEND_KEY + oldUsername))
+                .orElse(Collections.emptySet());
+        Set<String> sentRequests = Optional.ofNullable(redisTemplate.opsForSet().members(REQUEST_SENT_KEY + oldUsername))
+                .orElse(Collections.emptySet());
+        Set<String> receivedRequests = Optional.ofNullable(redisTemplate.opsForSet().members(REQUEST_RECEIVED_KEY + oldUsername))
+                .orElse(Collections.emptySet());
+        Set<String> blocks = Optional.ofNullable(redisTemplate.opsForSet().members(BLOCK_KEY + oldUsername))
+                .orElse(Collections.emptySet());
+
+        redisTemplate.delete(SUGGESTED_KEY + oldUsername);
+        clearOldDataAndSetNew(REQUEST_SENT_KEY, REQUEST_RECEIVED_KEY, oldUsername, newUsername, sentRequests);
+        clearOldDataAndSetNew(FRIEND_KEY, FRIEND_KEY, oldUsername, newUsername, friends);
+        clearOldDataAndSetNew(REQUEST_RECEIVED_KEY, REQUEST_SENT_KEY, oldUsername, newUsername, receivedRequests);
+
+        //process block
+        clearOldAndSetNewBlock(oldUsername, newUsername, blocks);
+
+    }
+
+    private void clearOldAndSetNewBlock(String oldUsername, String newUsername, Set<String> blocks) {
+        String oldKey = BLOCK_KEY + oldUsername;
+        String newKey = BLOCK_KEY + newUsername;
+
+        redisTemplate.delete(oldKey);
+        if (!blocks.isEmpty())
+            redisTemplate.opsForSet().add(newKey, blocks.toArray(new String[0]));
+    }
+
+    private void clearOldDataAndSetNew(String redisKey, String reverseRedisKey, String oldUsername, String newUsername, Set<String> usernames) {
+        String oldKey = redisKey + oldUsername;
+        String newKey = redisKey + newUsername;
+        redisTemplate.delete(oldKey);
+        if (!usernames.isEmpty()) {
+            usernames.forEach(username -> {
+                String reverseKey = reverseRedisKey + username;
+                if (redisTemplate.hasKey(reverseKey)) {
+                    redisTemplate.opsForSet().remove(reverseKey, oldUsername);
+                    redisTemplate.opsForSet().add(reverseKey, newUsername);
+                }
+            });
+            redisTemplate.opsForSet().add(newKey, usernames.toArray(new String[0]));
+        }
     }
 
     private List<UserProjection> readOnCache(String key) {

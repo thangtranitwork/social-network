@@ -26,8 +26,8 @@ public interface BlockRepository extends Neo4jRepository<Block, Long> {
     BlockStatus getBlockStatus(UUID userId, UUID targetId);
 
     @Query("""
-            MATCH (a:User {id: $userId})
-            MATCH (b:User {id: $targetId})
+            MATCH (a:User {username: $username})
+            MATCH (b:User {username: $targetUsername})
             
             OPTIONAL MATCH (a)-[f:FRIEND]-(b)
             OPTIONAL MATCH (a)-[r:REQUEST]-(b)
@@ -36,7 +36,7 @@ public interface BlockRepository extends Neo4jRepository<Block, Long> {
             WITH DISTINCT a, b
             CREATE (a)-[:BLOCK {uuid: randomUUID()}]->(b)
             """)
-    void blockUser(UUID userId, UUID targetId);
+    void blockUser(String username, String targetUsername);
 
     @Query("""
             MATCH (:User {id: $userId})-[block:BLOCK]->(:User {id: $targetId})

@@ -45,10 +45,10 @@ public interface RequestRepository extends Neo4jRepository<Request, Long> {
     void create(UUID senderId, UUID targetId);
 
     @Query("""
-                MATCH (u:User {id: $userId})-[r:REQUEST]-(t:User {id: $targetId})
+                MATCH (u:User {username: $username})-[r:REQUEST]-(t:User {username: $targetUsername})
                 RETURN r.uuid
             """)
-    Optional<UUID> getRequestUUID(UUID userId, UUID targetId);
+    Optional<UUID> getRequestUUID(String username, String targetUsername);
 
     @Query("""
                 MATCH (u:User {id: $senderId})-[r:REQUEST]->(t:User {id: $targetId})

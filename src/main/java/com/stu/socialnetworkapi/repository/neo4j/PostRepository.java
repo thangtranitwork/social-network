@@ -18,11 +18,11 @@ import java.util.UUID;
 public interface PostRepository extends Neo4jRepository<Post, UUID> {
     @Query("""
                 MATCH (post:Post {id: $id})
-                WHERE post.deleteAt IS NULL
+                WHERE post.deletedAt IS NULL
                 MATCH (author:User)-[:POSTED]->(post)
                 OPTIONAL MATCH (author)-[:HAS_PROFILE_PICTURE]->(profilePic:File)
                 OPTIONAL MATCH (post)-[:ATTACH_FILES]->(file:File)
-                OPTIONAL MATCH (viewer:User {username: $username})
+                OPTIONAL MATCH (viewer:User {username: $viewerUsername})
                 OPTIONAL MATCH (viewer)-[friendship:FRIEND]->(author)
                 OPTIONAL MATCH (viewer)-[liked:LIKED]->(post)
             

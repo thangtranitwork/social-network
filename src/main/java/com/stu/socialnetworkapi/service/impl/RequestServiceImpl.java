@@ -13,14 +13,16 @@ import com.stu.socialnetworkapi.service.itf.ChatService;
 import com.stu.socialnetworkapi.service.itf.NotificationService;
 import com.stu.socialnetworkapi.service.itf.RequestService;
 import com.stu.socialnetworkapi.service.itf.UserService;
-import com.stu.socialnetworkapi.util.UserCounterCalculator;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -29,7 +31,7 @@ public class RequestServiceImpl implements RequestService {
     private final ChatService chatService;
     private final RequestRepository requestRepository;
     private final NotificationService notificationService;
-    private final UserCounterCalculator userCounterCalculator;
+    private final Neo4jClient neo4jClient;
     private final RelationshipCacheRepository relationshipCacheRepository;
 
     @Override
@@ -38,9 +40,10 @@ public class RequestServiceImpl implements RequestService {
         User target = userService.getUser(username);
 
         validateSendAddFriendRequest(requester, target);
-        requestRepository.create(requester.getId(), target.getId());
 
-        userCounterCalculator.calculateUsersCounter(List.of(requester.getId(), target.getId()));
+        requestRepository.create(requester.getId(), target.getId());
+        requester = userService.getUser(requester.getId());
+        target = userService.getUser(target.getId());
         relationshipCacheRepository.invalidateRequestSent(requester.getUsername());
         relationshipCacheRepository.invalidateRequestReceived(target.getUsername());
         relationshipCacheRepository.removeIfInSuggestion(requester.getUsername(), target.getUsername());
@@ -74,9 +77,7 @@ public class RequestServiceImpl implements RequestService {
         userService.validateUserExists(username);
         UUID uuid = requestRepository.getRequestUUID(currentUsername, username)
                 .orElseThrow(() -> new ApiException(ErrorCode.REQUEST_NOT_FOUND));
-
         requestRepository.deleteByUuid(uuid);
-        userCounterCalculator.calculateUsersCounterByUsername(List.of(currentUsername, username));
 
         relationshipCacheRepository.getRequestSent(username);
         relationshipCacheRepository.getRequestReceived(username);
@@ -90,13 +91,13 @@ public class RequestServiceImpl implements RequestService {
         User target = userService.getUser(username);
         UUID uuid = requestRepository.getRequestUUIDWhichDirection(target.getId(), currentUser.getId())
                 .orElseThrow(() -> new ApiException(ErrorCode.REQUEST_NOT_FOUND));
-
         requestRepository.acceptRequest(uuid);
-        userCounterCalculator.calculateUsersCounter(List.of(currentUser.getId(), target.getId()));
-
+        currentUser = userService.getUser(currentUser.getId());
+        target = userService.getUser(target.getId());
         chatService.createChatIfNotExist(currentUser, target);
-        relationshipCacheRepository.invalidateRequestSent(currentUser.getUsername());
-        relationshipCacheRepository.invalidateRequestReceived(target.getUsername());
+
+        relationshipCacheRepository.invalidateRequestReceived(currentUser.getUsername());
+        relationshipCacheRepository.invalidateRequestSent(target.getUsername());
         relationshipCacheRepository.invalidateFriend(currentUser.getUsername());
         relationshipCacheRepository.invalidateFriend(target.getUsername());
         Notification notification = Notification.builder()

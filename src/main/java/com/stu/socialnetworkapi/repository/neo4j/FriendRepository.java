@@ -29,10 +29,11 @@ public interface FriendRepository extends Neo4jRepository<Friend, Long> {
     @Query("""
                 MATCH (u:User)-[r:FRIEND {uuid: $uuid}]->(t:User)
                 OPTIONAL MATCH (u)<-[rv:FRIEND]-(t)
+                SET u.friendCount = u.friendCount - 1,
+                    t.friendCount = t.friendCount - 1
                 DELETE r, rv
             """)
     void deleteByUuid(UUID uuid);
-
 
     @Query("""
             MATCH (user1:User {id: $userId1})-[friend:FRIEND]->(user2:User {id: $userId2})
@@ -93,7 +94,7 @@ public interface FriendRepository extends Neo4jRepository<Friend, Long> {
 
     @Query("""
             // Match both users
-            MATCH (user1:User {username: $username}), (user2:User {username: $username})
+            MATCH (user1:User {username: $username}), (user2:User {username: $targetUsername})
             
             // Find mutual friends (users who are friends with both user1 and user2)
             MATCH (user1)-[:FRIEND]->(mutualFriend:User)<-[:FRIEND]-(user2)

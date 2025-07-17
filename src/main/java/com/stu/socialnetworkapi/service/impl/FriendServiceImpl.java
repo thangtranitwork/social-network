@@ -6,7 +6,6 @@ import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.mapper.UserMapper;
 import com.stu.socialnetworkapi.repository.neo4j.FriendRepository;
-import com.stu.socialnetworkapi.repository.neo4j.UserRepository;
 import com.stu.socialnetworkapi.repository.redis.RelationshipCacheRepository;
 import com.stu.socialnetworkapi.service.itf.BlockService;
 import com.stu.socialnetworkapi.service.itf.FriendService;
@@ -23,15 +22,14 @@ public class FriendServiceImpl implements FriendService {
     private final UserMapper userMapper;
     private final UserService userService;
     private final BlockService blockService;
-    private final UserRepository userRepository;
     private final FriendRepository friendRepository;
     private final RelationshipCacheRepository relationshipCacheRepository;
 
     @Override
     public List<UserCommonInformationResponse> getFriends(String username) {
         String currentUsername = userService.getCurrentUsernameRequiredAuthentication();
-        User target = userService.getUser(username);
-        blockService.validateBlock(currentUsername, target.getUsername());
+        userService.validateUserExists(username);
+        blockService.validateBlock(currentUsername, username);
         return relationshipCacheRepository.getFriend(username);
     }
 
@@ -43,9 +41,6 @@ public class FriendServiceImpl implements FriendService {
         UUID uuid = friendRepository.getFriendId(currentUsername, username)
                 .orElseThrow(() -> new ApiException(ErrorCode.FRIEND_NOT_FOUND));
         friendRepository.deleteByUuid(uuid);
-
-        userRepository.recalculateUserCounters(currentUsername);
-        userRepository.recalculateUserCounters(username);
         relationshipCacheRepository.invalidateFriend(currentUsername);
         relationshipCacheRepository.invalidateFriend(username);
     }

@@ -118,7 +118,10 @@ public class CommentServiceImpl implements CommentService {
     public void delete(UUID id) {
         User user = userService.getCurrentUserRequiredAuthentication();
         Comment comment = getCommentById(id);
-        Post post = comment.getPost();
+        Comment originalComment = comment.getOriginalComment();
+        Post post = !comment.isRepliedComment()
+                ? comment.getPost()
+                : originalComment.getPost();
         boolean isAdmin = jwtUtil.isAdmin();
         boolean isPostAuthor = post.getAuthor().getId().equals(user.getId());
         boolean isCommentAuthor = user.getId().equals(comment.getAuthor().getId());
@@ -129,7 +132,6 @@ public class CommentServiceImpl implements CommentService {
 
         if (comment.isRepliedComment()) {
             File attachment = comment.getAttachedFile();
-            Comment originalComment = comment.getOriginalComment();
             originalComment.setReplyCount(originalComment.getReplyCount() - 1);
             post.setCommentCount(post.getCommentCount() - 1);
 

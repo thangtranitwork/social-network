@@ -26,7 +26,7 @@ public class User {
     String username;
     LocalDate birthdate;
     String bio;
-
+    // TODO: remove and read from cache
     int friendCount;
     int blockCount;
     int requestSentCount;

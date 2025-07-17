@@ -61,4 +61,6 @@ stringee:
 logging:
   level:
     root: error
-    com.stu.socialnetworkapi: debug
+    com:
+      stu:
+        socialnetworkapi: DEBUG

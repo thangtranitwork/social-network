@@ -37,6 +37,8 @@ public interface RequestRepository extends Neo4jRepository<Request, Long> {
     @Query("""
                 MATCH (sender:User {id: $senderId})
                 MATCH (target:User {id: $targetId})
+                SET sender.requestSentCount = sender.requestSentCount + 1,
+                    target.requestReceivedCount = target.requestReceivedCount + 1
                 CREATE (sender)-[:REQUEST {
                     sentAt: datetime(),
                     uuid: randomUUID()
@@ -57,19 +59,25 @@ public interface RequestRepository extends Neo4jRepository<Request, Long> {
     Optional<UUID> getRequestUUIDWhichDirection(UUID senderId, UUID targetId);
 
     @Query("""
-                MATCH (:User)-[r:REQUEST {uuid: $uuid}]-(:User)
+                MATCH (a:User)-[r:REQUEST {uuid: $uuid}]->(b:User)
+                SET a.requestSentCount = a.requestSentCount - 1,
+                    b.requestReceivedCount = b.requestReceivedCount - 1
                 DELETE r
             """)
     void deleteByUuid(UUID uuid);
 
     @Query("""
                 MATCH (sender:User)-[r:REQUEST {uuid: $requestId}]->(target:User)
-                WITH sender, target, r
+                SET sender.requestSentCount = coalesce(sender.requestSentCount, 0) - 1,
+                    sender.friendCount = coalesce(sender.friendCount, 0) + 1,
+                    target.requestReceivedCount = coalesce(target.requestReceivedCount, 0) - 1,
+                    target.friendCount = coalesce(target.friendCount, 0) + 1
                 DELETE r
-                MERGE (sender)-[friend:FRIEND {uuid: randomUUID(), createdAt: datetime()}]->(target)
-                MERGE (sender)<-[friendReverse:FRIEND {uuid: randomUUID(), createdAt: datetime()}]-(target)
+                CREATE (sender)-[:FRIEND {uuid: randomUUID(), createdAt: datetime()}]->(target)
+                CREATE (sender)<-[:FRIEND {uuid: randomUUID(), createdAt: datetime()}]-(target)
+                RETURN true
             """)
-    void acceptRequest(UUID requestId);
+    boolean acceptRequest(UUID requestId);
 
     @Query("""
                 MATCH (sender:User)-[r:REQUEST {uuid: $uuid}]->(target:User)

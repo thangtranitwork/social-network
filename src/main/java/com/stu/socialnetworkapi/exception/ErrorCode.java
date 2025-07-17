@@ -107,7 +107,7 @@ public enum ErrorCode {
     CALL_NOT_FOUND(7013, "Call not found", HttpStatus.NOT_FOUND),
     NOT_READY_FOR_CALL(7014, "Not ready for call", HttpStatus.BAD_REQUEST),
 
-
+    INVALID_REQUEST_METHOD(7015, "Invalid request method", HttpStatus.METHOD_NOT_ALLOWED),
     SEARCH_QUERY_REQUIRED(9000, "Search query is required", HttpStatus.BAD_REQUEST),
     TOO_MANY_REQUESTS(9991, "Too many requests, please  wait a minutes", HttpStatus.TOO_MANY_REQUESTS),
     INVALID_WEBSOCKET_CHANNEL(9992, "Invalid websocket channel", HttpStatus.BAD_REQUEST),

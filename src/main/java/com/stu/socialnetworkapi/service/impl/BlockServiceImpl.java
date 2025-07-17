@@ -12,7 +12,6 @@ import com.stu.socialnetworkapi.repository.redis.InChatRepository;
 import com.stu.socialnetworkapi.repository.redis.RelationshipCacheRepository;
 import com.stu.socialnetworkapi.service.itf.BlockService;
 import com.stu.socialnetworkapi.service.itf.UserService;
-import com.stu.socialnetworkapi.util.UserCounterCalculator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -29,7 +28,6 @@ public class BlockServiceImpl implements BlockService {
     private final BlockRepository blockRepository;
     private final InChatRepository inChatRepository;
     private final ApplicationEventPublisher eventPublisher;
-    private final UserCounterCalculator userCounterCalculator;
     private final RelationshipCacheRepository relationshipCacheRepository;
 
     @Override
@@ -70,7 +68,6 @@ public class BlockServiceImpl implements BlockService {
                     throw new ApiException(ErrorCode.BLOCK_LIMIT_REACHED);
 
                 blockRepository.blockUser(currentUsername, username);
-                userCounterCalculator.calculateUserCounterUsername(currentUsername);
                 relationshipCacheRepository.invalidateBlock(currentUsername);
 
                 MessageCommand command = MessageCommand.builder()
@@ -89,7 +86,6 @@ public class BlockServiceImpl implements BlockService {
         UUID uuid = blockRepository.getBlockId(currentUserId, target.getId())
                 .orElseThrow(() -> new ApiException(ErrorCode.BLOCK_NOT_FOUND));
         blockRepository.deleteByUuid(uuid);
-        userCounterCalculator.calculateUserCounter(currentUserId);
         relationshipCacheRepository.invalidateBlock(userService.getCurrentUsernameRequiredAuthentication());
         MessageCommand command = MessageCommand.builder()
                 .command(MessageCommand.Command.HAS_BEEN_UNBLOCKED)

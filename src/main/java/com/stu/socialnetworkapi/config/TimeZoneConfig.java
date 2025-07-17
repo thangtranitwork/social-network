@@ -1,8 +1,6 @@
 package com.stu.socialnetworkapi.config;
 
 import jakarta.annotation.PostConstruct;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
 
@@ -10,7 +8,6 @@ import java.util.TimeZone;
 
 @Slf4j
 @Configuration
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class TimeZoneConfig {
     @PostConstruct
     public static void setTimeZone() {

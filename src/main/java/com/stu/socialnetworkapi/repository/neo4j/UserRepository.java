@@ -30,7 +30,8 @@ public interface UserRepository extends Neo4jRepository<User, UUID> {
                      RETURN target.id AS userId,
                             target.givenName AS givenName,
                             target.familyName AS familyName,
-                            target.username AS username
+                            target.username AS username,
+                            profile.id AS profilePictureId
             """)
     List<UserProjection> getUsersByUsername(Set<String> usernames);
 

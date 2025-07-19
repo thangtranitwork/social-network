@@ -6,15 +6,13 @@ import com.stu.socialnetworkapi.dto.request.PostRequest;
 import com.stu.socialnetworkapi.dto.request.PostUpdateContentRequest;
 import com.stu.socialnetworkapi.dto.request.SharePostRequest;
 import com.stu.socialnetworkapi.dto.response.PostResponse;
-import com.stu.socialnetworkapi.entity.File;
-import com.stu.socialnetworkapi.entity.Notification;
-import com.stu.socialnetworkapi.entity.Post;
-import com.stu.socialnetworkapi.entity.User;
+import com.stu.socialnetworkapi.entity.*;
 import com.stu.socialnetworkapi.enums.GetType;
 import com.stu.socialnetworkapi.enums.NotificationAction;
 import com.stu.socialnetworkapi.enums.ObjectType;
 import com.stu.socialnetworkapi.enums.PostPrivacy;
 import com.stu.socialnetworkapi.event.PostCreatedEvent;
+import com.stu.socialnetworkapi.event.PostCreatedEventPublisher;
 import com.stu.socialnetworkapi.event.PostsLoadedEvent;
 import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
@@ -25,6 +23,7 @@ import com.stu.socialnetworkapi.repository.neo4j.PostRepository;
 import com.stu.socialnetworkapi.service.itf.*;
 import com.stu.socialnetworkapi.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -35,6 +34,7 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -50,6 +50,7 @@ public class PostServiceImpl implements PostService {
     private final KeywordRepository keywordRepository;
     private final NotificationService notificationService;
     private final ApplicationEventPublisher eventPublisher;
+    private final PostCreatedEventPublisher postCreatedEventPublisher;
 
     @Override
     public PostResponse get(UUID postId) {
@@ -58,7 +59,7 @@ public class PostServiceImpl implements PostService {
                 .orElseThrow(() -> new ApiException(ErrorCode.POST_NOT_FOUND));
 
         validateViewPost(projection, currentUsername);
-        if (currentUsername != null) keywordRepository.interact(postId, currentUsername, 1);
+        if (currentUsername != null) keywordRepository.interact(postId, currentUsername, Keyword.GET_SCORE);
         return postMapper.toPostResponse(projection);
     }
 
@@ -123,7 +124,8 @@ public class PostServiceImpl implements PostService {
                 .privacy(request.privacy())
                 .build();
         PostResponse response = postMapper.toPostResponse(postRepository.save(post));
-        eventPublisher.publishEvent(new PostCreatedEvent(post.getId()));
+        postCreatedEventPublisher.publish(new PostCreatedEvent(post.getId(), post.getContent()));
+        log.debug("abv");
         sendNotificationWhenPost(author, post);
         return response;
     }
@@ -145,10 +147,9 @@ public class PostServiceImpl implements PostService {
 
         originalPost.setShareCount(originalPost.getShareCount() + 1);
         postRepository.saveAll(List.of(post, originalPost));
-        keywordRepository.interact(originalPost.getId(), author.getId(), 5);
-        eventPublisher.publishEvent(new PostCreatedEvent(post.getId()));
+        keywordRepository.interact(originalPost.getId(), author.getId(), Keyword.SHARE_SCORE);
+        postCreatedEventPublisher.publish(new PostCreatedEvent(post.getId(), post.getContent()));
         sendNotificationWhenSharePost(author, originalPost, post);
-
         return postMapper.toPostResponse(post);
     }
 
@@ -219,7 +220,7 @@ public class PostServiceImpl implements PostService {
         post.getLiker().add(user);
         post.setLikeCount(post.getLikeCount() + 1);
         postRepository.save(post);
-        keywordRepository.interact(postId, user.getId(), 2);
+        keywordRepository.interact(postId, user.getId(), Keyword.LIKE_SCORE);
         sendNotificationWhenLikePost(postId, user, post);
     }
 

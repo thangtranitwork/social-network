@@ -58,7 +58,7 @@ public class CommentServiceImpl implements CommentService {
         post.setCommentCount(post.getCommentCount() + 1);
         postRepository.save(post);
         commentRepository.save(comment);
-        keywordRepository.interact(post.getId(), author.getId(), 3);
+        keywordRepository.interact(post.getId(), author.getId(), Keyword.COMMENT_SCORE);
         sendNotificationWhenComment(post, comment);
         return commentMapper.toCommentResponse(comment);
     }
@@ -86,7 +86,7 @@ public class CommentServiceImpl implements CommentService {
         post.setCommentCount(post.getCommentCount() + 1);
         postRepository.save(post);
         commentRepository.saveAll(List.of(originalComment, comment));
-        keywordRepository.interact(post.getId(), author.getId(), 3);
+        keywordRepository.interact(post.getId(), author.getId(), Keyword.COMMENT_SCORE);
         sendNotificationWhenReply(post, comment, originalComment);
         return commentMapper.toCommentResponse(comment);
     }

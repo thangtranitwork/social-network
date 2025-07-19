@@ -31,6 +31,7 @@ public class ConstrainsAndIndexInitializer {
             session.run("CREATE CONSTRAINT call_id_unique IF NOT EXISTS FOR (m:Call) REQUIRE m.callId IS UNIQUE");
             session.run("CREATE CONSTRAINT notification_id_unique IF NOT EXISTS FOR (n:Notification) REQUIRE n.id IS UNIQUE");
             session.run("CREATE CONSTRAINT verify_code_id_unique IF NOT EXISTS FOR (v:VerifyCode) REQUIRE v.id IS UNIQUE");
+            session.run("CREATE CONSTRAINT keyword_text_unique IF NOT EXISTS FOR (k:Keyword) REQUIRE k.text IS UNIQUE");
 
             session.run("CREATE CONSTRAINT friend_uuid_unique IF NOT EXISTS FOR ()-[r:FRIEND]-() REQUIRE r.uuid IS UNIQUE");
             session.run("CREATE CONSTRAINT block_uuid_unique IF NOT EXISTS FOR ()-[r:BLOCK]-() REQUIRE r.uuid IS UNIQUE");

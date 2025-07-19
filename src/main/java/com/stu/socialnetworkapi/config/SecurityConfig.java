@@ -42,6 +42,7 @@ public class SecurityConfig {
             "/v1/posts/of-user/{username}",
             "/v1/comments/of-post/{postId}",
             "/v1/stringee/**",
+            "/v1/test/**",
             "/ws/**" //authorize in handshake interceptor
     };
 

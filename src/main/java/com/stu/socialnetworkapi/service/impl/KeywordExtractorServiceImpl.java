@@ -1,145 +1,45 @@
 package com.stu.socialnetworkapi.service.impl;
 
-import com.stu.socialnetworkapi.entity.Keyword;
-import com.stu.socialnetworkapi.entity.Post;
-import com.stu.socialnetworkapi.enums.Language;
-import com.stu.socialnetworkapi.repository.neo4j.PostRepository;
 import com.stu.socialnetworkapi.service.itf.KeywordExtractorService;
-import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.ClassPathResource;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.messages.SystemMessage;
+import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class KeywordExtractorServiceImpl implements KeywordExtractorService {
-    private static final Map<Language, Set<String>> STOPWORDS = new EnumMap<>(Language.class);
-    private static final List<Language> SUPPORTED_LANGUAGES = Language.getLanguages();
-    private static final int NUMBER_OF_KEYWORDS = 5;
-    private static final int MIN_LENGTH_TO_PROCESS = 200;
-    private final PostRepository postRepository;
+    private final ChatClient chatClient;
+
+    private static final SystemMessage systemMessageWith3Keywords = new SystemMessage("Extract 3 keywords from the text. Format: [key, key]:");
+    private static final SystemMessage systemMessageWithAKeyword = new SystemMessage("Extract 1 keywords from the text. Format: [key]:");
+
+    private static final ParameterizedTypeReference<List<String>> parameterizedTypeReference = new ParameterizedTypeReference<>() {
+    };
+    private static final int MIN_LENGTH_TO_GET_MORE_KEYWORDS = 200;
+
+    public KeywordExtractorServiceImpl(ChatClient.Builder chatClientBuilder) {
+        this.chatClient = chatClientBuilder.build();
+    }
 
     @Override
-    public void extract(UUID postId) {
-        Post post = postRepository.findById(postId).orElse(null);
-        if (post == null) {
-            return;
-        }
-        if (post.getContent().length() < MIN_LENGTH_TO_PROCESS) {
-            return;
-        }
-        Language language = detectLanguage(post.getContent());
-        String cleanedContent = cleanText(post.getContent(), language);
-        if (cleanedContent.isBlank()) return;
-        Set<Keyword> keywords = getTopNgrams(cleanedContent, language);
-        post.setKeywords(keywords);
-        postRepository.save(post);
-    }
+    public List<String> extract(String content) {
+        if (content == null || content.isBlank())
+            return List.of();
+        UserMessage userMessage = new UserMessage(content);
+        SystemMessage systemMessage = content.length() < MIN_LENGTH_TO_GET_MORE_KEYWORDS
+                ? systemMessageWithAKeyword
+                : systemMessageWith3Keywords;
+        Prompt prompt = new Prompt(systemMessage, userMessage);
 
-    @PostConstruct
-    public void init() {
-        for (Language language : SUPPORTED_LANGUAGES) {
-            Set<String> words = loadStopWords(language);
-            STOPWORDS.put(language, words);
-            log.debug("Loaded {} stopwords for language: {}", words.size(), language.name());
-        }
-    }
-
-    private static Set<String> loadStopWords(Language language) {
-        Set<String> result = new HashSet<>();
-        String path = language.getStopwordsFilePath();
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(new ClassPathResource(path).getInputStream(), StandardCharsets.UTF_8))) {
-
-            String line;
-            while ((line = reader.readLine()) != null) {
-                result.add(line.trim().toLowerCase());
-            }
-
-        } catch (IOException e) {
-            log.error("Error reading file '{}': {}", path, e.getMessage());
-        }
-        return result;
-    }
-
-    private static Language detectLanguage(String text) {
-        String[] tokens = text.toLowerCase().split("[^a-zA-Zà-ỹÀ-ỹ]+");
-
-        Map<Language, Integer> scoreMap = new EnumMap<>(Language.class);
-        for (Language language : SUPPORTED_LANGUAGES) {
-            Set<String> stopwords = STOPWORDS.get(language);
-            if (stopwords == null) continue;
-
-            int count = 0;
-            for (String token : tokens) {
-                if (stopwords.contains(token)) {
-                    count++;
-                }
-            }
-            scoreMap.put(language, count);
-        }
-
-        List<Map.Entry<Language, Integer>> sorted = scoreMap.entrySet().stream()
-                .sorted((a, b) -> Integer.compare(b.getValue(), a.getValue()))
-                .toList();
-
-        if (sorted.isEmpty() || sorted.get(0).getValue() == 0) return Language.UNSUPPORTED;
-
-        return sorted.get(0).getKey();
-    }
-
-    private static String cleanText(String text, Language language) {
-        Set<String> stopWords = language == Language.UNSUPPORTED
-                ? Collections.emptySet()
-                : STOPWORDS.get(language);
-        String preprocessed = text.replaceAll("[^\\p{L}\\p{N}\\s]", " ");
-        String[] words = preprocessed.split("\\s+");
-        StringBuilder result = new StringBuilder();
-
-        for (String word : words) {
-            String cleaned = word.replaceAll("[^\\p{L}\\p{N}]", "");
-            if (cleaned.isBlank()) continue;
-
-            String normalized = cleaned.toLowerCase();
-            if (!stopWords.contains(normalized)) {
-                result.append(cleaned).append(" ");
-            }
-        }
-
-        return result.toString().trim().replaceAll("\\s{2,}", " ");
-    }
-
-    private static Set<Keyword> getTopNgrams(String cleanedText, Language language) {
-        int minN = language.getMinWords();
-        int maxN = language.getMaxWords();
-        double lengthWeight = language.getLengthWeight();
-        String[] words = cleanedText.toLowerCase().split("\\s+");
-        Map<String, Integer> ngramCounts = new HashMap<>();
-
-        for (int n = minN; n <= maxN; n++) {
-            for (int i = 0; i <= words.length - n; i++) {
-                String ngram = String.join(" ", Arrays.copyOfRange(words, i, i + n));
-                ngramCounts.put(ngram, ngramCounts.getOrDefault(ngram, 0) + 1);
-            }
-        }
-
-        return ngramCounts.entrySet().stream()
-                .sorted((a, b) -> {
-                    double scoreA = a.getValue() + a.getKey().split("\\s+").length * lengthWeight;
-                    double scoreB = b.getValue() + b.getKey().split("\\s+").length * lengthWeight;
-                    return Double.compare(scoreB, scoreA);
-                })
-                .limit(NUMBER_OF_KEYWORDS)
-                .map(entry -> new Keyword(entry.getKey()))
-                .collect(Collectors.toSet());
+        return chatClient
+                .prompt(prompt)
+                .call()
+                .entity(parameterizedTypeReference);
     }
 }

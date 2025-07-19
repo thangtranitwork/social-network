@@ -13,4 +13,5 @@ import java.util.UUID;
 @AllArgsConstructor
 public class PostCreatedEvent {
     private UUID postId;
+    private String content;
 }

@@ -286,6 +286,7 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
                     AND NOT (u)-[:BLOCK]-(author)
                     AND (
                         post.privacy = 'PUBLIC'
+                        OR u.id = author.id
                         OR (post.privacy = 'FRIEND' AND EXISTS((u)-[:FRIEND]->(author)))
                         )
                     OPTIONAL MATCH (u)-[friendship:FRIEND]->(author)
@@ -506,8 +507,9 @@ public interface PostRepository extends Neo4jRepository<Post, UUID> {
                 // Kiểm tra privacy với friendship riêng biệt
                 OPTIONAL MATCH (u)-[friendship:FRIEND]->(author)
                 WHERE (
-                    post.privacy = 'PUBLIC' OR
-                    (post.privacy = 'FRIEND' AND friendship IS NOT NULL)
+                    post.privacy = 'PUBLIC'
+                    OR u.id = author.id
+                    OR (post.privacy = 'FRIEND' AND friendship IS NOT NULL)
                 )
             
                 // Lấy thông tin bài viết gốc nếu là shared post

@@ -3,7 +3,7 @@ name: social-network
 
 services:
   neo4j:
-    image: neo4j:5.19
+    image: neo4j:5
     container_name: neo4j
     ports:
       - "7474:7474"

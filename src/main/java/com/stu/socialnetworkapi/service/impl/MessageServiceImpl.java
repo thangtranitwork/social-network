@@ -8,21 +8,22 @@ import com.stu.socialnetworkapi.entity.Chat;
 import com.stu.socialnetworkapi.entity.File;
 import com.stu.socialnetworkapi.entity.Message;
 import com.stu.socialnetworkapi.entity.User;
+import com.stu.socialnetworkapi.enums.MessageType;
 import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
 import com.stu.socialnetworkapi.exception.WebSocketException;
 import com.stu.socialnetworkapi.mapper.MessageMapper;
+import com.stu.socialnetworkapi.repository.neo4j.MessageRepository;
 import com.stu.socialnetworkapi.repository.redis.InChatRepository;
 import com.stu.socialnetworkapi.repository.redis.IsTypingRepository;
-import com.stu.socialnetworkapi.repository.neo4j.MessageRepository;
 import com.stu.socialnetworkapi.service.itf.ChatService;
 import com.stu.socialnetworkapi.service.itf.FileService;
 import com.stu.socialnetworkapi.service.itf.MessageService;
 import com.stu.socialnetworkapi.service.itf.UserService;
-import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -188,6 +189,8 @@ public class MessageServiceImpl implements MessageService {
         String content = newContent.trim();
         if (!message.getSender().getId().equals(user.getId()))
             throw new ApiException(ErrorCode.UNAUTHORIZED);
+        if (MessageType.CALL.equals(message.getType()))
+            throw new ApiException(ErrorCode.CAN_NOT_EDIT_CALL);
         if (message.getContent() == null && message.getAttachedFile() != null)
             throw new ApiException(ErrorCode.CAN_NOT_EDIT_FILE_MESSAGE);
         if (ZonedDateTime.now().isAfter(message.getSentAt().plusMinutes(Message.MINUTES_TO_EDIT_MESSAGE)))

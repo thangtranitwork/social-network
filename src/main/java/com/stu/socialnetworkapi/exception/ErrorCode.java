@@ -106,6 +106,7 @@ public enum ErrorCode {
     TARGET_ALREADY_IN_IN_CALL(7012, "Target is already in call", HttpStatus.BAD_REQUEST),
     CALL_NOT_FOUND(7013, "Call not found", HttpStatus.NOT_FOUND),
     NOT_READY_FOR_CALL(7014, "Not ready for call", HttpStatus.BAD_REQUEST),
+    CAN_NOT_EDIT_CALL(7015, "Can't edit call", HttpStatus.BAD_REQUEST),
 
     INVALID_REQUEST_METHOD(7015, "Invalid request method", HttpStatus.METHOD_NOT_ALLOWED),
     SEARCH_QUERY_REQUIRED(9000, "Search query is required", HttpStatus.BAD_REQUEST),

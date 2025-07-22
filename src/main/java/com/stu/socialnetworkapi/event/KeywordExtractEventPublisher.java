@@ -7,14 +7,14 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class PostCreatedEventPublisher {
+public class KeywordExtractEventPublisher {
     private final Gson gson;
     private final RedisTemplate<String, String> redisTemplate;
 
-    private static final String POST_CREATED_EVENT_QUEUE = "queue:post_created";
+    private static final String KEYWORD_EXTRACT_EVENT_QUEUE = "queue:keyword_extract_event";
 
-    public void publish(PostCreatedEvent event) {
+    public void publish(KeywordExtractEvent event) {
         String json = gson.toJson(event);
-        redisTemplate.opsForList().rightPush(POST_CREATED_EVENT_QUEUE, json);
+        redisTemplate.opsForList().rightPush(KEYWORD_EXTRACT_EVENT_QUEUE, json);
     }
 }

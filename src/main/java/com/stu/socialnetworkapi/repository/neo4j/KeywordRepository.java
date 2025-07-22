@@ -36,4 +36,17 @@ public interface KeywordRepository extends Neo4jRepository<Keyword, String> {
             """)
     void save(UUID postId, List<String> keywords);
 
+    @Query("""
+                MATCH (post:Post {id: $postId})
+                OPTIONAL MATCH (post)-[rel:HAS_KEYWORDS]->(oldKeyword:Keyword)
+                DELETE rel
+            
+                WITH post
+                UNWIND $keywords AS keyword
+                MERGE (k:Keyword {text: keyword})
+                MERGE (post)-[:HAS_KEYWORDS]->(k)
+            """)
+    void update(UUID postId, List<String> keywords);
+
+
 }

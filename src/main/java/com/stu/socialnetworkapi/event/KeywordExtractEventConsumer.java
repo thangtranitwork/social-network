@@ -20,14 +20,14 @@ import java.util.concurrent.ScheduledExecutorService;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class PostCreatedEventConsumer {
+public class KeywordExtractEventConsumer {
     private final Gson gson;
     private final KeywordRepository keywordRepository;
     private final RedisTemplate<String, String> redisTemplate;
     private final KeywordExtractorService keywordExtractorService;
     private ScheduledExecutorService scheduledExecutorService;
 
-    private static final String POST_CREATED_EVENT_QUEUE = "queue:post_created";
+    private static final String KEYWORD_EXTRACT_EVENT_QUEUE = "queue:keyword_extract_event";
 
     @PostConstruct
     public void init() {
@@ -35,9 +35,9 @@ public class PostCreatedEventConsumer {
         scheduledExecutorService.submit(() -> {
             while (true) {
                 String result = redisTemplate.opsForList()
-                        .leftPop(POST_CREATED_EVENT_QUEUE, Duration.ofSeconds(5));
+                        .leftPop(KEYWORD_EXTRACT_EVENT_QUEUE, Duration.ofSeconds(5));
                 if (result != null) {
-                    PostCreatedEvent event = gson.fromJson(result, PostCreatedEvent.class);
+                    KeywordExtractEvent event = gson.fromJson(result, KeywordExtractEvent.class);
                     handle(event);
                 }
             }
@@ -47,13 +47,15 @@ public class PostCreatedEventConsumer {
     @Retryable(
             backoff = @Backoff(delay = 2000, multiplier = 1)
     )
-    private void handle(PostCreatedEvent event) {
+    private void handle(KeywordExtractEvent event) {
         List<String> keywords = keywordExtractorService.extract(event.getContent());
-
-        try {
+        if (keywords.isEmpty()) {
+            return;
+        }
+        if (!event.isUpdate()) {
             keywordRepository.save(event.getPostId(), keywords);
-        } catch (Exception e) {
-            log.error(e.getMessage());
+        } else {
+            keywordRepository.update(event.getPostId(), keywords);
         }
     }
 

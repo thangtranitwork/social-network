@@ -11,8 +11,8 @@ import com.stu.socialnetworkapi.enums.GetType;
 import com.stu.socialnetworkapi.enums.NotificationAction;
 import com.stu.socialnetworkapi.enums.ObjectType;
 import com.stu.socialnetworkapi.enums.PostPrivacy;
-import com.stu.socialnetworkapi.event.PostCreatedEvent;
-import com.stu.socialnetworkapi.event.PostCreatedEventPublisher;
+import com.stu.socialnetworkapi.event.KeywordExtractEvent;
+import com.stu.socialnetworkapi.event.KeywordExtractEventPublisher;
 import com.stu.socialnetworkapi.event.PostsLoadedEvent;
 import com.stu.socialnetworkapi.exception.ApiException;
 import com.stu.socialnetworkapi.exception.ErrorCode;
@@ -50,7 +50,7 @@ public class PostServiceImpl implements PostService {
     private final KeywordRepository keywordRepository;
     private final NotificationService notificationService;
     private final ApplicationEventPublisher eventPublisher;
-    private final PostCreatedEventPublisher postCreatedEventPublisher;
+    private final KeywordExtractEventPublisher keywordExtractEventPublisher;
 
     @Override
     public PostResponse get(UUID postId) {
@@ -124,8 +124,10 @@ public class PostServiceImpl implements PostService {
                 .privacy(request.privacy())
                 .build();
         PostResponse response = postMapper.toPostResponse(postRepository.save(post));
-        postCreatedEventPublisher.publish(new PostCreatedEvent(post.getId(), post.getContent()));
-        log.debug("abv");
+        keywordExtractEventPublisher.publish(KeywordExtractEvent.builder()
+                .postId(post.getId())
+                .content(post.getContent())
+                .build());
         sendNotificationWhenPost(author, post);
         return response;
     }
@@ -148,7 +150,10 @@ public class PostServiceImpl implements PostService {
         originalPost.setShareCount(originalPost.getShareCount() + 1);
         postRepository.saveAll(List.of(post, originalPost));
         keywordRepository.interact(originalPost.getId(), author.getId(), Keyword.SHARE_SCORE);
-        postCreatedEventPublisher.publish(new PostCreatedEvent(post.getId(), post.getContent()));
+        keywordExtractEventPublisher.publish(KeywordExtractEvent.builder()
+                .postId(post.getId())
+                .content(post.getContent())
+                .build());
         sendNotificationWhenSharePost(author, originalPost, post);
         return postMapper.toPostResponse(post);
     }
@@ -201,11 +206,16 @@ public class PostServiceImpl implements PostService {
             processUpdateFile(request, post);
             String trimmedContent = request.content() != null
                     ? request.content().trim()
-                    : null;
+                    : "";
             post.setContent(trimmedContent);
         }
         post.setUpdatedAt(ZonedDateTime.now());
         postRepository.save(post);
+        keywordExtractEventPublisher.publish(KeywordExtractEvent.builder()
+                .postId(post.getId())
+                .content(post.getContent())
+                .isUpdate(true)
+                .build());
     }
 
     @Override

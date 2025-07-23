@@ -85,7 +85,7 @@ public class PostServiceImpl implements PostService {
     @Override
     public List<PostResponse> getSuggestedPosts(Neo4jPageable pageable) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
-
+        System.out.println(pageable.getType());
         List<PostProjection> projections = switch (pageable.getType()) {
             case RELEVANT -> postRepository.getSuggestedPosts(currentUserId, pageable.getSkip(), pageable.getLimit());
             case FRIEND_ONLY ->

@@ -144,9 +144,9 @@ public interface UserRepository extends Neo4jRepository<User, UUID> {
     void increaseViewProfile(UUID userId, UUID targetId);
 
     @Query("""
-            WITH datetime() AS today
+            WITH datetime() AS todadatetime({year: today.year, month: today.month, day: today.day, hoy
             WITH today,
-                 datetime({year: today.year, month: today.month, day: today.day, hour: 0, minute: 0, second: 0}) AS startOfDay,
+                 ur: 0, minute: 0, second: 0}) AS startOfDay,
                  datetime({year: today.year, month: today.month, day: 1}) AS startOfMonth,
                  datetime({year: today.year, month: 1, day: 1}) AS startOfYear,
                  datetime($startOfWeek) AS startOfWeek

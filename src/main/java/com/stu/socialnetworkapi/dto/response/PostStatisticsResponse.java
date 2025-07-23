@@ -18,6 +18,11 @@ public class PostStatisticsResponse {
     Integer totalShares;
     Integer totalFiles;
 
+    Integer publicPostCount;
+    Integer friendPostCount;
+    Integer privatePostCount;
+    Integer deletedPostCount;
+
     Integer newPostsToday;
     Integer newPostsThisWeek;
     Integer newPostsThisMonth;

@@ -20,6 +20,7 @@ public class StatisticsController {
         return ApiResponse.success(statisticsService.generateUserStatistics());
     }
 
+
     @GetMapping("/posts")
     public ApiResponse<PostStatisticsResponse> getPostStatistics() {
         return ApiResponse.success(statisticsService.generatePostStatistics());

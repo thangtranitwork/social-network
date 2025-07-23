@@ -11,9 +11,9 @@ import java.util.List;
 public interface FileRepository extends Neo4jRepository<File, String> {
     @Query("""
             MATCH (uploader:User {username: $uploaderUsername})-[:UPLOAD_FILE]->(f:File)<-[:ATTACH_FILES]-(post:Post)<-[:POSTED]-(author:User)
-            OPTIONAL MATCH (viewer)-[friendship:FRIEND]->(author)
+            OPTIONAL MATCH (viewer:User {username: $viewerUsername})-[friendship:FRIEND]->(author)
             WHERE (
-                $viewerUsername = $uploaderUsername
+                viewer.username = uploader.username
                 OR post.privacy = 'PUBLIC'
                 OR (post.privacy = 'FRIEND' AND friendship IS NOT NULL)
             )

@@ -59,7 +59,7 @@ public class StatisticsServiceImplV2 implements StatisticsServiceV2{
     public Map<DayOfWeek, Integer> generateWeeklyUserStatistics(String weekString) {
         try {
             int week = Integer.parseInt(weekString.substring(6));
-            int year = Integer.parseInt(weekString.substring(0, 3));
+            int year = Integer.parseInt(weekString.substring(0, 4));
             return statisticsRepository.getWeekUserStatistics(week, year);
         } catch (Exception e) {
             throw new ApiException(ErrorCode.INVALID_INPUT);
@@ -70,7 +70,7 @@ public class StatisticsServiceImplV2 implements StatisticsServiceV2{
     public Map<Integer, Integer> generateMonthlyUserStatistics(String monthString) {
         try {
             int month = Integer.parseInt(monthString.substring(5));
-            int year = Integer.parseInt(monthString.substring(0, 3));
+            int year = Integer.parseInt(monthString.substring(0, 4));
             return statisticsRepository.getMonthUserStatistics(month, year);
         } catch (Exception e) {
             throw new ApiException(ErrorCode.INVALID_INPUT);
@@ -102,7 +102,7 @@ public class StatisticsServiceImplV2 implements StatisticsServiceV2{
     public Map<DayOfWeek, Integer> generateWeeklyPostStatistics(String weekString) {
         try {
             int week = Integer.parseInt(weekString.substring(6));
-            int year = Integer.parseInt(weekString.substring(0, 3));
+            int year = Integer.parseInt(weekString.substring(0, 4));
             return statisticsRepository.getWeekPostStatistics(week, year);
         } catch (Exception e) {
             throw new ApiException(ErrorCode.INVALID_INPUT);
@@ -113,7 +113,7 @@ public class StatisticsServiceImplV2 implements StatisticsServiceV2{
     public Map<Integer, Integer> generateMonthlyPostStatistics(String monthString) {
         try {
             int month = Integer.parseInt(monthString.substring(5));
-            int year = Integer.parseInt(monthString.substring(0, 3));
+            int year = Integer.parseInt(monthString.substring(0, 4));
             return statisticsRepository.getMonthPostStatistics(month, year);
         } catch (Exception e) {
             throw new ApiException(ErrorCode.INVALID_INPUT);

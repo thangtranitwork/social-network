@@ -122,7 +122,7 @@ public class StatisticsRepository {
                        count(CASE WHEN post.privacy = "PUBLIC" THEN 1 END) AS publicPostCount,
                        count(CASE WHEN post.privacy = "FRIEND" THEN 1 END) AS friendPostCount,
                        count(CASE WHEN post.privacy = "PRIVATE" THEN 1 END) AS privatePostCount,
-                       count(CASE WHEN post.deletedAT IS NOT NULL THEN 1 END) AS deletedPostCount,
+                       count(CASE WHEN post.deletedAt IS NOT NULL THEN 1 END) AS deletedPostCount,
                        count(CASE WHEN date(post.createdAt) = today THEN 1 END) AS newPostsToday,
                        count(CASE WHEN post.createdAt.week = today.week THEN 1 END) AS newPostsThisWeek,
                        count(CASE WHEN post.createdAt.month = today.month THEN 1 END) AS newPostsThisMonth,

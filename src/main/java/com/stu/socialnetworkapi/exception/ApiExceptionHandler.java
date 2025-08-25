@@ -42,7 +42,6 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(AsyncRequestNotUsableException.class)
     public ResponseEntity<Void> handleAsyncRequestNotUsable(AsyncRequestNotUsableException ex) {
-        log.warn("⚠️ Client aborted request: {}", ex.getMessage());
         return ResponseEntity.noContent().build();
     }
 

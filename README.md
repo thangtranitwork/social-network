@@ -92,6 +92,7 @@ cd social-network
 - MAIL_PASSWORD=mật khẩu ứng dụng của gmail
 - FRONTEND_ORIGIN=url frontend
 - SELF_ORIGIN=url backend
+- REDIS_HOST=url redis
 - STRINGEE_API_SID=lấy từ stringee api
 - STRINGEE_API_SECRET_KEY=lấy từ stringee api
 - GEMINI_KEY=truy cập ai studio tạo gemini api key

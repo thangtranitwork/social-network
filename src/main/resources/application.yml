@@ -20,7 +20,7 @@ spring:
       password: ${NEO4J_PASS}
   data:
     redis:
-      host: localhost
+      host: ${REDIS_HOST}
       port: 6379
       timeout: 60000
       repositories:

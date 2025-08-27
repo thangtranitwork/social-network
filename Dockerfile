@@ -13,6 +13,9 @@ WORKDIR /app
 # Copy jar từ stage build
 COPY --from=build /app/target/*.jar app.jar
 
+# Copy thư mục uploads từ máy host vào container
+COPY upload ./upload
+
 # Tạo thư mục /data
 RUN mkdir /data
 

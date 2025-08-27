@@ -11,7 +11,7 @@ public class OnlyLetterValidator implements ConstraintValidator<OnlyLetter, Stri
 
     @Override
     public boolean isValid(String s, ConstraintValidatorContext constraintValidatorContext) {
-        if (s == null) return true;
+        if (s == null || s.isEmpty()) return true;
         return LETTER_SPACE_PATTERN.matcher(s.trim()).matches();
     }
 }

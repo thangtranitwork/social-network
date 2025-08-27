@@ -26,7 +26,7 @@ spring:
       repositories:
         enabled: true
   datasource:
-    url: jdbc:sqlite:./data/online_users.db
+    url: jdbc:sqlite:/data/online_users.db
   jpa:
     database-platform: org.hibernate.community.dialect.SQLiteDialect
     show-sql: true

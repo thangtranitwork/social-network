@@ -93,6 +93,9 @@ cd social-network
 - FRONTEND_ORIGIN=url frontend
 - SELF_ORIGIN=url backend
 - REDIS_HOST=url redis
+- REDIS_USERNAME=username redis
+  REDIS_PASSWORD=password redis
+  REDIS_PORT=port redis
 - STRINGEE_API_SID=lấy từ stringee api
 - STRINGEE_API_SECRET_KEY=lấy từ stringee api
 - GEMINI_KEY=truy cập ai studio tạo gemini api key

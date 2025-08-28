@@ -10,7 +10,7 @@ public class UsernameValidator implements ConstraintValidator<Username, String> 
 
     @Override
     public boolean isValid(String value, ConstraintValidatorContext context) {
-        if (value == null) return true;
+        if (value == null) return false;
 
         return value.matches(USERNAME_REGEX);
     }

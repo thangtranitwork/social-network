@@ -13,6 +13,8 @@ public interface MessageService {
 
     MessageResponse sendFile(FileMessageRequest message);
 
+    MessageResponse sendGif(GifMessageRequest message);
+
     List<MessageResponse> getHistory(UUID chatId, Neo4jPageable pageable);
 
     void editMessage(EditMessageRequest message);

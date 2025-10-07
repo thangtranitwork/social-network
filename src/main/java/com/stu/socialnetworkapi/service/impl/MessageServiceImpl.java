@@ -97,7 +97,26 @@ public class MessageServiceImpl implements MessageService {
         Message message = Message.builder()
                 .chat(chat)
                 .sender(sender)
+                .type(MessageType.FILE)
                 .attachedFile(file)
+                .isRead(inChatRepository.isSubscribed(receiver.getId(), chat.getId()))
+                .build();
+        messageRepository.save(message);
+        MessageResponse response = messageMapper.toMessageResponse(message);
+        sendMessageNotification(chat.getId(), receiver.getId(), response);
+        return response;
+    }
+
+    @Override
+    public MessageResponse sendGif(GifMessageRequest request) {
+        User sender = userService.getCurrentUserRequiredAuthentication();
+        User receiver = userService.getUser(request.username());
+        Chat chat = chatService.getOrCreateDirectChat(sender, receiver);
+        Message message = Message.builder()
+                .content(request.url())
+                .chat(chat)
+                .sender(sender)
+                .type(MessageType.GIF)
                 .isRead(inChatRepository.isSubscribed(receiver.getId(), chat.getId()))
                 .build();
         messageRepository.save(message);
@@ -191,7 +210,7 @@ public class MessageServiceImpl implements MessageService {
             throw new ApiException(ErrorCode.UNAUTHORIZED);
         if (MessageType.CALL.equals(message.getType()))
             throw new ApiException(ErrorCode.CAN_NOT_EDIT_CALL);
-        if (message.getContent() == null && message.getAttachedFile() != null)
+        if (MessageType.FILE.equals(message.getType()))
             throw new ApiException(ErrorCode.CAN_NOT_EDIT_FILE_MESSAGE);
         if (ZonedDateTime.now().isAfter(message.getSentAt().plusMinutes(Message.MINUTES_TO_EDIT_MESSAGE)))
             throw new ApiException(ErrorCode.CAN_NOT_EDIT_MESSAGE);

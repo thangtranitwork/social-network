@@ -25,6 +25,7 @@ public class MessageMapper {
                 .deleted(message.getDeleteAt() != null)
                 .updated(message.getUpdateAt() != null)
                 .isRead(message.isRead())
+                .type(message.getType())
                 .build();
     }
 

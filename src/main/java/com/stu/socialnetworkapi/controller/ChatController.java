@@ -1,9 +1,6 @@
 package com.stu.socialnetworkapi.controller;
 
-import com.stu.socialnetworkapi.dto.request.EditMessageRequest;
-import com.stu.socialnetworkapi.dto.request.FileMessageRequest;
-import com.stu.socialnetworkapi.dto.request.Neo4jPageable;
-import com.stu.socialnetworkapi.dto.request.TextMessageRequest;
+import com.stu.socialnetworkapi.dto.request.*;
 import com.stu.socialnetworkapi.dto.response.ApiResponse;
 import com.stu.socialnetworkapi.dto.response.ChatResponse;
 import com.stu.socialnetworkapi.dto.response.MessageResponse;
@@ -50,6 +47,11 @@ public class ChatController {
     @PostMapping("/send-file")
     public ApiResponse<MessageResponse> sendFile(@Valid FileMessageRequest request) {
         return ApiResponse.success(messageService.sendFile(request));
+    }
+
+    @PostMapping("/send-gif")
+    public ApiResponse<MessageResponse> sendGif(@Valid @RequestBody GifMessageRequest request) {
+        return ApiResponse.success(messageService.sendGif(request));
     }
 
     @PutMapping("/edit")

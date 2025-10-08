@@ -15,6 +15,8 @@ public interface MessageService {
 
     MessageResponse sendGif(GifMessageRequest message);
 
+    MessageResponse sendVoice(VoiceMessageRequest request);
+
     List<MessageResponse> getHistory(UUID chatId, Neo4jPageable pageable);
 
     void editMessage(EditMessageRequest message);

@@ -54,6 +54,11 @@ public class ChatController {
         return ApiResponse.success(messageService.sendGif(request));
     }
 
+    @PostMapping("/send-voice")
+    public ApiResponse<MessageResponse> sendVoice(@Valid VoiceMessageRequest request) {
+        return ApiResponse.success(messageService.sendVoice(request));
+    }
+
     @PutMapping("/edit")
     public ApiResponse<Void> editMessage(@Valid @RequestBody EditMessageRequest request) {
         messageService.editMessage(request);

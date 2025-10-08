@@ -126,6 +126,25 @@ public class MessageServiceImpl implements MessageService {
     }
 
     @Override
+    public MessageResponse sendVoice(VoiceMessageRequest request) {
+        User sender = userService.getCurrentUserRequiredAuthentication();
+        User receiver = userService.getUser(request.username());
+        Chat chat = chatService.getOrCreateDirectChat(sender, receiver);
+        File file = fileService.upload(request.voiceFile());
+        Message message = Message.builder()
+                .chat(chat)
+                .sender(sender)
+                .type(MessageType.VOICE)
+                .attachedFile(file)
+                .isRead(inChatRepository.isSubscribed(receiver.getId(), chat.getId()))
+                .build();
+        messageRepository.save(message);
+        MessageResponse response = messageMapper.toMessageResponse(message);
+        sendMessageNotification(chat.getId(), receiver.getId(), response);
+        return response;
+    }
+
+    @Override
     public List<MessageResponse> getHistory(UUID chatId, Neo4jPageable pageable) {
         UUID userId = userService.getCurrentUserIdRequiredAuthentication();
         if (!inChatRepository.isInChat(userId, chatId)) {

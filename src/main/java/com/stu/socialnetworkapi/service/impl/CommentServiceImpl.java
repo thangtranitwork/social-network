@@ -16,6 +16,7 @@ import com.stu.socialnetworkapi.repository.neo4j.KeywordRepository;
 import com.stu.socialnetworkapi.repository.neo4j.PostRepository;
 import com.stu.socialnetworkapi.service.itf.*;
 import com.stu.socialnetworkapi.util.JwtUtil;
+import com.stu.socialnetworkapi.util.TruncateText;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -208,6 +209,7 @@ public class CommentServiceImpl implements CommentService {
                 .action(NotificationAction.COMMENT)
                 .targetId(comment.getId())
                 .targetType(ObjectType.COMMENT)
+                .shortenedContent(TruncateText.truncateByWord(comment.getContent()))
                 .build();
         notificationService.send(notification);
     }
@@ -221,6 +223,7 @@ public class CommentServiceImpl implements CommentService {
                 .action(NotificationAction.REPLY_COMMENT)
                 .targetId(comment.getId())
                 .targetType(ObjectType.COMMENT)
+                .shortenedContent(TruncateText.truncateByWord(originalComment.getContent()))
                 .build();
         notificationService.send(notification);
     }

@@ -19,6 +19,7 @@ public class NotificationResponse {
     UUID commentId;
     UUID repliedCommentId;
     String username;
+    String shortenedContent;
     UserCommonInformationResponse creator;
     ZonedDateTime sentAt;
     boolean isRead;

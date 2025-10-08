@@ -36,6 +36,7 @@ public class NotificationMapper {
                 .sentAt(projection.sentAt())
                 .creator(userMapper.toUserCommonInformationResponse(projection))
                 .isRead(projection.isRead())
+                .shortenedContent(projection.shortenedContent())
                 .build();
     }
 }

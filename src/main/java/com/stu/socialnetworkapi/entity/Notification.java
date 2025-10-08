@@ -26,6 +26,7 @@ public class Notification {
     boolean isRead;
     ObjectType targetType;
     UUID targetId;
+    String shortenedContent;
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     @Relationship(type = "BY_USER", direction = Relationship.Direction.OUTGOING)
@@ -44,6 +45,7 @@ public class Notification {
         this.targetId = other.targetId;
         this.creator = other.creator;
         this.receiver = other.receiver;
+        this.shortenedContent = other.shortenedContent;
         this.sentAt = other.sentAt;
         this.isRead = other.isRead;
     }

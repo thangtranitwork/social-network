@@ -22,6 +22,7 @@ import com.stu.socialnetworkapi.repository.neo4j.KeywordRepository;
 import com.stu.socialnetworkapi.repository.neo4j.PostRepository;
 import com.stu.socialnetworkapi.service.itf.*;
 import com.stu.socialnetworkapi.util.JwtUtil;
+import com.stu.socialnetworkapi.util.TruncateText;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -85,7 +86,6 @@ public class PostServiceImpl implements PostService {
     @Override
     public List<PostResponse> getSuggestedPosts(Neo4jPageable pageable) {
         UUID currentUserId = userService.getCurrentUserIdRequiredAuthentication();
-        System.out.println(pageable.getType());
         List<PostProjection> projections = switch (pageable.getType()) {
             case RELEVANT -> postRepository.getSuggestedPosts(currentUserId, pageable.getSkip(), pageable.getLimit());
             case FRIEND_ONLY ->
@@ -448,6 +448,7 @@ public class PostServiceImpl implements PostService {
                 .targetType(ObjectType.POST)
                 .action(NotificationAction.POST)
                 .sentAt(post.getCreatedAt())
+                .shortenedContent(TruncateText.truncateByWord(post.getContent()))
                 .build();
         notificationService.sendToFriends(notification);
     }
@@ -460,6 +461,7 @@ public class PostServiceImpl implements PostService {
                 .targetType(ObjectType.POST)
                 .action(NotificationAction.SHARE)
                 .sentAt(post.getCreatedAt())
+                .shortenedContent(TruncateText.truncateByWord(post.getContent()))
                 .build();
 
         Notification notificationToFriend = Notification.builder()
@@ -467,6 +469,7 @@ public class PostServiceImpl implements PostService {
                 .targetId(post.getId())
                 .targetType(ObjectType.POST)
                 .action(NotificationAction.POST)
+                .shortenedContent(TruncateText.truncateByWord(originalPost.getContent()))
                 .sentAt(post.getCreatedAt())
                 .build();
 

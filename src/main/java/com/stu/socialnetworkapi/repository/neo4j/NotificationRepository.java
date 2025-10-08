@@ -57,6 +57,7 @@ public interface NotificationRepository extends Neo4jRepository<Notification, UU
                        n.action AS action,
                        n.targetType AS targetType,
                        n.targetId AS targetId,
+                       n.shortenedContent AS shortenedContent,
                        CASE
                            WHEN n.targetType = 'POST' THEN post.id
                            WHEN n.targetType = 'COMMENT' THEN postFromComment.id

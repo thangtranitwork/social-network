@@ -16,6 +16,7 @@ public record NotificationProjection(
         UUID repliedCommentId,
         ZonedDateTime sentAt,
         boolean isRead,
+        String shortenedContent,
         UUID userId,
         String username,
         String givenName,

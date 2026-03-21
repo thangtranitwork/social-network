@@ -26,74 +26,76 @@ import java.util.List;
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-    @Value("${origin.front-end}")
-    private String frontEndOrigin;
-    private final CustomJwtDecoder jwtDecoder;
-    private static final String[] PUBLIC_ENDPOINTS = new String[]{
-            "/v1/auth/**",
-            "/v1/register/**",
-            "/v1/forgot-password/**",
-            "/v1/update-password/**",
-            "/v1/users/{username}",
-            "/v1/files/{id}",
-            "/v1/notifications/send",
-            "/v1/posts/newsfeed",
-            "/v1/posts/{id}",
-            "/v1/posts/of-user/{username}",
-            "/v1/comments/of-post/{postId}",
-            "/v1/stringee/**",
-            "/v1/test/**",
-            "/ws/**" //authorize in handshake interceptor
-    };
+        @Value("${origin.front-end}")
+        private String frontEndOrigin;
+        private final CustomJwtDecoder jwtDecoder;
+        private static final String[] PUBLIC_ENDPOINTS = new String[] {
+                        "/v1/auth/**",
+                        "/v1/register/**",
+                        "/actuator/**",
+                        "/v1/forgot-password/**",
+                        "/v1/update-password/**",
+                        "/v1/users/{username}",
+                        "/v1/files/{id}",
+                        "/v1/notifications/send",
+                        "/v1/posts/newsfeed",
+                        "/v1/posts/{id}",
+                        "/v1/posts/of-user/{username}",
+                        "/v1/comments/of-post/{postId}",
+                        "/v1/stringee/**",
+                        "/v1/test/**",
+                        "/ws/**" // authorize in handshake interceptor
+        };
 
-    private static final String[] ADMIN_ENDPOINTS = new String[]{
-            "/v1/statistics"
-    };
+        private static final String[] ADMIN_ENDPOINTS = new String[] {
+                        "/v1/statistics"
+        };
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http
-                .csrf(AbstractHttpConfigurer::disable)
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .authorizeHttpRequests(
-                        request ->
-                                request.requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                                        .requestMatchers(ADMIN_ENDPOINTS).hasAuthority(AccountRole.ADMIN.name())
-                                        .anyRequest().authenticated())
-                .oauth2ResourceServer(oauth2 ->
-                        oauth2.jwt(jwtConfigurer ->
-                                        jwtConfigurer.jwtAuthenticationConverter(jwtAuthenticationConverter())
-                                                .decoder(jwtDecoder))
-                                .authenticationEntryPoint(new JwtAuthenticationEntryPoint()))
-                .build();
-    }
+        @Bean
+        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+                return http
+                                .csrf(AbstractHttpConfigurer::disable)
+                                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                                .authorizeHttpRequests(
+                                                request -> request.requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                                                                .requestMatchers(ADMIN_ENDPOINTS)
+                                                                .hasAuthority(AccountRole.ADMIN.name())
+                                                                .anyRequest().authenticated())
+                                .oauth2ResourceServer(oauth2 -> oauth2
+                                                .jwt(jwtConfigurer -> jwtConfigurer
+                                                                .jwtAuthenticationConverter(
+                                                                                jwtAuthenticationConverter())
+                                                                .decoder(jwtDecoder))
+                                                .authenticationEntryPoint(new JwtAuthenticationEntryPoint()))
+                                .build();
+        }
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration corsConfiguration = new CorsConfiguration();
-        corsConfiguration.addAllowedOrigin(frontEndOrigin);
-        corsConfiguration.setAllowedOriginPatterns(List.of(frontEndOrigin, "https://*.stringee.com"));
-        corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        corsConfiguration.setAllowedHeaders(List.of("*"));
-        corsConfiguration.setAllowCredentials(true);
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", corsConfiguration);
-        return source;
-    }
+        @Bean
+        public CorsConfigurationSource corsConfigurationSource() {
+                CorsConfiguration corsConfiguration = new CorsConfiguration();
+                corsConfiguration.addAllowedOrigin(frontEndOrigin);
+                corsConfiguration.setAllowedOriginPatterns(List.of(frontEndOrigin, "https://*.stringee.com"));
+                corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+                corsConfiguration.setAllowedHeaders(List.of("*"));
+                corsConfiguration.setAllowCredentials(true);
+                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+                source.registerCorsConfiguration("/**", corsConfiguration);
+                return source;
+        }
 
-    @Bean
-    @Order(Ordered.HIGHEST_PRECEDENCE)
-    public CorsFilter corsFilter() {
-        return new CorsFilter(corsConfigurationSource());
-    }
+        @Bean
+        @Order(Ordered.HIGHEST_PRECEDENCE)
+        public CorsFilter corsFilter() {
+                return new CorsFilter(corsConfigurationSource());
+        }
 
-    @Bean
-    public JwtAuthenticationConverter jwtAuthenticationConverter() {
-        JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
-        grantedAuthoritiesConverter.setAuthorityPrefix("");
+        @Bean
+        public JwtAuthenticationConverter jwtAuthenticationConverter() {
+                JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
+                grantedAuthoritiesConverter.setAuthorityPrefix("");
 
-        JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
-        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
-        return jwtAuthenticationConverter;
-    }
+                JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
+                jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
+                return jwtAuthenticationConverter;
+        }
 }

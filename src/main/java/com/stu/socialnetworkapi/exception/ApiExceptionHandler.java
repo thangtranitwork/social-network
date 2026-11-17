@@ -59,7 +59,7 @@ public class ApiExceptionHandler {
                 .code(errorCode.getCode())
                 .message(errorCode.getMessage())
                 .build();
-        String userId = principal.getName();
+        String userId = principal != null ? principal.getName() : null;
         if (userId != null)
             messagingTemplate.convertAndSend(WebSocketChannelPrefix.USER_WEBSOCKET_ERROR_CHANNEL_PREFIX + "/" + userId, response);
         else log.error("WebSocket error: {}", response);
@@ -109,19 +109,31 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     private ResponseEntity<ApiResponse<Void>> handlerMethodArgumentNotValidException(MethodArgumentNotValidException exception) {
-        String key = Objects.requireNonNull(exception.getFieldError())
-                .getDefaultMessage();
-        ErrorCode errorCode = ErrorCode.valueOf(key);
+        String key = exception.getFieldError() != null
+                ? exception.getFieldError().getDefaultMessage()
+                : null;
+        ErrorCode errorCode = resolveErrorCode(key);
         return ApiResponse.error(errorCode)
                 .toResponseEntity(errorCode.getHttpStatus());
     }
 
     @ExceptionHandler(HandlerMethodValidationException.class)
     private ResponseEntity<ApiResponse<Void>> handlerHandlerMethodValidationException(HandlerMethodValidationException exception) {
-        String key = Objects.requireNonNull(exception.getAllErrors().get(0).getDefaultMessage());
-        ErrorCode errorCode = ErrorCode.valueOf(key);
+        String key = exception.getAllErrors().isEmpty()
+                ? null
+                : exception.getAllErrors().get(0).getDefaultMessage();
+        ErrorCode errorCode = resolveErrorCode(key);
         return ApiResponse.error(errorCode)
                 .toResponseEntity(errorCode.getHttpStatus());
+    }
+
+    private ErrorCode resolveErrorCode(String key) {
+        if (key == null) return ErrorCode.INVALID_INPUT;
+        try {
+            return ErrorCode.valueOf(key);
+        } catch (IllegalArgumentException e) {
+            return ErrorCode.INVALID_INPUT;
+        }
     }
 
     @ExceptionHandler(NoResourceFoundException.class)

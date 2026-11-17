@@ -1,154 +1,161 @@
-# ỨNG DỤNG MÔ HÌNH ĐỒ THỊ TRONG XÂY DỰNG WEBSITE MẠNG XÃ HỘI
+# APPLYING GRAPH DATABASE MODELING IN BUILDING A SOCIAL NETWORK WEBSITE
 
-![Mạng xã hội](https://cdnv2.tgdd.vn/mwg-static/common/News/1571187/2.jpg)
+![Social Network](https://cdnv2.tgdd.vn/mwg-static/common/News/1571187/2.jpg)
 
-## Giới thiệu
+## Introduction
 
-Đây là ứng dụng mạng xã hội chạy trên nền tảng web, với mục đích tạo ra một không gian trực tuyến giúp người dùng kết nối, chia sẻ và tương tác với nhau dễ dàng. Hệ thống hỗ trợ các chức năng như đăng bài viết, bình luận, kết bạn, nhắn tin và thông báo theo thời gian thực. Mục tiêu của ứng dụng là xây dựng một nền tảng thân thiện, bảo mật và mở rộng dễ dàng để phục vụ nhu cầu kết nối cộng đồng, đặc biệt hướng đến người dùng Việt Nam.
+This is a web-based social network application designed to provide an online space where users can easily connect, share, and interact with one another. The system supports core features such as posting, commenting, friending, real-time messaging, and real-time notifications. The goal is to build a user-friendly, secure, and scalable platform for community connection, particularly tailored for Vietnamese users.
 
-## Công nghệ sử dụng
+## Tech Stack
 
 ### Backend
-- **Spring**: Framework Java để xây dựng ứng dụng web nhanh chóng, dễ cấu hình và dễ triển khai
-- **Neo4j**: Cơ sở dữ liệu đồ thị phù hợp cho việc lưu trữ và truy vấn dữ liệu theo quan hệ giữa các đối tượng
-- **SQLite**: Cơ sở dữ liệu gọn nhẹ, dễ triển khai
-- **WebSocket**: Giao thức truyền thông hai chiều, liên tục giữa client và server cho các tính năng thời gian thực
-### Công cụ phát triển
-- **IntelliJ IDEA**: IDE mạnh mẽ cho phát triển Java và Spring Boot
-- **Docker**: Nền tảng ảo hóa giúp đóng gói và triển khai ứng dụng dễ dàng
-- **Git**: Hệ thống quản lý mã nguồn phân tán
+- **Spring Boot**: Java framework for building web applications quickly with straightforward configuration and deployment
+- **Neo4j**: Graph database ideal for storing and querying interconnected data based on relationships between entities
+- **Redis**: In-memory data store used for caching, refresh tokens, rate limiting, and real-time presence/call states
+- **SQLite**: Lightweight embedded database for logging online user statistics
+- **WebSocket**: Full-duplex communication protocol between client and server for real-time messaging, typing indicators, and notifications
 
-## Vì sao chọn Neo4j thay vì MySQL (RDBMS)?
-Trong Mạng xã hội, về mặt tự nhiên được biểu hiện dưới dạng đồ thị như (User)-[:FRIEND]-(User), (User)-[:LIKED]->(Post), … chúng vẫn có thể biểu diễn trong RDBMS bằng cách tạo ra nhiều bảng trung gian, tuy nhiên cách tiếp cận này khiến cơ sở dữ liệu trở nên phức tạp hơn.
-- Truy vấn hiệu suất cao hơn khi xử lý nhiều thực thể qua nhiều mối quan hệ:
-  + Trong RDBMS, các truy vấn quan hệ phức tạp thường phải dùng nhiều phép JOIN. Khi số lượng bảng và bản ghi tăng lên, hiệu suất sẽ giảm do phải quét bảng và kết hợp dữ liệu.
-  + Với Neo4j, các mối quan hệ giữa các thực thể (cạnh trong đồ thị) được lưu trữ trực tiếp. Khi truy vấn cơ sở dữ liệu có thể đi theo các cạnh để truy xuất các thực thể liên quan mà không cần JOIN, giúp cải thiện hiệu suất rõ rệt trong các hệ thống có mối quan hệ phức tạp như mạng xã hội.
-  
-_Thử nghiệm cho thấy Neo4j thực hiện truy vấn qua 3 quan hệ nhanh hơn MySQL đáng kể._
-![Kết quả MySQL](src/main/resources/static/mysql-result.png)
+### Development Tools
+- **IntelliJ IDEA**: Powerful IDE for Java and Spring Boot development
+- **Docker**: Containerization platform for packaging and deploying the application and its dependencies
+- **Git**: Distributed version control system
 
-![Kết quả Neo4j](src/main/resources/static/neo4j-result.png)
+## Why Neo4j Instead of MySQL (RDBMS)?
 
-## Mô hình cơ sở dữ liệu
+In a social network, data is naturally modeled as a graph—such as `(User)-[:FRIEND]-(User)`, `(User)-[:LIKED]->(Post)`, etc. While this can be represented in an RDBMS using multiple join tables, that approach significantly increases schema and query complexity.
 
-![Sơ đồ đồ thị](src/main/resources/static/csdl.png)
+- **Higher query performance when traversing multiple relationships:**
+  - In an RDBMS, complex relational queries require multiple `JOIN` operations. As tables and row counts grow, performance degrades due to table scans and join overhead.
+  - With Neo4j, relationships (graph edges) between entities are stored directly. Queries traverse edges to retrieve related entities without `JOIN`s, delivering noticeably better performance for highly connected social data.
 
-## Chức năng chính
+_Benchmarks show that Neo4j performs 3-hop relationship queries significantly faster than MySQL._
+![MySQL Benchmark Result](src/main/resources/static/mysql-result.png)
 
-- **Xác thực**: Đăng ký, đăng nhập, quản lý tài khoản
-- **Quản lý bài viết**: Đăng, chỉnh sửa, xóa bài viết
-- **Bình luận**: Tương tác với bài viết qua bình luận
-- **Trang cá nhân**: Xem và quản lý thông tin cá nhân
-- **Nhắn tin**: Giao tiếp trực tiếp giữa người dùng theo thời gian thực
-- **Thông báo**: Hệ thống thông báo theo thời gian thực
-- **Tìm kiếm**: Tìm người dùng, bài viết và nội dung
-- **Quản lý mối quan hệ**: Kết bạn, hủy kết bạn, chặn người dùng
-- **Thống kê**: Xem thống kê về các hoạt động của trang 
+![Neo4j Benchmark Result](src/main/resources/static/neo4j-result.png)
 
-## Những thách thức của dự án
+## Database Schema
 
-- **Hiệu năng và khả năng mở rộng**: Đảm bảo hệ thống phục vụ lượng lớn người dùng đồng thời
-- **Bảo mật và quyền riêng tư**: Bảo vệ dữ liệu người dùng và chống các cuộc tấn công phổ biến
-- **Tính năng thời gian thực**: Đảm bảo nhắn tin, thông báo hoạt động theo thời gian thực
-- **Trải nghiệm người dùng**: Giao diện trực quan, thân thiện và tương thích đa thiết bị
-- **Quản lý quan hệ người dùng**: Hỗ trợ các mối quan hệ phức tạp giữa người dùng
-- **Quản trị hệ thống và phân quyền**: Phân định rõ vai trò và quyền hạn của quản trị viên
-- **Caching & paging**: Lượng dữ liệu lớn cần được xử lý hợp lý 
-## Kết quả mong đợi
+![Graph Database Schema](src/main/resources/static/csdl.png)
 
-- Hệ thống mạng xã hội hoạt động ổn định với đầy đủ chức năng
-- Giao diện người dùng thân thiện và responsive
-- Các tính năng thời gian thực hoạt động mượt mà
-- Hệ thống quản trị đầy đủ và linh hoạt
-- Đảm bảo tính bảo mật và quyền riêng tư
-- Khả năng mở rộng và bảo trì dễ dàng
+## Key Features
 
-## Cài đặt và chạy dự án
+- **Authentication**: Registration, email verification, login, password reset, and account management
+- **Post Management**: Create, edit, share, like, and delete posts with privacy controls
+- **Comments**: Comment and reply on posts
+- **User Profile**: View and manage personal profile information
+- **Real-Time Messaging & Calls**: Direct real-time chat (text, attachments, GIFs, voice) and audio/video calling via Stringee
+- **Real-Time Notifications**: Live notification delivery
+- **Search**: Search users, posts, and content
+- **Relationship Management**: Send/accept friend requests, unfriend, and block users
+- **Statistics**: Admin analytics for user activity, online users, and posts
 
-### Yêu cầu hệ thống
+## Project Challenges
+
+- **Performance & Scalability**: Ensuring the system can serve a large number of concurrent users
+- **Security & Privacy**: Protecting user data and defending against common vulnerabilities
+- **Real-Time Capabilities**: Delivering low-latency messaging and notifications
+- **User Experience**: Intuitive, responsive interface across devices
+- **Relationship Management**: Supporting complex social graph relationships
+- **Administration & Authorization**: Clear separation of roles and permissions for administrators
+- **Caching & Pagination**: Efficiently handling large datasets
+
+## Expected Outcomes
+
+- A stable, full-featured social network backend
+- Responsive and user-friendly client experience
+- Smooth real-time features
+- Comprehensive and flexible administration
+- Strong security and privacy guarantees
+- High maintainability and scalability
+
+## Setup and Running the Project
+
+### Prerequisites
 - Java 17+
 - Maven
-- Docker và Docker Compose (Không cần thiết nếu không dùng)
-- Neo4j (Có thể chạy qua container Docker)
-- Redis (Có thể chạy qua container Docker)
+- Docker and Docker Compose (optional if running Neo4j and Redis locally)
+- Neo4j (can be run via Docker container)
+- Redis (can be run via Docker container)
 
-### Cài đặt
+### Installation
 
-1. Clone repository:
+1. Clone the repository:
 ```bash
 git clone https://github.com/thangtranitwork/social-network.git
 cd social-network
 ```
 
-2. Thiết lập biến môi trường qua file .env:
-- NEO4J_USER=username neo4j
-- NEO4J_PASS=mật khẩu neo4j
-- NEO4J_URI=đường dẫn neo4j
-- JWT_ACCESS_TOKEN_KEY=khóa JWT
-- JWT_ACCESS_TOKEN_DURATION=thời gian tồn tại của token
-- JWT_REFRESH_TOKEN_DURATION=thời gian tồn tại của refresh token
-- VERIFY_EMAIL_DURATION=thời gian tồn tại của email xác thực
-- MAIL=Gmail
-- MAIL_PASSWORD=mật khẩu ứng dụng của gmail
-- FRONTEND_ORIGIN=url frontend
-- SELF_ORIGIN=url backend
-- REDIS_HOST=url redis
-- REDIS_USERNAME=username redis
-  REDIS_PASSWORD=password redis
-  REDIS_PORT=port redis
-- STRINGEE_API_SID=lấy từ stringee api
-- STRINGEE_API_SECRET_KEY=lấy từ stringee api
-- GEMINI_KEY=truy cập ai studio tạo gemini api key
+2. Configure environment variables in a `.env` file:
+- `NEO4J_USER` = Neo4j username
+- `NEO4J_PASS` = Neo4j password
+- `NEO4J_URI` = Neo4j connection URI
+- `JWT_ACCESS_TOKEN_KEY` = JWT signing secret key
+- `JWT_ACCESS_TOKEN_DURATION` = Access token lifetime (in seconds)
+- `JWT_REFRESH_TOKEN_DURATION` = Refresh token lifetime (in days)
+- `VERIFY_EMAIL_DURATION` = Verification email lifetime
+- `MAIL` = Gmail address
+- `MAIL_PASSWORD` = Gmail app password
+- `FRONTEND_ORIGIN` = Frontend URL
+- `SELF_ORIGIN` = Backend URL
+- `REDIS_HOST` = Redis host
+- `REDIS_USERNAME` = Redis username
+- `REDIS_PASSWORD` = Redis password
+- `REDIS_PORT` = Redis port
+- `STRINGEE_API_SID` = Stringee API SID
+- `STRINGEE_API_SECRET_KEY` = Stringee API secret key
+- `GEMINI_KEY` = Gemini API key from Google AI Studio
 
-### Chạy bằng docker compose:
+### Running with Docker Compose
 
-Bỏ phần comment trong docker-compose.yml sau đó chạy:
+Uncomment the `api` service in `docker-compose.yml`, then run:
 ```bash
 docker compose --env-file .env up
 ```
-hoặc
+or
 ```bash
 docker-compose --env-file .env up
 ```
 
-### Chạy ứng dụng bằng java và maven
+### Running with Java and Maven
 
-Nếu dùng Redis và Neo4j qua docker hãy chạy lệnh:
+If you run Neo4j and Redis via Docker:
 ```bash
 docker compose --env-file .env up
 ```
-Sau đó chạy file .run-env.cmd
+Then run `.run-env.cmd`:
 ```bash
 .run-env.cmd
 ```
-**_[Server đang chạy ở port 2003](http://localhost:2003)_**
-## Cấu trúc dự án
+**_[Server runs on port 2003](http://localhost:2003)_**
+
+## Project Structure
 
 ```
 social-network-api/
 ├── src/
 │   └── main/
-│       ├── java/            # Mã nguồn Java
-│       └── resources/       # Cấu hình và tài nguyên
-├── pom.xml                  # Cấu hình Maven
-├── docker-compose.yml       # Cấu hình Docker Compose
-├── Dockerfile               # Cấu hình Dockerfile
-├── .env                     # Cấu hình biến môi trường
-├── init-neo4j.sh            # Load data khi khởi tạo neo4j container
-├── neo4j.dump               # Data mẫu
-└── README.md                # Tài liệu dự án
+│       ├── java/            # Java source code
+│       └── resources/       # Configuration and static/template resources
+├── pom.xml                  # Maven configuration
+├── docker-compose.yml       # Docker Compose configuration
+├── Dockerfile               # Dockerfile configuration
+├── .env                     # Environment variables
+├── init-neo4j.sh            # Script to load initial data into Neo4j container
+├── neo4j.dump               # Sample Neo4j database dump
+└── README.md                # Project documentation
 ```
 
 ## Frontend
 [Social Media App](https://github.com/Hoang18769/social-media-app)
-## Tài liệu tham khảo
+
+## References
 1. [Neo4j Documentation – Neo4j, Inc.](https://neo4j.com/docs/)
 2. [Spring Framework Documentation – Spring Team](https://docs.spring.io/spring-framework/docs/current/reference/html/)
 3. [React Documentation – Meta](https://react.dev/)
 4. [Tailwind CSS Documentation – Tailwind Labs](https://tailwindcss.com/docs)
 5. [Next.js Documentation – Vercel](https://nextjs.org/docs)
 6. Christensen, J. (2025, March 13). [*Graph database vs. relational database: What’s the difference?*](https://neo4j.com/blog/graph-database/graph-database-vs-relational-database/)
-7. Z. Zhang, Y. Liu, W. Ding, and W. W. Huang. *[A Friend Recommendation System Using Users’ Information of Total Attributes]([https://www.cs.umb.edu/~ding/papers/ICDS2015.pdf](https://www.cs.umb.edu/~ding/papers/ICDS2015.pdf))*, Dept. of Management, Xi’an Jiaotong University, and Dept. of Computer Science, Univ. of Massachusetts Boston.
+7. Z. Zhang, Y. Liu, W. Ding, and W. W. Huang. *[A Friend Recommendation System Using Users’ Information of Total Attributes](https://www.cs.umb.edu/~ding/papers/ICDS2015.pdf)*, Dept. of Management, Xi’an Jiaotong University, and Dept. of Computer Science, Univ. of Massachusetts Boston.
 
-## Liên hệ
+## Contact
 - Email: [thangtran.it.work@gmail.com](mailto:thangtran.it.work@gmail.com)

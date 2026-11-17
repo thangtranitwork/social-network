@@ -18,7 +18,7 @@ public class CustomJwtDecoder implements JwtDecoder {
     @Value("${jwt.access-token.key}")
     private String key;
     private final JwtUtil jwtUtil;
-    private NimbusJwtDecoder nimbusJwtDecoder = null;
+    private volatile NimbusJwtDecoder nimbusJwtDecoder = null;
 
     @Override
     public Jwt decode(String token) {

@@ -34,7 +34,7 @@ import java.util.UUID;
 public class FileServiceImpl implements FileService {
     private static final String UPLOAD_DIRECTORY = "upload";
 
-    private final Path root = Paths.get(UPLOAD_DIRECTORY);
+    private final Path root = Paths.get(UPLOAD_DIRECTORY).toAbsolutePath().normalize();
     private final JwtUtil jwtUtil;
     private final FileRepository fileRepository;
     private final UserRepository userRepository;
@@ -55,7 +55,7 @@ public class FileServiceImpl implements FileService {
     @Override
     public FileResponse load(String id) {
         try {
-            Path file = root.resolve(id);
+            Path file = resolveSafePath(id);
             Resource resource = new UrlResource(file.toUri());
             if (!resource.exists() || !resource.isReadable()) {
                 throw new ApiException(ErrorCode.FILE_NOT_FOUND);
@@ -81,7 +81,8 @@ public class FileServiceImpl implements FileService {
             String extension = getFileExtension(originalFilename);
             String contentType = file.getContentType();
             String newFileName = UUID.randomUUID() + extension;
-            fileAsyncExecutor.save(file, newFileName);
+            byte[] bytes = file.getBytes();
+            fileAsyncExecutor.save(bytes, newFileName);
             File newFile = File.builder()
                     .id(newFileName)
                     .name(originalFilename)
@@ -112,7 +113,8 @@ public class FileServiceImpl implements FileService {
                 String extension = getFileExtension(originalFilename);
                 String newFileName = UUID.randomUUID() + extension;
                 String contentType = file.getContentType();
-                fileAsyncExecutor.save(file, newFileName);
+                byte[] bytes = file.getBytes();
+                fileAsyncExecutor.save(bytes, newFileName);
                 File newFile = File.builder()
                         .id(newFileName)
                         .name(originalFilename)
@@ -171,6 +173,14 @@ public class FileServiceImpl implements FileService {
         int lastDotIndex = Objects.requireNonNull(filename).lastIndexOf(".");
         if (lastDotIndex == -1) return "";
         return filename.substring(lastDotIndex);
+    }
+
+    private Path resolveSafePath(String fileName) {
+        Path resolved = root.resolve(fileName).normalize();
+        if (!resolved.startsWith(root)) {
+            throw new ApiException(ErrorCode.INVALID_FILE);
+        }
+        return resolved;
     }
 
     private void rollBackUploadFilesFailed(List<File> uploadedFiles) {

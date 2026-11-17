@@ -2,7 +2,6 @@ package com.stu.socialnetworkapi.util;
 
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -13,9 +12,14 @@ import java.nio.file.Paths;
 public class FileAsyncExecutor {
     private static final String UPLOAD_DIRECTORY = "upload";
 
-    private final Path root = Paths.get(UPLOAD_DIRECTORY);
+    private final Path root = Paths.get(UPLOAD_DIRECTORY).toAbsolutePath().normalize();
+
     @Async
-    public void save(MultipartFile file, String newFileName) throws IOException {
-        Files.copy(file.getInputStream(), root.resolve(newFileName));
+    public void save(byte[] content, String newFileName) throws IOException {
+        Path target = root.resolve(newFileName).normalize();
+        if (!target.startsWith(root)) {
+            throw new IOException("Invalid file path: " + newFileName);
+        }
+        Files.write(target, content);
     }
 }

@@ -15,6 +15,7 @@ import com.stu.socialnetworkapi.service.itf.UserService;
 import com.stu.socialnetworkapi.util.JwtUtil;
 import com.stu.socialnetworkapi.util.StringeeTokenUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -90,44 +92,43 @@ public class StringeeServiceImpl implements StringeeService {
     public Map<String, String> handleEvent(StringeeCallEvent event) {
         String eventType = event.type();
         String callId = event.call_id();
-        String callerUsername = event.from().getNumber();
-        String calleeUsername = event.to().getNumber();
-        boolean isVideoCall = event.isVideoCall();
         if (eventType == null) {
             return success;
         }
+        String callerUsername = event.from() != null ? event.from().getNumber() : null;
+        String calleeUsername = event.to() != null ? event.to().getNumber() : null;
+        boolean isVideoCall = event.isVideoCall();
 
         if (eventType.equals("stringee_call")) {
             String callStatus = event.call_status();
+            if (callStatus == null) {
+                return success;
+            }
             switch (callStatus) {
                 case "started":
                     callService.start(callId, callerUsername, calleeUsername, isVideoCall);
                     break;
                 case "ringing":
-                    System.out.println("📞 Cuộc gọi đang đổ chuông - Call ID: " + callId);
+                    log.debug("Call ringing - Call ID: {}", callId);
                     break;
                 case "answered":
                     callService.answer(callId);
-                    System.out.println("✅ Cuộc gọi được trả lời - Call ID: " + callId);
+                    log.debug("Call answered - Call ID: {}", callId);
                     break;
                 case "ended":
-                    System.out.println("🔚 Cuộc gọi kết thúc - Call ID: " + callId);
+                    log.debug("Call ended - Call ID: {}", callId);
                     callService.end(callId);
                     break;
                 case "failed":
-                    System.out.println("❌ Cuộc gọi thất bại - Call ID: " + callId);
-                    break;
                 case "busy":
-                    System.out.println("📵 Máy bận - Call ID: " + callId);
-                    break;
                 case "timeout":
-                    System.out.println("⏰ Hết thời gian chờ - Call ID: " + callId);
+                    log.debug("Call {} - Call ID: {}", callStatus, callId);
                     break;
                 default:
-                    System.out.println("❓ Call status không xác định: " + callStatus + " - Call ID: " + callId);
+                    log.warn("Unknown call status: {} - Call ID: {}", callStatus, callId);
             }
         } else {
-            System.out.println("❓ Event không xác định: " + eventType + " - Call ID: " + callId);
+            log.warn("Unknown event type: {} - Call ID: {}", eventType, callId);
         }
         return success;
     }

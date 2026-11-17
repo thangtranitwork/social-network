@@ -33,7 +33,7 @@ spring:
     url: jdbc:sqlite:/data/online_users.db
   jpa:
     database-platform: org.hibernate.community.dialect.SQLiteDialect
-    show-sql: true
+    show-sql: false
     hibernate:
       ddl-auto: update
   mail:
@@ -72,7 +72,7 @@ stringee:
     secret-key: ${STRINGEE_API_SECRET_KEY}
 logging:
   level:
-    root: error
+    root: WARN
     com:
       stu:
         socialnetworkapi: DEBUG

@@ -32,23 +32,23 @@ public class SecurityConfig {
         private static final String[] PUBLIC_ENDPOINTS = new String[] {
                         "/v1/auth/**",
                         "/v1/register/**",
-                        "/actuator/**",
+                        "/actuator/health/**",
                         "/v1/forgot-password/**",
                         "/v1/update-password/**",
                         "/v1/users/{username}",
                         "/v1/files/{id}",
-                        "/v1/notifications/send",
                         "/v1/posts/newsfeed",
                         "/v1/posts/{id}",
                         "/v1/posts/of-user/{username}",
                         "/v1/comments/of-post/{postId}",
                         "/v1/stringee/**",
-                        "/v1/test/**",
                         "/ws/**" // authorize in handshake interceptor
         };
 
         private static final String[] ADMIN_ENDPOINTS = new String[] {
-                        "/v1/statistics"
+                        "/v1/statistics/**",
+                        "/v2/statistics/**",
+                        "/v1/test/**"
         };
 
         @Bean
@@ -73,7 +73,6 @@ public class SecurityConfig {
         @Bean
         public CorsConfigurationSource corsConfigurationSource() {
                 CorsConfiguration corsConfiguration = new CorsConfiguration();
-                corsConfiguration.addAllowedOrigin(frontEndOrigin);
                 corsConfiguration.setAllowedOriginPatterns(List.of(frontEndOrigin, "https://*.stringee.com"));
                 corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
                 corsConfiguration.setAllowedHeaders(List.of("*"));

@@ -11,18 +11,25 @@ import com.stu.socialnetworkapi.repository.neo4j.VerifyCodeRepository;
 import com.stu.socialnetworkapi.service.itf.MailService;
 import com.stu.socialnetworkapi.service.itf.UpdatePasswordService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class UpdatePasswordServiceImpl implements UpdatePasswordService {
     private static final long VERIFY_EMAIL_VALIDITY_SECONDS = 900L; // 15 minutes
+
+    @Value("${origin.front-end}")
+    private String frontEndOrigin;
 
     private final MailService mailService;
     private final PasswordEncoder passwordEncoder;
@@ -31,16 +38,21 @@ public class UpdatePasswordServiceImpl implements UpdatePasswordService {
 
     @Override
     public void send(String email, String continueUrl) {
+        validateContinueUrl(continueUrl);
         Account account = accountRepository.findByEmail(email)
                 .orElseThrow(() -> new ApiException(ErrorCode.ACCOUNT_NOT_FOUND));
-        VerifyCode code = account.getVerifyCode();
-        if (code == null)
-            code = VerifyCode.builder()
-                    .code(UUID.randomUUID())
-                    .account(account)
-                    .expiryTime(LocalDateTime.now().plusSeconds(VERIFY_EMAIL_VALIDITY_SECONDS))
-                    .build();
-        else code.setExpiryTime(LocalDateTime.now().plusSeconds(VERIFY_EMAIL_VALIDITY_SECONDS));
+        VerifyCode existingCode = account.getVerifyCode();
+        if (existingCode != null) {
+            account.setVerifyCode(null);
+            accountRepository.save(account);
+            verifyCodeRepository.deleteById(existingCode.getCode());
+        }
+        VerifyCode code = VerifyCode.builder()
+                .code(UUID.randomUUID())
+                .account(account)
+                .verified(false)
+                .expiryTime(LocalDateTime.now().plusSeconds(VERIFY_EMAIL_VALIDITY_SECONDS))
+                .build();
         verifyCodeRepository.save(code);
         sendVerifyEmail(email, code, continueUrl);
     }
@@ -49,8 +61,12 @@ public class UpdatePasswordServiceImpl implements UpdatePasswordService {
     public void verify(VerifyRequest request) {
         VerifyCode verifyCode = verifyCodeRepository.findById(request.code())
                 .orElseThrow(() -> new ApiException(ErrorCode.VERIFICATION_CODE_NOT_FOUND));
-        if (!verifyCode.getCode().equals(request.code()) || verifyCode.getExpiryTime().isBefore(LocalDateTime.now()))
+        if (verifyCode.getAccount() == null
+                || !verifyCode.getAccount().getEmail().equals(request.email())
+                || !verifyCode.getCode().equals(request.code())
+                || verifyCode.getExpiryTime().isBefore(LocalDateTime.now())) {
             throw new ApiException(ErrorCode.VERIFICATION_CODE_NOT_MATCHED_OR_EXPIRED);
+        }
         verifyCode.setVerified(true);
         verifyCodeRepository.save(verifyCode);
     }
@@ -60,11 +76,33 @@ public class UpdatePasswordServiceImpl implements UpdatePasswordService {
         Account account = accountRepository.findByEmail(request.email())
                 .orElseThrow(() -> new ApiException(ErrorCode.ACCOUNT_NOT_FOUND));
 
-        String encodedPassword = passwordEncoder.encode(request.password());
-        if (account.getVerifyCode() == null || !account.getVerifyCode().isVerified())
+        VerifyCode verifyCode = account.getVerifyCode();
+        if (verifyCode == null
+                || !verifyCode.isVerified()
+                || verifyCode.getExpiryTime().isBefore(LocalDateTime.now())) {
             throw new ApiException(ErrorCode.VERIFICATION_CODE_NOT_MATCHED_OR_EXPIRED);
-        account.setPassword(encodedPassword);
+        }
+        account.setPassword(passwordEncoder.encode(request.password()));
+        account.setVerifyCode(null);
         accountRepository.save(account);
+        verifyCodeRepository.deleteById(verifyCode.getCode());
+    }
+
+    private void validateContinueUrl(String continueUrl) {
+        try {
+            URI continueUri = URI.create(continueUrl);
+            URI allowedUri = URI.create(frontEndOrigin);
+            boolean sameOrigin = continueUri.getScheme() != null
+                    && continueUri.getScheme().equalsIgnoreCase(allowedUri.getScheme())
+                    && continueUri.getHost() != null
+                    && continueUri.getHost().equalsIgnoreCase(allowedUri.getHost())
+                    && continueUri.getPort() == allowedUri.getPort();
+            if (!sameOrigin) {
+                throw new ApiException(ErrorCode.INVALID_INPUT);
+            }
+        } catch (IllegalArgumentException e) {
+            throw new ApiException(ErrorCode.INVALID_INPUT);
+        }
     }
 
     private void sendVerifyEmail(String email, VerifyCode verifyCode, String continueUrl) {

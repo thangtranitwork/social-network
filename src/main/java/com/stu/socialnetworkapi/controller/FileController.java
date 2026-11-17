@@ -21,10 +21,20 @@ public class FileController {
     @GetMapping("/{id}")
     public ResponseEntity<Resource> load(@PathVariable String id) {
         FileResponse file = fileService.load(id);
+        String contentType = file.getContentType();
+        boolean safeInline = contentType != null && (
+                (contentType.startsWith("image/") && !contentType.equalsIgnoreCase("image/svg+xml"))
+                        || contentType.startsWith("video/")
+                        || contentType.startsWith("audio/")
+                        || contentType.equalsIgnoreCase("application/pdf")
+        );
+        String dispositionType = safeInline ? "inline" : "attachment";
+        String safeFileName = file.getName() != null ? file.getName().replaceAll("[\r\n\"]", "_") : id;
         return ResponseEntity.ok()
-                .header("Content-Disposition", "inline; filename=\"" + file.getName() + "\"")
+                .header("Content-Disposition", dispositionType + "; filename=\"" + safeFileName + "\"")
+                .header("X-Content-Type-Options", "nosniff")
                 .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600, immutable") // Cache file trong 1 tieng
-                .contentType(MediaType.parseMediaType(file.getContentType()))
+                .contentType(MediaType.parseMediaType(contentType != null ? contentType : MediaType.APPLICATION_OCTET_STREAM_VALUE))
                 .body(file.getResource());
     }
 }

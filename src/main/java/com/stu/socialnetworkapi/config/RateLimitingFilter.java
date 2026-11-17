@@ -39,20 +39,19 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
 
-        String clientIp = getClientIP(request);
-        if (clientIp != null && clientIp.startsWith("0:0:0:0:0:0:0:")) {
-            // Skip localhost
+        String remoteAddr = request.getRemoteAddr();
+        if (remoteAddr != null && (remoteAddr.equals("127.0.0.1") || remoteAddr.startsWith("0:0:0:0:0:0:0:"))) {
+            // Skip localhost based on actual socket remoteAddr (not spoofable X-Forwarded-For)
             filterChain.doFilter(request, response);
             return;
         }
+        String clientIp = getClientIP(request);
         String redisKey = RATE_LIMIT_BY_IP + clientIp;
 
-        Integer currentCount = redisTemplate.opsForValue().get(redisKey);
-        if (currentCount == null) {
-            redisTemplate.opsForValue().set(redisKey, 1, Duration.ofSeconds(TIME_WINDOW_SECONDS));
-        } else if (currentCount < MAX_REQUESTS) {
-            redisTemplate.opsForValue().increment(redisKey);
-        } else {
+        Long currentCount = redisTemplate.opsForValue().increment(redisKey);
+        if (currentCount != null && currentCount == 1L) {
+            redisTemplate.expire(redisKey, Duration.ofSeconds(TIME_WINDOW_SECONDS));
+        } else if (currentCount != null && currentCount > MAX_REQUESTS) {
             // Trả lỗi 429 Too Many Requests
             ErrorCode errorCode = ErrorCode.TOO_MANY_REQUESTS;
             response.setStatus(errorCode.getHttpStatus().value());
@@ -74,8 +73,8 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         String xfHeader = request.getHeader("X-Forwarded-For");
         String remoteAddr = request.getRemoteAddr();
 
-        if (xfHeader != null && !xfHeader.isEmpty()) {
-            return xfHeader.split(",")[0];
+        if (xfHeader != null && !xfHeader.isBlank()) {
+            return xfHeader.split(",")[0].trim();
         }
         return remoteAddr;
     }
